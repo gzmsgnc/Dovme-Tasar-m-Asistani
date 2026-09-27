@@ -1,0 +1,6 @@
+{
+  "name": "Dövme Tasarım Asistanı",
+  "description": "Numeroloji, astroloji, enneagram ve sembolizm temelli kişisel dövme tasarım reçetesi ve AI prompt oluşturma asistanı.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
