@@ -452,6 +452,16 @@ export async function exportRecipeToPDF(
           </div>
         ` : ''}
 
+        ${r.generatedSketchUrl ? `
+          <!-- OLUŞTURULAN DÖVME TASARIM ESKİZİ / STENCIL ŞABLONU -->
+          <div class="pdf-section-title">
+            <span>◆</span> OLUŞTURULAN DÖVME TASARIM ESKİZİ / STENCIL ŞABLONU
+          </div>
+          <div class="pdf-card" style="text-align: center; background: #08080a; padding: 18px; margin-bottom: 20px;">
+            <img src="${r.generatedSketchUrl}" style="max-width: 440px; max-height: 540px; border-radius: 8px; border: 1px solid #282834; display: inline-block;" alt="Dövme Tasarım Eskizi" />
+          </div>
+        ` : ''}
+
         <!-- 8. DÖVME SANATÇISI TEKNİK SPEC SHEET & MASTER AI PROMPTLARI -->
         <div class="pdf-section-title">
           <span>◆</span> 8. DÖVME SANATÇISI TEKNİK SPEC SHEET & MASTER AI PROMPTU
@@ -486,18 +496,23 @@ export async function exportRecipeToPDF(
 
     document.body.appendChild(container);
 
-    if (onProgress) onProgress('Yüksek çözünürlüklü sayfalar taranıyor...');
+    let canvas;
+    try {
+      if (onProgress) onProgress('Yüksek çözünürlüklü sayfalar taranıyor...');
 
-    // Convert DOM to canvas with high resolution
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#0b0b0e'
-    });
-
-    // Clean up DOM element
-    document.body.removeChild(container);
+      // Convert DOM to canvas with high resolution
+      canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#0b0b0e'
+      });
+    } finally {
+      // Clean up DOM element reliably
+      if (container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    }
 
     if (onProgress) onProgress('PDF dosyası derleniyor...');
 

@@ -47,7 +47,13 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
   const handleSendWhatsApp = () => {
     if (returnMessage) {
       const link = generateWhatsAppShareLink('', returnMessage);
-      window.open(link, '_blank');
+      const a = document.createElement('a');
+      a.href = link;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
       if (calculatedResult && onCompletedAnswers) {
         onCompletedAnswers(calculatedResult.type, calculatedResult.wing);
       }

@@ -39,6 +39,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   const [selectedClientDetail, setSelectedClientDetail] = useState<PersonData | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<PersonData | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -173,18 +174,36 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                       >
                         <UserCheck className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        type="button"
-                        title="Kişiyi Sil"
-                        onClick={() => {
-                          if (confirm(`${client.name} kişisini silmek istediğinizden emin misiniz?`)) {
-                            onDeleteClient(client.id);
-                          }
-                        }}
-                        className="p-1.5 rounded bg-[#111] hover:bg-rose-950/40 text-[#888] hover:text-rose-400 border border-[#222] text-xs transition-all cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {deleteConfirmId === client.id ? (
+                        <div className="flex items-center gap-1 animate-fadeIn">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onDeleteClient(client.id);
+                              setDeleteConfirmId(null);
+                            }}
+                            className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-mono font-bold cursor-pointer transition-colors"
+                          >
+                            Sil
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="px-1.5 py-1 rounded bg-[#222] hover:bg-[#333] text-zinc-300 text-[10px] font-mono cursor-pointer"
+                          >
+                            Vazgeç
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Kişiyi Sil"
+                          onClick={() => setDeleteConfirmId(client.id)}
+                          className="p-1.5 rounded bg-[#111] hover:bg-rose-950/40 text-[#888] hover:text-rose-400 border border-[#222] text-xs transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 

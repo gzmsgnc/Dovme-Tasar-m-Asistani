@@ -15,6 +15,8 @@ import {
   Compass
 } from 'lucide-react';
 import { calculateEbcedAndYildizname } from '../../utils/ebced';
+import { calculateNumerology } from '../../utils/numerology';
+import { calculateAstrology } from '../../utils/astrology';
 import { TotemQuizModal } from './TotemQuizModal';
 import { EnneagramQuizModal } from './EnneagramQuizModal';
 import { TOTEM_ANIMALS_52 } from '../../utils/totemCatalogData';
@@ -513,6 +515,11 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
           clientName={name || 'Danışan'}
           initialAnswers={totemAnswers}
           enneagramType={enneagramType}
+          personalContext={birthDate ? {
+            dominantElement: calculateAstrology(birthDate, birthTime, birthPlace).dominantElement,
+            lifePathNumber: calculateNumerology(name || 'Danışan', birthDate).lifePathNumber,
+            sunSign: calculateAstrology(birthDate, birthTime, birthPlace).sunSign
+          } : undefined}
           onClose={() => setShowTotemModal(false)}
           onApplyResult={(answers, result) => {
             setTotemAnswers(answers);
@@ -528,10 +535,9 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
         <EnneagramQuizModal
           isOpen={showEnneagramModal}
           onClose={() => setShowEnneagramModal(false)}
-          clientName={name || 'Danışan'}
-          onComplete={(result) => {
-            setEnneagramType(result.type);
-            setEnneagramWing(result.wing);
+          onApplyResult={(type, wing) => {
+            setEnneagramType(type);
+            setEnneagramWing(wing);
             setShowEnneagramModal(false);
           }}
         />

@@ -37,10 +37,15 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Deep AI Esoteric & Artistic Synthesis
-  app.post('/api/ai/deep-synthesis', async (req: Request, res: Response) => {
+  // Deep AI Esoteric & Artistic Synthesis (supports both /api/ai/deep-synthesis and /api/ai/synthesize)
+  const handleSynthesis = async (req: Request, res: Response) => {
     try {
-      const { person, numerology, astrology, enneagram, symbolism, parameters } = req.body;
+      const body = req.body || {};
+      const person = body.person || body.analysisData || {};
+      const numerology = body.numerology || {};
+      const astrology = body.astrology || {};
+      const enneagram = body.enneagram || {};
+      const parameters = body.parameters || body.designParameters || {};
       const ai = getGenAI();
 
       if (!ai) {
@@ -51,20 +56,38 @@ async function startServer() {
         });
       }
 
+      const clientName = person.name || 'Danışan';
+      const birthDate = person.birthDate || 'Belirtilmedi';
+      const lifePath = numerology.lifePathNumber || person.lifePath || '7';
+      const lifePathTitle = numerology.lifePathTitle || 'Ruhani Arayış';
+      const sunSign = astrology.sunSign || 'Koç';
+      const moonSign = astrology.moonSign || 'Balık';
+      const ascSign = astrology.ascendantSign || 'Yay';
+      const dominantElement = astrology.dominantElement || 'Ateş';
+      const enneaType = enneagram.wing || enneagram.typeName || '4w5';
+      const coreMotivation = enneagram.coreMotivation || 'Özgünlük ve derin anlam';
+      const shadowTraits = Array.isArray(enneagram.shadowTraits) ? enneagram.shadowTraits.join(', ') : 'Gölge entegrasyonu';
+      const mainSymbol = parameters.mainSymbol || person.primaryTotem || 'Kurt / Geyik';
+      const secondarySymbols = Array.isArray(parameters.secondarySymbols) ? parameters.secondarySymbols.join(', ') : 'Kutsal Geometri';
+      const selectedStyles = Array.isArray(parameters.selectedStyles) ? parameters.selectedStyles.join(', ') : 'Fine Line, Dotwork';
+      const bodyPlacement = parameters.bodyPlacement || 'Önkol İç';
+      const visualAtmosphere = parameters.visualAtmosphere || 'Mistik & Ezoterik';
+      const colorScheme = parameters.colorScheme || 'Saf Monokrom Siyah';
+
       const prompt = `
 Sen dünya çapında ünlü, ezoterik sembolizm, numeroloji, kadim astroloji ve profesyonel dövme sanatı konusunda uzman bir master dövme sanatçısısın.
 Aşağıdaki kişi için kişiselleştirilmiş dövme tasarım reçetesini derinleştir, her sembolün neden seçildiğini ve kişinin ruhsal-matematiksel profiliyle nasıl birleştiğini şiirsel ama teknik açıdan kusursuz bir üslupla açıkla.
 
-Kişi: ${person.name} (Doğum: ${person.birthDate} ${person.birthTime || ''})
-Numeroloji: Yaşam Yolu ${numerology.lifePathNumber} (${numerology.lifePathTitle}), İfade ${numerology.destinyNumber}, DM ${numerology.dmNumber}, Eksik Sayılar: ${numerology.missingNumbers.join(',') || 'Yok'}, 19 İlahi Yardım: ${numerology.divineHelp19.has19 ? 'Var' : 'Yok'}
-Astroloji: Güneş ${astrology.sunSign}, Ay ${astrology.moonSign}, Yükselen ${astrology.ascendantSign}, Hakim Element: ${astrology.dominantElement}
-Enneagram: ${enneagram.wing} (Temel Motivasyon: ${enneagram.coreMotivation}, Gölge: ${enneagram.shadowTraits.join(', ')})
-Seçilen Semboller: Ana Sembol: ${parameters.mainSymbol}, Yardımcılar: ${parameters.secondarySymbols.join(', ')}
-Dövme Stilleri: ${parameters.selectedStyles.join(', ')}
-Yerleşim & Kompozisyon: ${parameters.bodyPlacement} (${parameters.composition})
-Atmosfer & Renk: ${parameters.visualAtmosphere}, ${parameters.colorScheme}
+Kişi: ${clientName} (Doğum: ${birthDate})
+Numeroloji: Yaşam Yolu ${lifePath} (${lifePathTitle})
+Astroloji: Güneş ${sunSign}, Ay ${moonSign}, Yükselen ${ascSign}, Hakim Element: ${dominantElement}
+Enneagram: ${enneaType} (Temel Motivasyon: ${coreMotivation}, Gölge: ${shadowTraits})
+Seçilen Semboller: Ana Sembol: ${mainSymbol}, Yardımcılar: ${secondarySymbols}
+Dövme Stilleri: ${selectedStyles}
+Yerleşim & Kompozisyon: ${bodyPlacement}
+Atmosfer & Renk: ${visualAtmosphere}, ${colorScheme}
 
-Lütfen şu formatta JSON yanıt ver:
+Lütfen şu formatta geçerli bir JSON yanıt ver:
 {
   "esotericInsight": "Kişinin ezoterik haritası ve dövmenin ruhsal anlamı (2-3 paragraf)",
   "technicalArtistNotes": "Dövme sanatçısı için iğne derinliği, çizgi kalınlığı, whip shading ve anatomik yerleşim rehberi",
@@ -79,7 +102,7 @@ Lütfen şu formatta JSON yanıt ver:
       `.trim();
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json'
@@ -94,10 +117,14 @@ Lütfen şu formatta JSON yanıt ver:
       res.json({ 
         success: false, 
         fallback: true,
+        error: err instanceof Error ? err.message : String(err),
         message: 'Canlı AI servisi meşgul, yerel matematiksel ezoterik sentez devrede.' 
       });
     }
-  });
+  };
+
+  app.post('/api/ai/deep-synthesis', handleSynthesis);
+  app.post('/api/ai/synthesize', handleSynthesis);
 
   // Prompt Variations Generator
   app.post('/api/ai/refine-prompts', async (req: Request, res: Response) => {
@@ -137,7 +164,7 @@ Lütfen JSON formatında yanıt ver:
       `.trim();
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           responseMimeType: 'application/json'

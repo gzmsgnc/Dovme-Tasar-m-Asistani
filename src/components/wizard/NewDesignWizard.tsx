@@ -25,6 +25,7 @@ import { EnneagramShareModal } from '../modals/EnneagramShareModal';
 import { ClientConsultationDossierModal } from '../modals/ClientConsultationDossierModal';
 import { ClientEnneagramQuizView } from '../common/ClientEnneagramQuizView';
 import { encodeToMorse } from '../../utils/morseCode';
+import { downloadAsPng, downloadAsSvg } from '../../utils/imageExport';
 import { 
   User, 
   Sparkles, 
@@ -59,7 +60,11 @@ import {
   RotateCcw,
   UserCheck,
   Users,
-  Plus
+  Plus,
+  Image as ImageIcon,
+  Loader2,
+  RefreshCw,
+  ZoomIn
 } from 'lucide-react';
 
 interface NewDesignWizardProps {
@@ -71,6 +76,8 @@ interface NewDesignWizardProps {
   onViewArchive: () => void;
   onNavigateToClients?: () => void;
   onStartNewClient?: () => void;
+  initialMainSymbol?: string | null;
+  initialSelectedStyle?: string | null;
 }
 
 export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
@@ -81,7 +88,9 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   onSelectClient,
   onViewArchive,
   onNavigateToClients,
-  onStartNewClient
+  onStartNewClient,
+  initialMainSymbol,
+  initialSelectedStyle
 }) => {
   const [step, setStep] = useState<number>(1);
 
@@ -157,6 +166,31 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [promptViewTab, setPromptViewTab] = useState<'shadow-dossier' | 'client-letter' | 'midjourney' | 'dalle3' | 'flux' | 'stencil' | 'specsheet' | 'explanation' | 'negative'>('shadow-dossier');
   const [step5ViewMode, setStep5ViewMode] = useState<'shadow-report' | 'studio-grid'>('shadow-report');
   const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  // Visual Sketch & 03RL Stencil Generation State
+  const [isGeneratingSketch, setIsGeneratingSketch] = useState<boolean>(false);
+  const [sketchStatus, setSketchStatus] = useState<string>('');
+  const [generatedSketchUrl, setGeneratedSketchUrl] = useState<string | null>(null);
+  const [generatedSvgUrl, setGeneratedSvgUrl] = useState<string | null>(null);
+  const [sketchMode, setSketchMode] = useState<'flash' | 'stencil'>('flash');
+  const [sketchSeed, setSketchSeed] = useState<number>(() => Math.floor(100000 + Math.random() * 900000));
+  const [sketchVariationIndex, setSketchVariationIndex] = useState<number>(1);
+  const [sketchModalOpen, setSketchModalOpen] = useState<boolean>(false);
+
+  // Library preselection synchronization
+  useEffect(() => {
+    if (initialMainSymbol) {
+      setCustomMainSymbol(initialMainSymbol);
+      setStep(4);
+    }
+  }, [initialMainSymbol]);
+
+  useEffect(() => {
+    if (initialSelectedStyle) {
+      setSelectedStyles(prev => prev.includes(initialSelectedStyle) ? prev : [...prev, initialSelectedStyle]);
+      setStep(4);
+    }
+  }, [initialSelectedStyle]);
 
   // Auto-calculate profile whenever person data changes
   useEffect(() => {
@@ -400,6 +434,52 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setGeneratedRecipe(recipe);
     setStep(5);
     setIsSaved(false);
+  };
+
+  // Generate Visual Sketch or Stencil via AI & Vector Engine
+  const handleGenerateSketch = async (targetMode?: 'flash' | 'stencil') => {
+    if (!generatedRecipe) return;
+    const modeToUse = targetMode || sketchMode;
+    setSketchMode(modeToUse);
+    setIsGeneratingSketch(true);
+    setSketchStatus(modeToUse === 'stencil' ? '03RL Vektör & Termal Stencil hazırlanıyor...' : 'Ezoterik Dövme Flaşı çiziliyor...');
+
+    try {
+      const promptToUse = modeToUse === 'stencil'
+        ? (generatedRecipe.stencilPrompt || generatedRecipe.masterOutlinePrompt || generatedRecipe.masterEnglishPrompt)
+        : (generatedRecipe.masterShadedPrompt || generatedRecipe.masterEnglishPrompt);
+
+      const response = await fetch('/api/ai/generate-sketch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipe: generatedRecipe,
+          mode: modeToUse,
+          seed: sketchSeed,
+          variationIndex: sketchVariationIndex,
+          prompt: promptToUse
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && data.imageUrl) {
+        setGeneratedSketchUrl(data.imageUrl);
+        setGeneratedSvgUrl(data.svgUrl || null);
+        setGeneratedRecipe(prev => prev ? { ...prev, generatedSketchUrl: data.imageUrl } : null);
+        setSketchStatus(`✓ ${modeToUse === 'stencil' ? 'Termal Stencil (03RL)' : 'Dövme Flaşı'} (#${sketchVariationIndex}) başarıyla oluşturuldu!`);
+        setSketchVariationIndex(prev => prev + 1);
+        setTimeout(() => setSketchStatus(''), 4500);
+      } else {
+        setSketchStatus('⚠️ Görsel oluşturulamadı.');
+        setTimeout(() => setSketchStatus(''), 3500);
+      }
+    } catch (err) {
+      console.error('Sketch generation error:', err);
+      setSketchStatus('⚠️ Sunucu bağlantı hatası.');
+      setTimeout(() => setSketchStatus(''), 3500);
+    } finally {
+      setIsGeneratingSketch(false);
+    }
   };
 
   // Toggle Styles
@@ -3156,6 +3236,21 @@ ${r.turkishPromptExplanation}
                   <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#1a1a1a] text-[9px] font-mono text-[#888]">
                     <span className="px-1.5 py-0.5 rounded bg-[#161616] text-amber-300">Stüdyo Masası İçin Hazır</span>
                     <span className="px-1.5 py-0.5 rounded bg-[#161616] text-amber-300">İğne & Ton Dağılımı</span>
+                  </div>
+                </div>
+              )}
+
+              {promptViewTab === 'explanation' && (
+                <div className="flex-1 flex flex-col space-y-2">
+                  <textarea
+                    readOnly
+                    value={generatedRecipe.turkishPromptExplanation}
+                    className="w-full flex-1 bg-transparent text-[11px] font-mono leading-relaxed text-cyan-200/90 resize-none outline-none custom-scrollbar select-all"
+                    rows={9}
+                  />
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#1a1a1a] text-[9px] font-mono text-[#888]">
+                    <span className="px-1.5 py-0.5 rounded bg-[#161616] text-cyan-300">12-Nokta Reçete Görsel Veri Haritası</span>
+                    <span className="px-1.5 py-0.5 rounded bg-[#161616] text-cyan-300">Sembolik & Anatomik Entegrasyon</span>
                   </div>
                 </div>
               )}

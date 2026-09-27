@@ -14,6 +14,7 @@ import {
   FileText
 } from 'lucide-react';
 import { ClientConsultationDossierModal } from '../modals/ClientConsultationDossierModal';
+import { PDFExportButton } from '../common/PDFExportButton';
 
 interface ArchiveViewProps {
   recipes: TattooRecipe[];
@@ -30,6 +31,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({
   const [selectedRecipe, setSelectedRecipe] = useState<TattooRecipe | null>(null);
   const [dossierRecipe, setDossierRecipe] = useState<TattooRecipe | null>(null);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const filteredRecipes = recipes.filter(r => 
     r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,18 +186,36 @@ ${recipe.negativePrompt}
                     >
                       {copiedPromptId === recipe.id ? <Check className="w-3.5 h-3.5 text-[#c4a47c]" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
-                    <button
-                      type="button"
-                      title="Reçeteyi Sil"
-                      onClick={() => {
-                        if (confirm(`"${recipe.title}" reçetesini silmek istediğinize emin misiniz?`)) {
-                          onDeleteRecipe(recipe.id);
-                        }
-                      }}
-                      className="p-1.5 rounded bg-[#111] hover:bg-rose-950/40 text-[#888] hover:text-rose-400 border border-[#222] text-xs transition-all cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {deleteConfirmId === recipe.id ? (
+                      <div className="flex items-center gap-1 animate-fadeIn">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeleteRecipe(recipe.id);
+                            setDeleteConfirmId(null);
+                          }}
+                          className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-mono font-bold cursor-pointer transition-colors"
+                        >
+                          Sil
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-1.5 py-1 rounded bg-[#222] hover:bg-[#333] text-zinc-300 text-[10px] font-mono cursor-pointer"
+                        >
+                          Vazgeç
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        title="Reçeteyi Sil"
+                        onClick={() => setDeleteConfirmId(recipe.id)}
+                        className="p-1.5 rounded bg-[#111] hover:bg-rose-950/40 text-[#888] hover:text-rose-400 border border-[#222] text-xs transition-all cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -219,15 +239,22 @@ ${recipe.negativePrompt}
 
               {/* Action Buttons */}
               <div className="pt-2 border-t border-[#1a1a1a] flex flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setDossierRecipe(recipe)}
-                  className="w-full py-2 px-3 rounded bg-gradient-to-r from-amber-600/20 to-[#c4a47c]/20 hover:from-amber-600/30 hover:to-[#c4a47c]/30 border border-[#c4a47c]/50 hover:border-[#c4a47c] text-[#f4e6d4] text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                  title="Çakra analizleri, gölge yanlar ve ek dosya parçalarını içeren danışan dosyasını aç"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#c4a47c]" />
-                  <span>📁 Danışan Görüşme & Şifa Dosyası (Ekler Dahil)</span>
-                </button>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setDossierRecipe(recipe)}
+                    className="flex-1 py-2 px-3 rounded bg-gradient-to-r from-amber-600/20 to-[#c4a47c]/20 hover:from-amber-600/30 hover:to-[#c4a47c]/30 border border-[#c4a47c]/50 hover:border-[#c4a47c] text-[#f4e6d4] text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                    title="Çakra analizleri, gölge yanlar ve ek dosya parçalarını içeren danışan dosyasını aç"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>📁 Danışan Dosyası & Ekler</span>
+                  </button>
+                  <PDFExportButton
+                    recipe={recipe}
+                    variant="compact"
+                    label="PDF"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => setSelectedRecipe(recipe)}
@@ -253,6 +280,11 @@ ${recipe.negativePrompt}
                 <h3 className="text-base font-bold text-white font-serif">{selectedRecipe.title}</h3>
               </div>
               <div className="flex items-center gap-2">
+                <PDFExportButton
+                  recipe={selectedRecipe}
+                  variant="compact"
+                  label="PDF İndir"
+                />
                 <button
                   type="button"
                   onClick={() => handleDownloadRecipeMarkdown(selectedRecipe)}

@@ -25,6 +25,8 @@ export function App() {
   const [clients, setClients] = useState<PersonData[]>([]);
   const [recipes, setRecipes] = useState<TattooRecipe[]>([]);
   const [selectedPersonForDesign, setSelectedPersonForDesign] = useState<PersonData | null>(null);
+  const [preselectedSymbol, setPreselectedSymbol] = useState<string | null>(null);
+  const [preselectedStyle, setPreselectedStyle] = useState<string | null>(null);
   const [wizardSessionId, setWizardSessionId] = useState<number>(Date.now());
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isClientQuizMode, setIsClientQuizMode] = useState<boolean>(() => {
@@ -133,6 +135,8 @@ export function App() {
               onViewArchive={() => setActiveTab('archive')}
               onNavigateToClients={() => setActiveTab('clients')}
               onStartNewClient={handleAddNewClientClick}
+              initialMainSymbol={preselectedSymbol}
+              initialSelectedStyle={preselectedStyle}
             />
           )}
 
@@ -152,6 +156,9 @@ export function App() {
               onDeleteRecipe={handleDeleteRecipe}
               onStartNewDesign={() => {
                 setSelectedPersonForDesign(null);
+                setPreselectedSymbol(null);
+                setPreselectedStyle(null);
+                setWizardSessionId(Date.now());
                 setActiveTab('new_design');
               }}
             />
@@ -160,6 +167,7 @@ export function App() {
           {activeTab === 'symbols' && (
             <SymbolLibraryView
               onSelectSymbolForDesign={(symbolName) => {
+                setPreselectedSymbol(symbolName);
                 setActiveTab('new_design');
               }}
             />
@@ -168,6 +176,7 @@ export function App() {
           {activeTab === 'styles' && (
             <StyleLibraryView
               onSelectStyleForDesign={(styleName) => {
+                setPreselectedStyle(styleName);
                 setActiveTab('new_design');
               }}
             />

@@ -43,7 +43,13 @@ export const EnneagramShareModal: React.FC<EnneagramShareModalProps> = ({
 
   const handleOpenWhatsApp = () => {
     const link = generateWhatsAppShareLink(phoneNumber, whatsappMessage);
-    window.open(link, '_blank');
+    const a = document.createElement('a');
+    a.href = link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   // Live parsing of pasted customer answers
