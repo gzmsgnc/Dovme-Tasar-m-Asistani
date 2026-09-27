@@ -45,7 +45,7 @@ export function escapeXml(unsafe: string | number | undefined | null): string {
 
 export function generateEsotericTattooStencilSvg(options: StencilOptions = {}): string {
   const {
-    mainSymbol = 'Kurt (Wolf)',
+    mainSymbol = 'Kutsal Geometri & Odak Sembol',
     secondarySymbols = ['Kutsal Lotus', 'Metatron Küpü'],
     subtleDetails = ['19 İlahi Yardım Mührü', 'Kozmik Takımyıldız'],
     lifePathNumber = '7',

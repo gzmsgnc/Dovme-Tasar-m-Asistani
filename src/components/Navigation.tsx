@@ -19,6 +19,7 @@ interface NavigationProps {
   recipesCount: number;
   onOpenBackup: () => void;
   activeClientName?: string | null;
+  onStartNewClient?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -27,7 +28,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   clientsCount,
   recipesCount,
   onOpenBackup,
-  activeClientName
+  activeClientName,
+  onStartNewClient
 }) => {
   const navItems = [
     { id: 'new_design' as ActiveTab, label: 'YENİ TASARIM', icon: Sparkles, badge: null },
@@ -41,7 +43,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     <>
       {/* Desktop Sidebar (lg and above) */}
       <aside className="hidden lg:flex w-64 border-r border-[#1a1a1a] bg-[#0a0a0a] flex-col p-6 shrink-0 h-screen sticky top-0">
-        <div className="mb-8 cursor-pointer select-none" onClick={() => setActiveTab('new_design')}>
+        <div className="mb-6 cursor-pointer select-none" onClick={() => onStartNewClient ? onStartNewClient() : setActiveTab('new_design')}>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-[#c4a47c]/20 border border-[#c4a47c]/50 flex items-center justify-center text-[#c4a47c]">
               <Compass className="w-3.5 h-3.5" />
@@ -53,6 +55,18 @@ export const Navigation: React.FC<NavigationProps> = ({
           <p className="text-[9px] text-[#666] tracking-[3px] uppercase mt-1.5 font-mono">
             Personal Design Assistant
           </p>
+        </div>
+
+        {/* Quick New Client Action */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => onStartNewClient ? onStartNewClient() : setActiveTab('new_design')}
+            className="w-full py-2.5 px-3 rounded-lg bg-[#141414] hover:bg-[#1a1a1a] border border-[#c4a47c]/40 hover:border-[#c4a47c] text-[#c4a47c] hover:text-white flex items-center justify-center gap-2 text-xs font-mono font-bold tracking-wider transition-all cursor-pointer shadow-sm shadow-[#c4a47c]/5"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#c4a47c]" />
+            <span>+ YENİ DANIŞAN</span>
+          </button>
         </div>
 
         <nav className="flex-1 space-y-2">
@@ -131,6 +145,14 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => onStartNewClient ? onStartNewClient() : setActiveTab('new_design')}
+              title="Yeni Danışan & Temiz Tasarım"
+              className="px-2.5 py-1.5 rounded-lg bg-[#1a1813] border border-[#c4a47c]/40 text-[#c4a47c] hover:text-white text-xs flex items-center gap-1.5 transition-all font-mono"
+            >
+              <Sparkles className="w-3 h-3 text-[#c4a47c]" />
+              <span className="text-[11px] font-bold">+ Yeni</span>
+            </button>
             <button
               onClick={onOpenBackup}
               title="Yedekleme & Dışa Aktar"

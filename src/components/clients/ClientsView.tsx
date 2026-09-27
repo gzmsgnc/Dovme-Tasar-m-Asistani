@@ -111,7 +111,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
               birthPlace: client.birthPlace,
               motherName: client.motherName,
               totemAnswers: client.totemAnswers,
-              enneagramType: client.enneagramType
+              enneagramType: client.enneagramType,
+              lifePathNumber: num.lifePathNumber,
+              dominantElement: astro.dominantElement,
+              sunSign: astro.sunSign
             });
 
             return (

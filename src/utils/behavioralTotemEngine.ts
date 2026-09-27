@@ -452,22 +452,13 @@ const DEFAULT_VECTOR: BehavioralVector = {
 };
 
 /**
- * Kullanıcı test yanıtlarından 20 boyutlu normalize davranış vektörü çıkarır
+ * Kullanıcı test yanıtlarından 20 boyutlu normalize davranış vektörü çıkarır.
+ * Cevaplanan soruların aktif boyutları hesaplanır. Testte doğrudan dokunulmayan boyutlar
+ * kullanıcının genel yanıt eğilimine göre nötrlenir (sabit 50 puan yapay sapma yaratmaz).
  */
 export function calculateUserBehavioralVector(answers: Record<number, string>): BehavioralVector {
-  const dimensionTotals: Record<BehavioralDimensionKey, number> = {
-    independence: 0, socialConnection: 0, protectiveness: 0, observation: 0,
-    courageRisk: 0, patience: 0, adaptability: 0, curiosity: 0, intuition: 0,
-    leadership: 0, stealth: 0, resilience: 0, freedomNeed: 0, territorialBoundary: 0,
-    cooperation: 0, competitiveness: 0, threatReflex: 0, solitudeNeed: 0, socialEnergy: 0, crisisBehavior: 0
-  };
-
-  const dimensionCounts: Record<BehavioralDimensionKey, number> = {
-    independence: 0, socialConnection: 0, protectiveness: 0, observation: 0,
-    courageRisk: 0, patience: 0, adaptability: 0, curiosity: 0, intuition: 0,
-    leadership: 0, stealth: 0, resilience: 0, freedomNeed: 0, territorialBoundary: 0,
-    cooperation: 0, competitiveness: 0, threatReflex: 0, solitudeNeed: 0, socialEnergy: 0, crisisBehavior: 0
-  };
+  const dimensionTotals: Partial<Record<BehavioralDimensionKey, number>> = {};
+  const dimensionCounts: Partial<Record<BehavioralDimensionKey, number>> = {};
 
   Object.entries(answers).forEach(([qIdStr, optId]) => {
     const qId = parseInt(qIdStr, 10);
@@ -479,18 +470,31 @@ export function calculateUserBehavioralVector(answers: Record<number, string>): 
 
     Object.entries(selectedOption.dimensionWeights).forEach(([dim, weight]) => {
       const k = dim as BehavioralDimensionKey;
-      if (dimensionTotals[k] !== undefined && weight !== undefined) {
-        dimensionTotals[k] += weight;
-        dimensionCounts[k] += 1;
+      if (weight !== undefined) {
+        dimensionTotals[k] = (dimensionTotals[k] || 0) + weight;
+        dimensionCounts[k] = (dimensionCounts[k] || 0) + 1;
       }
     });
   });
 
+  const allKeys = Object.keys(DEFAULT_VECTOR) as BehavioralDimensionKey[];
   const finalVector: BehavioralVector = { ...DEFAULT_VECTOR };
+  
+  // Calculate average of actively responded dimensions
+  const activeDims = Object.keys(dimensionTotals) as BehavioralDimensionKey[];
+  let activeSum = 0;
+  activeDims.forEach(k => {
+    const avg = Math.round((dimensionTotals[k] || 50) / (dimensionCounts[k] || 1));
+    finalVector[k] = avg;
+    activeSum += avg;
+  });
 
-  (Object.keys(dimensionTotals) as BehavioralDimensionKey[]).forEach(dim => {
-    if (dimensionCounts[dim] > 0) {
-      finalVector[dim] = Math.round(dimensionTotals[dim] / dimensionCounts[dim]);
+  const userBaseline = activeDims.length > 0 ? Math.round(activeSum / activeDims.length) : 50;
+
+  // Untouched dimensions take the user's natural baseline rather than artificial 50
+  allKeys.forEach(k => {
+    if (!dimensionCounts[k]) {
+      finalVector[k] = userBaseline;
     }
   });
 
@@ -498,72 +502,99 @@ export function calculateUserBehavioralVector(answers: Record<number, string>): 
 }
 
 /**
- * İki 20-boyutlu vektör arasında Pearson Korelasyonu (profil biçimi ve iniş-çıkış uyumu) 
- * ile Normalize Euclidean Mesafesi (mutlak değer yakınlığı) hibrit benzerliğini hesaplar (%0 - %100)
+ * Z-Score Standardize Profil Eşleme ve Korelasyon Motoru:
+ * Hayvanların genel ortalama puanlarındaki farkları (bazı hayvanların her boyutta 80+ almasını)
+ * nötralize eder. Bunun yerine hayvanın KENDİ arketipik tepe ve çukurları ile kullanıcının
+ * tepe ve çukurlarının (hangi özelliklerin öne çıktığının) Pearson korelasyonunu ve
+ * bağıl mesafe uyumunu hesaplar.
+ * Böylece Kurt, Geyik, Orka gibi genel hayvanlar her teste yapay şekilde kazanamaz;
+ * 52 hayvanın her biri kendi özgün karakteristiğine uygun cevaplar verildiğinde adilce birinci çıkar.
  */
-export function calculateVectorSimilarity(userVec: BehavioralVector, animalVec: BehavioralVector): number {
+export function calculateVectorSimilarity(
+  userVec: BehavioralVector,
+  animalVec: BehavioralVector,
+  personalBonus: number = 0
+): number {
   const keys = Object.keys(userVec) as BehavioralDimensionKey[];
   const N = keys.length; // 20
 
-  let sumDiffSq = 0;
-  let meanU = 0;
-  let meanA = 0;
-
+  // 1. Kullanıcı İstatistikleri
+  let sumU = 0;
   for (const k of keys) {
-    const u = userVec[k];
-    const a = animalVec[k];
-    sumDiffSq += (u - a) * (u - a);
-    meanU += u;
-    meanA += a;
+    sumU += userVec[k];
   }
-  meanU /= N;
-  meanA /= N;
+  const meanU = sumU / N;
 
-  // Pearson Korelasyonu (Davranış grafiğinin tepe ve vadi uyumu)
-  let cov = 0;
   let varU = 0;
+  for (const k of keys) {
+    const diff = userVec[k] - meanU;
+    varU += diff * diff;
+  }
+  const stdU = Math.sqrt(varU / N) || 1;
+
+  // 2. Hayvan İstatistikleri
+  let sumA = 0;
+  for (const k of keys) {
+    sumA += animalVec[k];
+  }
+  const meanA = sumA / N;
+
   let varA = 0;
   for (const k of keys) {
-    const du = userVec[k] - meanU;
-    const da = animalVec[k] - meanA;
-    cov += du * da;
-    varU += du * du;
-    varA += da * da;
+    const diff = animalVec[k] - meanA;
+    varA += diff * diff;
   }
-  const stdU = Math.sqrt(varU);
-  const stdA = Math.sqrt(varA);
-  const correlation = (stdU > 0 && stdA > 0) ? (cov / (stdU * stdA)) : 0; // -1 to +1
+  const stdA = Math.sqrt(varA / N) || 1;
 
-  // Euclidean Mesafe Skoru (Kök ortalama kare sapma)
-  const rmsError = Math.sqrt(sumDiffSq / N); // 0 ile 100 arası
-  const distanceScore = Math.max(0, 1 - (rmsError / 75)); // 0 to 1
+  // 3. Standartlaştırılmış Z-Score Pearson Korelasyonu
+  let dotProduct = 0;
+  let absDevDiffSum = 0;
 
-  // Korelasyon 0..1 aralığına normalize edilir
-  const correlationScore = (correlation + 1) / 2; // 0 to 1
+  for (const k of keys) {
+    const zU = (userVec[k] - meanU) / stdU;
+    const zA = (animalVec[k] - meanA) / stdA;
+    dotProduct += zU * zA;
+    absDevDiffSum += Math.abs(zU - zA);
+  }
 
-  // Hibrit: %55 profil deseni / eğri benzerliği + %45 mutlak seviye uyumu
-  const combined = (correlationScore * 0.55) + (distanceScore * 0.45);
-  const percentage = Math.min(99.4, Math.max(40, combined * 100));
-  return Math.round(percentage * 10) / 10;
+  const pearson = dotProduct / N; // -1.0 to +1.0
+  const normalizedPearson = (pearson + 1) / 2; // 0.0 to 1.0
+
+  // Z-Score mesafe uyumu
+  const avgZDiff = absDevDiffSum / N;
+  const zDistanceScore = Math.max(0, 1 - (avgZDiff / 2.5)); // 0.0 to 1.0
+
+  // Birleşik benzerlik: %65 profil formu korelasyonu + %35 Z-mesafe uyumu
+  let composite = (normalizedPearson * 0.65) + (zDistanceScore * 0.35) + personalBonus;
+  composite = Math.min(0.99, Math.max(0.40, composite));
+
+  // Yüzdeye çevir (örn: %45 - %98.8 arası)
+  const percentage = (composite * 55) + 43.5;
+  return Math.round(Math.min(99.0, Math.max(48.0, percentage)) * 10) / 10;
 }
 
 /**
  * Gölge Totemi hesaplar:
- * Kişinin en bastırdığı (vektörde en düşük kalan) ve bilinçdışında dengelenmeye muhtaç boyutları tespit eder.
+ * Kişinin en bastırdığı (vektörde zıt kutupta kalan) ve bilinçdışında dengelenmeye muhtaç
+ * boyutları zıt polarite (100 - userVector ve ters Z-score) ile tespit eder.
  * Bu zıt kutbu en güçlü taşıyan ve dönüştürücü koruma sunan hayvanı bulur.
  */
-export function findShadowGuardianTotem(userVector: BehavioralVector, primaryId: string, secondaryId: string): TotemAnimalProfile {
+export function findShadowGuardianTotem(
+  userVector: BehavioralVector,
+  primaryId: string,
+  secondaryId: string
+): TotemAnimalProfile {
   // İnvert edilmiş gölge vektörü: 100 - userVector
   const invertedVector: BehavioralVector = {} as BehavioralVector;
   (Object.keys(userVector) as BehavioralDimensionKey[]).forEach(k => {
     invertedVector[k] = 100 - userVector[k];
   });
 
-  let bestShadow: TotemAnimalProfile = TOTEM_ANIMALS_52[0];
+  const candidates = TOTEM_ANIMALS_52.filter(a => a.id !== primaryId && a.id !== secondaryId);
+  let bestShadow: TotemAnimalProfile = candidates[0] || TOTEM_ANIMALS_52[0];
   let highestScore = -1;
 
-  for (const animal of TOTEM_ANIMALS_52) {
-    if (animal.id === primaryId || animal.id === secondaryId) continue;
+  for (const animal of candidates) {
     const score = calculateVectorSimilarity(invertedVector, animal.behavioralVector);
     if (score > highestScore) {
       highestScore = score;
@@ -597,36 +628,58 @@ export function generateCrossEnneagramTotemInsight(
   const enneaInfo = enneaDescriptions[enneagramType] || enneaDescriptions[4];
   const totemName = primaryTotem.turkishName || primaryTotem.name;
 
-  return `Enneagram ${enneaInfo.name} motivasyonu (${enneaInfo.focus}), davranış testinde ortaya çıkan ${totemName} arketipiyle çok boyutlu bir denge kurar. Bu iki sistem birbirine bağımlı değildir; Enneagram kişinin içsel psikolojik motorunu, ${totemName} ise kriz ve eylem anlarındaki saf davranışsal refleksini yansıtır.`;
+  return `Enneagram ${enneaInfo.name} motivasyonu (${enneaInfo.focus}), testte ortaya çıkan ${totemName} arketipiyle çok boyutlu bir denge kurar. Bu iki sistem birbirine bağımlı değildir; Enneagram kişinin içsel psikolojik motorunu, ${totemName} ise kriz ve eylem anlarındaki saf davranışsal refleksini yansıtır.`;
 }
 
 /**
  * Ana Davranışsal Totem Hesaplama Fonksiyonu
+ * Kullanıcı test yanıtları + isteğe bağlı kişisel astrolojik / numerolojik eğilimler
  */
 export function calculateBehavioralTotemResult(
   answers: Record<number, string>,
-  enneagramType: number = 4
+  enneagramType: number = 4,
+  personalContext?: {
+    dominantElement?: 'Ateş' | 'Toprak' | 'Hava' | 'Su' | string;
+    lifePathNumber?: number;
+    sunSign?: string;
+  }
 ): TotemTestCalculationResult {
   const userVector = calculateUserBehavioralVector(answers);
 
   // 52 Hayvanla karşılaştırma
-  const scoredMatches: TotemMatchScore[] = TOTEM_ANIMALS_52.map(animal => ({
-    animal,
-    similarityScore: calculateVectorSimilarity(userVector, animal.behavioralVector)
-  }));
+  const scoredMatches: TotemMatchScore[] = TOTEM_ANIMALS_52.map(animal => {
+    let personalBonus = 0;
+    // Eğer kullanıcının astrolojik elementi hayvanın elementiyle eşleşiyorsa +%2.5 rezonans bonusu
+    if (personalContext?.dominantElement && animal.element === personalContext.dominantElement) {
+      personalBonus += 0.025;
+    }
+
+    const similarityScore = calculateVectorSimilarity(userVector, animal.behavioralVector, personalBonus);
+    return {
+      animal,
+      similarityScore
+    };
+  });
 
   // Sıralama (En yüksek uyumdan düşüğe)
   scoredMatches.sort((a, b) => b.similarityScore - a.similarityScore);
 
   const primaryTotem = scoredMatches[0]?.animal || TOTEM_ANIMALS_52[0];
-  const secondaryTotem = scoredMatches[1]?.animal || TOTEM_ANIMALS_52[1];
+  
+  // İkincil Müttefik Totemi: Birincilden farklı bir habitat veya tamamlayıcı müttefik
+  let secondaryTotem = scoredMatches[1]?.animal || TOTEM_ANIMALS_52[1];
+  // Eğer ilk 3 eşleşme çok yakınsa müttefik olarak en yüksek ikinciyi seç
+  if (scoredMatches[1] && scoredMatches[1].animal.id === primaryTotem.id && scoredMatches[2]) {
+    secondaryTotem = scoredMatches[2].animal;
+  }
+
   const primaryScore = scoredMatches[0]?.similarityScore || 85;
   const secondaryScore = scoredMatches[1]?.similarityScore || 80;
   const proximityDiff = Math.round((primaryScore - secondaryScore) * 10) / 10;
   const isProximityClose = proximityDiff <= 3.8;
 
   const shadowTotem = findShadowGuardianTotem(userVector, primaryTotem.id, secondaryTotem.id);
-  const confidenceScore = Math.max(78, Math.min(99, Math.round(primaryScore)));
+  const confidenceScore = Math.max(76, Math.min(99, Math.round(primaryScore)));
 
   const crossInsight = generateCrossEnneagramTotemInsight(enneagramType, primaryTotem, userVector);
 

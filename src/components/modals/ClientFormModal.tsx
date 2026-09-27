@@ -509,10 +509,12 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       {/* Davranışsal Totem Testi Modalı */}
       {showTotemModal && (
         <TotemQuizModal
+          isOpen={showTotemModal}
           clientName={name || 'Danışan'}
           initialAnswers={totemAnswers}
+          enneagramType={enneagramType}
           onClose={() => setShowTotemModal(false)}
-          onComplete={(result, answers) => {
+          onApplyResult={(answers, result) => {
             setTotemAnswers(answers);
             setPrimaryTotemId(result.primaryTotem.id);
             setTotemConfidenceScore(result.confidenceScore);

@@ -24,6 +24,11 @@ interface TotemQuizModalProps {
   initialAnswers?: Record<number, string>;
   enneagramType?: number;
   clientName?: string;
+  personalContext?: {
+    dominantElement?: 'Ateş' | 'Toprak' | 'Hava' | 'Su' | string;
+    lifePathNumber?: number;
+    sunSign?: string;
+  };
 }
 
 export const TotemQuizModal: React.FC<TotemQuizModalProps> = ({
@@ -32,7 +37,8 @@ export const TotemQuizModal: React.FC<TotemQuizModalProps> = ({
   onApplyResult,
   initialAnswers = {},
   enneagramType = 4,
-  clientName
+  clientName,
+  personalContext
 }) => {
   const [answers, setAnswers] = useState<Record<number, string>>(initialAnswers);
   const [result, setResult] = useState<TotemTestCalculationResult | null>(null);
@@ -41,8 +47,8 @@ export const TotemQuizModal: React.FC<TotemQuizModalProps> = ({
   useEffect(() => {
     if (initialAnswers && Object.keys(initialAnswers).length > 0) {
       setAnswers(initialAnswers);
-      if (Object.keys(initialAnswers).length >= 5) {
-        const calculated = calculateBehavioralTotemResult(initialAnswers, enneagramType);
+      if (Object.keys(initialAnswers).length >= 3) {
+        const calculated = calculateBehavioralTotemResult(initialAnswers, enneagramType, personalContext);
         setResult(calculated);
       }
     } else {
@@ -50,7 +56,7 @@ export const TotemQuizModal: React.FC<TotemQuizModalProps> = ({
       setResult(null);
       setActiveTab('questions');
     }
-  }, [initialAnswers, isOpen, enneagramType]);
+  }, [initialAnswers, isOpen, enneagramType, personalContext]);
 
   if (!isOpen) return null;
 
@@ -62,9 +68,9 @@ export const TotemQuizModal: React.FC<TotemQuizModalProps> = ({
     const updated = { ...answers, [questionId]: optionId };
     setAnswers(updated);
 
-    // Otomatik hesaplama (her seçimde güncellenir)
-    if (Object.keys(updated).length >= 5) {
-      const calculated = calculateBehavioralTotemResult(updated, enneagramType);
+    // Otomatik hesaplama (en az 3 seçimde hesaplanır)
+    if (Object.keys(updated).length >= 3) {
+      const calculated = calculateBehavioralTotemResult(updated, enneagramType, personalContext);
       setResult(calculated);
     }
   };

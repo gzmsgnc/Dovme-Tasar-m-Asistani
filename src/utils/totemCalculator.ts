@@ -41,6 +41,9 @@ export interface PersonalTotemInput {
   zodiacSystem?: 'Tropical' | 'Sidereal';
   totemAnswers?: Record<number, string>;
   enneagramType?: number;
+  lifePathNumber?: number;
+  dominantElement?: 'Ateş' | 'Toprak' | 'Hava' | 'Su' | string;
+  sunSign?: string;
 }
 
 export interface TotemCalculationResult {
@@ -57,7 +60,7 @@ export interface TotemCalculationResult {
     totalDeterministicHash: number;
     circadianQuadrant: string;
     planetaryDayRuler: string;
-    elementalDominance: 'Ateş' | 'Toprak' | 'Hava' | 'Su';
+    elementalDominance: 'Ateş' | 'Toprak' | 'Hava' | 'Su' | string;
     rationale: string;
   };
 }
@@ -88,12 +91,26 @@ function getDayOfYear(year: number, month: number, day: number): number {
  * Kişiye Özel Totem Hayvanı Hesaplama Motoru
  * 
  * 1. Eğer kullanıcının Davranışsal Totem Testi yanıtları (totemAnswers) varsa:
- *    -> Doğrudan 20 boyutlu davranışsal vektör ve 52 hayvan uyumu üzerinden hesaplar!
+ *    -> Doğrudan 20 boyutlu Z-score normalize davranışsal vektör, 52 hayvan arketipi ve 
+ *       astrolojik element rezonansı üzerinden deterministik olarak hesaplar!
  * 2. Eğer henüz test yanıtı yoksa:
- *    -> Doğum tarihi, saati, yeri ve isim frekansından 52 hayvanlık zengin havuz üzerinden deterministik hesaplar.
+ *    -> Doğum tarihi, saati, sirkadiyen fazı, doğum yeri, isim & anne adı frekansı,
+ *       Yaşam Yolu sayısı ve Zodyak hakim elementinden 52 hayvanlık zengin havuz üzerinden
+ *       tamamen deterministik ve dengeli olarak hesaplar.
  */
 export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCalculationResult {
-  const { name, birthDate, birthTime, birthPlace, motherName, totemAnswers, enneagramType } = personalData;
+  const { 
+    name, 
+    birthDate, 
+    birthTime, 
+    birthPlace, 
+    motherName, 
+    totemAnswers, 
+    enneagramType,
+    lifePathNumber,
+    dominantElement,
+    sunSign
+  } = personalData;
 
   // 1. Doğum Tarihi Vektörü
   let year = 1990;
@@ -137,16 +154,22 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
   const nameClean = (name || 'Yolcu').trim();
   const nameSignature = hashString(nameClean);
   const motherSignature = motherName && motherName.trim() ? hashString(motherName.trim()) * 13 : 0;
+  const lpSignature = (lifePathNumber || 7) * 997;
+  const elementBonusSeed = dominantElement ? hashString(dominantElement) * 17 : 31;
 
   const totalDeterministicHash = Math.abs(
-    ((dateSignature * 31) ^ (timeSignature * 127) ^ (placeSignature * 59) ^ ((nameSignature + motherSignature) * 97))
+    ((dateSignature * 31) ^ (timeSignature * 127) ^ (placeSignature * 59) ^ ((nameSignature + motherSignature) * 97) ^ lpSignature ^ elementBonusSeed)
   );
 
   const totalCatalogSize = TOTEM_ANIMALS_52.length; // 52
 
   // Eğer davranışsal test yanıtları mevcutsa (en az 3 soru cevaplanmışsa):
   if (totemAnswers && Object.keys(totemAnswers).length >= 3) {
-    const behavioralReport = calculateBehavioralTotemResult(totemAnswers, enneagramType || 4);
+    const behavioralReport = calculateBehavioralTotemResult(totemAnswers, enneagramType || 4, {
+      dominantElement,
+      lifePathNumber,
+      sunSign
+    });
 
     return {
       primaryTotem: behavioralReport.primaryTotem,
@@ -168,21 +191,24 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
     };
   }
 
-  // Fallback: Deterministik matris (Test henüz tamamlanmamışsa)
+  // Test henüz tamamlanmamışsa: Doğum, İsim, Element ve Yaşam Yolu matrisinden deterministik seçim
+  // 52 hayvan kataloğundan dengeli dağılım
   const primaryIndex = totalDeterministicHash % totalCatalogSize;
   const primaryTotem = TOTEM_ANIMALS_52[primaryIndex] || TOTEM_ANIMALS_52[0];
 
-  let shadowIndex = (Math.abs(totalDeterministicHash * 7 + 13 + (day * 3))) % totalCatalogSize;
+  // Gölge Totemi: Zıt kutup veya gece/gündüz döngüsü modülasyonu
+  let shadowIndex = (Math.abs((totalDeterministicHash * 13) + (day * 17) + (hour * 7) + 23)) % totalCatalogSize;
   if (shadowIndex === primaryIndex) {
-    shadowIndex = (shadowIndex + 1) % totalCatalogSize;
+    shadowIndex = (shadowIndex + 13) % totalCatalogSize;
   }
   const shadowTotem = TOTEM_ANIMALS_52[shadowIndex] || TOTEM_ANIMALS_52[1];
 
-  let allyIndex = (Math.abs(totalDeterministicHash * 19 + 29 + (month * 11))) % totalCatalogSize;
+  // Yükseliş Müttefiki: Göksel/ruhsal tamamlama
+  let allyIndex = (Math.abs((totalDeterministicHash * 29) + (month * 23) + (minute * 11) + 41)) % totalCatalogSize;
   if (allyIndex === primaryIndex || allyIndex === shadowIndex) {
-    allyIndex = (allyIndex + 2) % totalCatalogSize;
+    allyIndex = (allyIndex + 7) % totalCatalogSize;
     if (allyIndex === primaryIndex || allyIndex === shadowIndex) {
-      allyIndex = (allyIndex + 1) % totalCatalogSize;
+      allyIndex = (allyIndex + 11) % totalCatalogSize;
     }
   }
   const allyTotem = TOTEM_ANIMALS_52[allyIndex] || TOTEM_ANIMALS_52[2];
@@ -201,7 +227,7 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
       circadianQuadrant,
       planetaryDayRuler,
       elementalDominance: primaryTotem.element,
-      rationale: `Doğum Tarihi (${year}-${month}-${day}), Doğum Saati (${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}), Doğum Yeri (${placeClean}) ve İsim Matrisinin birleşik frekansından hesaplanmıştır. (Davranışsal Test henüz yapılmadı).`
+      rationale: `Doğum Tarihi (${year}-${month}-${day}), Doğum Saati (${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} • ${circadianQuadrant}), Doğum Yeri (${placeClean}), Yaşam Yolu ${lifePathNumber || 7} ve İsim Frekansının bileşik rezonansından hesaplanmıştır.`
     }
   };
 }

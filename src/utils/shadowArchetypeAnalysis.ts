@@ -12,6 +12,7 @@ import {
 import { ChakraProfile } from './chakra';
 import { calculateEbcedAndYildizname } from './ebced';
 import { encodeToMorse } from './morseCode';
+import { TOTEM_ANIMALS_52 } from './totemCatalogData';
 
 export function generateShadowArchetypeAnalysis(
   person: PersonData,
@@ -247,61 +248,74 @@ export function generateShadowArchetypeAnalysis(
   }
 
   // 4. Totem Animals Analysis (Light + Shadow)
-  const primaryTotemName = symbolism.totemAnimal || 'Kuzgun';
-  const shadowGuardianTotem = symbolism.totemHierarchy?.[1]?.name || 'Kara Panter';
-  const ascensionTotem = symbolism.totemHierarchy?.[2]?.name || 'Anka Kuşu';
+  const primaryTotemName = symbolism.totemAnimal || (symbolism.totemHierarchy?.[0]?.name ?? 'Ruh Totemi');
+  const shadowGuardianTotem = symbolism.totemHierarchy?.[1]?.name || 'Gölge Muhafız';
+  const ascensionTotem = symbolism.totemHierarchy?.[2]?.name || 'Yükseliş Müttefiki';
+
+  const findAnimal = (query: string) => {
+    const qLower = query.toLowerCase().trim();
+    return TOTEM_ANIMALS_52.find(a => 
+      qLower.includes(a.name.toLowerCase().split(' ')[0]) ||
+      (a.turkishName && qLower.includes(a.turkishName.toLowerCase().split(' ')[0])) ||
+      qLower.includes(a.id)
+    );
+  };
+
+  const primaryProfile = findAnimal(primaryTotemName);
+  const shadowProfile = findAnimal(shadowGuardianTotem);
+  const allyProfile = findAnimal(ascensionTotem);
 
   const section4TotemAnimals = [
     {
       name: primaryTotemName,
       role: 'Birincil Ruh Totemi (Primary Life Totem)',
-      mainTotemSymbolism: `${primaryTotemName}, Yaşam Yolu ${lifePath} ve Güneş ${sunSign} enerjisini temsil eden ana arketiptir.`,
-      strongSide: 'Yüksek sezgisel farkındalık, kriz anlarında yön bulma ve stratejik cesaret.',
-      protectiveSide: 'Kişinin enerji alanını aurik parazitlerden ve dış manipülasyonlardan koruma kalkanı.',
-      instinctiveSide: 'Doğal döngüleri, tehlikeyi ve fırsatları zihinden önce bedensel duyumla algılama.',
-      shadowSide: 'Aşırı kibir, yabancılaşma, kendi zekasına tapınma ve duygusal bağ kurmaktan kaçınma.',
-      unbalancedBehavior: 'Yalnızlaşarak dünyayı yukarıdan yargılama veya güvensizlikle çevreye mesafe koyma.',
-      suppressedUncontrolledTrait: 'İçeride biriken ve aniden patlayabilen kontrolsüz öfke / hayal kırıklığı.',
-      tattooPhysicalFeature: 'Keskin kas hatları, mikro-dotwork ile gölgelendirilmiş tüy/kürk dokusu, yarı profilden 3/4 açılı duruş.',
-      gazeDirection: 'Doğrudan izleyiciye değil; sol omzun üzerinden geçmişi ve ufuktaki dönüşümü süzen derin bakış.',
-      headAngle: '15 derece hafif yukarı ve yana eğik, uyanık ve bilge tetiktelik açısı.',
-      movementDetail: 'Pençeler/kanatlar tam açık saldırma pozisyonunda değil; toplanmış, içsel potansiyeli saklayan gergin sükunet.',
-      posture: 'Gövde anatomik olarak dik, omurga hattına paralel kavisli ve güçlü zemin teması.',
-      compositionRole: 'Tüm dövmenin 1. derece görsel çekim merkezi (%60-70 ağırlık), en yüksek kontrast ve en net 03RL konturlar.'
+      mainTotemSymbolism: primaryProfile?.mainSymbolism || `${primaryTotemName}, Yaşam Yolu ${lifePath} ve Güneş ${sunSign} enerjisini temsil eden ana ruhsal arketiptir.`,
+      strongSide: primaryProfile?.strongSide || 'Yüksek sezgisel farkındalık, kriz anlarında yön bulma ve stratejik irade.',
+      protectiveSide: primaryProfile?.protectivePower || 'Kişinin enerji alanını aurik parazitlerden ve dış manipülasyonlardan koruma kalkanı.',
+      instinctiveSide: primaryProfile?.instinctiveSide || 'Doğal döngüleri, tehlikeyi ve fırsatları zihinden önce bedensel duyumla algılama.',
+      shadowSide: primaryProfile?.shadowTrait || 'Aşırı kibir, yabancılaşma ve duygusal bağ kurmaktan kaçınma.',
+      unbalancedBehavior: primaryProfile?.unbalancedBehavior || 'Yalnızlaşarak dünyayı yukarıdan yargılama veya güvensizlikle çevreye mesafe koyma.',
+      suppressedUncontrolledTrait: primaryProfile?.suppressedTrait || 'İçeride biriken ve aniden patlayabilen kontrolsüz öfke / hayal kırıklığı.',
+      tattooPhysicalFeature: primaryProfile?.tattooPhysicalFeature || 'Keskin kas hatları, mikro-dotwork ile gölgelendirilmiş dokular, yarı profilden 3/4 açılı duruş.',
+      gazeDirection: primaryProfile?.gazeDirection || 'Doğrudan izleyiciye değil; sol omzun üzerinden geçmişi ve ufuktaki dönüşümü süzen derin bakış.',
+      headAngle: primaryProfile?.headAngle || '15 derece hafif yukarı ve yana eğik, uyanık ve bilge tetiktelik açısı.',
+      movementDetail: primaryProfile?.compositionRole || 'İçsel potansiyeli saklayan gergin sükunet ve anatomik güç.',
+      posture: primaryProfile?.posture || 'Gövde anatomik olarak dik, omurga hattına paralel kavisli ve güçlü zemin teması.',
+      compositionRole: primaryProfile?.compositionRole || 'Tüm dövmenin 1. derece görsel çekim merkezi (%60-70 ağırlık), en yüksek kontrast ve en net 03RL konturlar.'
     },
     {
       name: shadowGuardianTotem,
       role: 'Gölge & Muhafız Totemi (Shadow & Guardian Totem)',
-      mainTotemSymbolism: `${shadowGuardianTotem}, kişinin bilinçdışında bekleyen, yüzleşildiğinde en büyük koruyucuya dönüşen gölge gücüdür.`,
-      strongSide: 'Görünmezlik, sessiz güç, derin odaklanma ve sınır ihlallerini anında püskürtme.',
-      protectiveSide: 'Karanlık krizlerde ve psikolojik çöküşlerde tabandan yükselen dayanıklılık desteği.',
-      instinctiveSide: 'Kelimelere dökülmeyen tehditleri önceden sezip pençeleri hazır tutma refleksi.',
-      shadowSide: 'Pusuda beklemenin getirdiği kronik şüphecilik, kin tutma ve aniden yok edici hamle yapma isteği.',
-      unbalancedBehavior: 'Duygusal olarak tamamen duvar örüp karanlığa çekilme, kimseyi içeri almama.',
-      suppressedUncontrolledTrait: 'Yumuşaklığını ve sevilme ihtiyacını zayıflık sanıp vahşice bastırma eğilimi.',
-      tattooPhysicalFeature: 'Akıcı gölge formları, negatif alanın içinden beliren siluet, gözlerdeki keskin beyaz ışık parıltısı.',
-      gazeDirection: 'Ana figürün zıt yönüne (sağ aşağıya) bakarak dövmenin sınırlarını denetleyen gölge nöbetçisi bakışı.',
-      headAngle: 'Aşağıya doğru hafif eğik, saklı duruş açısı.',
-      movementDetail: 'Kuyruk veya gövde kıvrımı ana figürün tabanına dolanarak onu aşağıdan sarmalayan hareket dili.',
-      posture: 'Pusuya yatmış, esnek, her an sıçrayabilecek gergin yay formunda kavis.',
-      compositionRole: 'İkincil odak noktası (%20-30 ağırlık), ana figürle kontrast oluşturan yumuşak whip shading gölgeleri.'
+      mainTotemSymbolism: shadowProfile?.mainSymbolism || `${shadowGuardianTotem}, kişinin bilinçdışında bekleyen, yüzleşildiğinde en büyük koruyucuya dönüşen gölge gücüdür.`,
+      strongSide: shadowProfile?.strongSide || 'Görünmezlik, sessiz güç, derin odaklanma ve sınır ihlallerini anında püskürtme.',
+      protectiveSide: shadowProfile?.protectivePower || 'Karanlık krizlerde ve psikolojik çöküşlerde tabandan yükselen dayanıklılık desteği.',
+      instinctiveSide: shadowProfile?.instinctiveSide || 'Kelimelere dökülmeyen tehditleri önceden sezip refleksi hazır tutma.',
+      shadowSide: shadowProfile?.shadowTrait || 'Pusuda beklemenin getirdiği kronik şüphecilik, kin tutma ve aniden yok edici hamle yapma isteği.',
+      unbalancedBehavior: shadowProfile?.unbalancedBehavior || 'Duygusal olarak tamamen duvar örüp karanlığa çekilme, kimseyi içeri almama.',
+      suppressedUncontrolledTrait: shadowProfile?.suppressedTrait || 'Yumuşaklığını ve sevilme ihtiyacını zayıflık sanıp vahşice bastırma eğilimi.',
+      tattooPhysicalFeature: shadowProfile?.tattooPhysicalFeature || 'Akıcı gölge formları, negatif alanın içinden beliren siluet, gözlerdeki keskin beyaz ışık parıltısı.',
+      gazeDirection: shadowProfile?.gazeDirection || 'Ana figürün zıt yönüne bakarak dövmenin sınırlarını denetleyen gölge nöbetçisi bakışı.',
+      headAngle: shadowProfile?.headAngle || 'Aşağıya doğru hafif eğik, saklı duruş açısı.',
+      movementDetail: shadowProfile?.compositionRole || 'Ana figürün tabanına dolanarak onu aşağıdan sarmalayan hareket dili.',
+      posture: shadowProfile?.posture || 'Pusuya yatmış, esnek, her an sıçrayabilecek gergin yay formunda kavis.',
+      compositionRole: shadowProfile?.compositionRole || 'İkincil odak noktası (%20-30 ağırlık), ana figürle kontrast oluşturan yumuşak whip shading gölgeleri.'
     },
     {
       name: ascensionTotem,
       role: 'Ruhsal Yükseliş Müttefiki (Ascension Ally Totem)',
-      mainTotemSymbolism: `${ascensionTotem}, krizlerin ve dönüşümün ötesindeki yüksek bilinç potansiyelini simgeler.`,
-      strongSide: 'Yüksek perspektif, sezgisel rehberlik ve sükunet.',
-      protectiveSide: 'Zihni aşağı çeken ağırlıklardan ve karamsarlıktan koruyan arınma aurası.',
-      instinctiveSide: 'Ufkun ötesindeki ışığı ve yeni döngüleri önceden sezinleme.',
-      shadowSide: 'Aşırı soyutlaşma, ayakları yere basmama ve dünyevi sorumluluklardan kaçış.',
-      unbalancedBehavior: 'Gerçeklikten kopup hayal dünyasına sığınma.',
-      suppressedUncontrolledTrait: 'Dünyevi sınırlarla barışık kalabilme ihtiyacı.',
-      tattooPhysicalFeature: 'Göğe doğru süzülen kanat/ışık kavisleri, asil duruş ve ince 03RL detaylar.',
-      gazeDirection: 'Gökyüzüne, kozmik zirveye yönelmiş aydınlık bakış.',
-      headAngle: 'Yukarıya dönük, ışığı karşılayan taç açısı.',
-      movementDetail: 'Kanatlar ve gövde yukarı doğru akıcı bir süzülüş halinde.',
-      posture: 'Ruhsal yükseliş ve kanatlanma dinamiği.',
-      compositionRole: 'Kompozisyonun üst taç bölümünü tamamlayan yükseliş figürü (%15-20 ağırlık).'
+      mainTotemSymbolism: allyProfile?.mainSymbolism || `${ascensionTotem}, krizlerin ve dönüşümün ötesindeki yüksek bilinç potansiyelini simgeler.`,
+      strongSide: allyProfile?.strongSide || 'Yüksek perspektif, sezgisel rehberlik ve sükunet.',
+      protectiveSide: allyProfile?.protectivePower || 'Zihni aşağı çeken ağırlıklardan ve karamsarlıktan koruyan arınma aurası.',
+      instinctiveSide: allyProfile?.instinctiveSide || 'Ufkun ötesindeki ışığı ve yeni döngüleri önceden sezinleme.',
+      shadowSide: allyProfile?.shadowTrait || 'Aşırı soyutlaşma, ayakları yere basmama ve dünyevi sorumluluklardan kaçış.',
+      unbalancedBehavior: allyProfile?.unbalancedBehavior || 'Gerçeklikten kopup hayal dünyasına sığınma.',
+      suppressedUncontrolledTrait: allyProfile?.suppressedTrait || 'Dünyevi sınırlarla barışık kalabilme ihtiyacı.',
+      tattooPhysicalFeature: allyProfile?.tattooPhysicalFeature || 'Göğe doğru süzülen kavisler, asil duruş ve ince 03RL detaylar.',
+      gazeDirection: allyProfile?.gazeDirection || 'Gökyüzüne, kozmik zirveye yönelmiş aydınlık bakış.',
+      headAngle: allyProfile?.headAngle || 'Yukarıya dönük, ışığı karşılayan taç açısı.',
+      movementDetail: allyProfile?.compositionRole || 'Yukarı doğru akıcı bir süzülüş ve ruhsal yükseliş dinamiği.',
+      posture: allyProfile?.posture || 'Ruhsal yükseliş ve kanatlanma dinamiği.',
+      compositionRole: allyProfile?.compositionRole || 'Kompozisyonun üst taç bölümünü tamamlayan yükseliş figürü (%15-20 ağırlık).'
     }
   ];
 

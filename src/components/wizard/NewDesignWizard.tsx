@@ -70,6 +70,7 @@ interface NewDesignWizardProps {
   onSelectClient?: (client: PersonData | null) => void;
   onViewArchive: () => void;
   onNavigateToClients?: () => void;
+  onStartNewClient?: () => void;
 }
 
 export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
@@ -79,7 +80,8 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   onSaveClient,
   onSelectClient,
   onViewArchive,
-  onNavigateToClients
+  onNavigateToClients,
+  onStartNewClient
 }) => {
   const [step, setStep] = useState<number>(1);
 
@@ -279,8 +281,11 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     if (notifyParent && onSelectClient) {
       onSelectClient(null);
     }
+    if (notifyParent && onStartNewClient) {
+      onStartNewClient();
+    }
 
-    setClientSaveFeedback('Temiz form hazırlandı. Yeni kişi bilgilerini girebilirsiniz.');
+    setClientSaveFeedback('✓ Form tamamen sıfırlandı. Yeni danışan bilgilerini girebilirsiniz.');
     setTimeout(() => setClientSaveFeedback(null), 3000);
   };
 
@@ -789,17 +794,15 @@ ${r.turkishPromptExplanation}
                       <span>Tüm Rehber ({savedClients.length})</span>
                     </button>
                   )}
-                  {currentClientId && (
-                    <button
-                      type="button"
-                      onClick={() => handleStartFreshDesign()}
-                      className="text-[10px] text-zinc-400 hover:text-white px-2 py-0.5 rounded bg-[#1c1c1c] border border-[#333] hover:border-[#555] font-mono flex items-center gap-1 transition-colors cursor-pointer"
-                      title="Seçimi kaldırıp yeni temiz kişi formu aç"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>Temiz Form</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleStartFreshDesign()}
+                    className="text-[11px] font-mono font-bold text-[#c4a47c] hover:text-white px-3 py-1 rounded-lg bg-[#1a1710] hover:bg-[#262114] border border-[#c4a47c]/50 hover:border-[#c4a47c] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                    title="Formu tamamen temizle ve yeni bir danışan oturumu başlat"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>+ Yeni Kişi Başlat</span>
+                  </button>
                 </div>
               </div>
 
@@ -3268,6 +3271,11 @@ ${r.turkishPromptExplanation}
         initialAnswers={totemAnswers}
         enneagramType={selectedEnneaType}
         clientName={name}
+        personalContext={{
+          dominantElement: astrology?.dominantElement,
+          lifePathNumber: numerology?.lifePathNumber,
+          sunSign: astrology?.sunSign
+        }}
         onApplyResult={(newAnswers, result) => {
           setTotemAnswers(newAnswers);
           setClientSaveFeedback(`✓ Davranışsal Totem hesaplandı: "${result.primaryTotem.name}" (%${result.confidenceScore} uyum)!`);

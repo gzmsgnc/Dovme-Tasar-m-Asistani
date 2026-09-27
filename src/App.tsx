@@ -25,6 +25,7 @@ export function App() {
   const [clients, setClients] = useState<PersonData[]>([]);
   const [recipes, setRecipes] = useState<TattooRecipe[]>([]);
   const [selectedPersonForDesign, setSelectedPersonForDesign] = useState<PersonData | null>(null);
+  const [wizardSessionId, setWizardSessionId] = useState<number>(Date.now());
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isClientQuizMode, setIsClientQuizMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -78,11 +79,13 @@ export function App() {
 
   const handleStartDesignForClient = (client: PersonData) => {
     setSelectedPersonForDesign(client);
+    setWizardSessionId(Date.now());
     setActiveTab('new_design');
   };
 
   const handleAddNewClientClick = () => {
     setSelectedPersonForDesign(null);
+    setWizardSessionId(Date.now());
     setActiveTab('new_design');
   };
 
@@ -113,6 +116,7 @@ export function App() {
         recipesCount={recipes.length}
         onOpenBackup={() => setIsBackupModalOpen(true)}
         activeClientName={selectedPersonForDesign?.name || 'Yeni Danışan'}
+        onStartNewClient={handleAddNewClientClick}
       />
 
       {/* Main Content Area */}
@@ -120,6 +124,7 @@ export function App() {
         <main className="flex-1 transition-opacity duration-200">
           {activeTab === 'new_design' && (
             <NewDesignWizard
+              key={wizardSessionId}
               initialPerson={selectedPersonForDesign}
               savedClients={clients}
               onSaveRecipe={handleSaveRecipe}
@@ -127,6 +132,7 @@ export function App() {
               onSelectClient={(client) => setSelectedPersonForDesign(client)}
               onViewArchive={() => setActiveTab('archive')}
               onNavigateToClients={() => setActiveTab('clients')}
+              onStartNewClient={handleAddNewClientClick}
             />
           )}
 

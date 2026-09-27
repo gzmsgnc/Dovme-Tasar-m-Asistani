@@ -14,39 +14,48 @@ export function deriveSymbolismProfile(
   const ennea = enneagram.type;
 
   // 1. DETERMINISTIC PERSONAL TOTEM CALCULATION
-  // Kullanıcının kişisel verilerinden (Doğum tarihi, saati, yeri, isim) dinamik olarak hesaplanır.
-  const personalInput: PersonalTotemInput = personalData || {
-    name: numerology.lifePathTitle || 'Danışan',
-    birthDate: '1990-01-01',
-    birthTime: '12:00',
-    birthPlace: 'İstanbul'
+  // Kullanıcının kişisel verilerinden (Doğum tarihi, saati, yeri, isim, element ve test yanıtları) dinamik olarak hesaplanır.
+  const personalInput: PersonalTotemInput = {
+    name: personalData?.name || numerology.lifePathTitle || 'Danışan',
+    birthDate: personalData?.birthDate || '1990-01-01',
+    birthTime: personalData?.birthTime || '12:00',
+    birthPlace: personalData?.birthPlace || 'Anadolu',
+    motherName: personalData?.motherName,
+    personalNumbers: personalData?.personalNumbers,
+    personalStory: personalData?.personalStory,
+    zodiacSystem: personalData?.zodiacSystem,
+    totemAnswers: personalData?.totemAnswers,
+    enneagramType: personalData?.enneagramType || ennea,
+    lifePathNumber: lp,
+    dominantElement: astrology.dominantElement,
+    sunSign: sun
   };
 
   const totemCalc = calculateTotemAnimal(personalInput);
 
-  const primaryTotemName = totemCalc?.primaryTotem?.name || 'Kuzgun';
+  const primaryTotemName = totemCalc.primaryTotem.name;
   const primaryTotemOrigin = totemCalc.isBehavioralTestBased
-    ? `Davranışsal Totem Testi (%${totemCalc.behavioralReport?.confidenceScore || 85} Uyum) • ${totemCalc?.primaryTotem?.element || 'Hava'}`
+    ? `Davranışsal Totem Testi (%${totemCalc.behavioralReport?.confidenceScore || 85} Uyum) • ${totemCalc.primaryTotem.element || 'Hava'}`
     : `Doğum: ${personalInput.birthDate || ''} ${personalInput.birthTime ? '(' + personalInput.birthTime + ')' : ''} • Yer: ${personalInput.birthPlace || 'Belirtilmedi'} • Yaşam Yolu ${lp} • Güneş ${sun}`;
-  const primaryTotemMeaning = totemCalc?.primaryTotem?.mainSymbolism || 'Kadim bilgelik ve sezgisel rehberlik';
-  const primaryTotemPower = totemCalc?.primaryTotem?.strongSide || 'Yüksek sezgisel farkındalık';
-  const primaryTotemRole = totemCalc?.primaryTotem?.compositionRole || 'Merkezi figür';
+  const primaryTotemMeaning = totemCalc.primaryTotem.mainSymbolism || 'Kadim bilgelik ve sezgisel rehberlik';
+  const primaryTotemPower = totemCalc.primaryTotem.strongSide || 'Yüksek sezgisel farkındalık';
+  const primaryTotemRole = totemCalc.primaryTotem.compositionRole || 'Merkezi figür';
 
-  const shadowTotemName = totemCalc?.shadowTotem?.name || 'Kara Panter';
+  const shadowTotemName = totemCalc.shadowTotem.name;
   const shadowTotemOrigin = totemCalc.isBehavioralTestBased
-    ? `Davranışsal Gölge Kutbu • ${totemCalc?.shadowTotem?.element || 'Toprak'} • Bilinçdışı Dengeleyici Arketip`
-    : `Bilinçdışı Gölge Matrisi • ${totemCalc?.shadowTotem?.element || 'Toprak'} • Ay ${moon} • Gölge Arketipi`;
-  const shadowTotemMeaning = `${totemCalc?.shadowTotem?.shadowTrait || 'Gizli güç'} (Dönüşüm Şifası: ${totemCalc?.shadowTotem?.protectivePower || 'Koruma kalkanı'})`;
-  const shadowTotemPower = totemCalc?.shadowTotem?.protectivePower || 'Koruyucu sessiz kudret';
-  const shadowTotemRole = totemCalc?.shadowTotem?.compositionRole || 'Alt taban koruyucu';
+    ? `Davranışsal Gölge Kutbu • ${totemCalc.shadowTotem.element || 'Toprak'} • Bilinçdışı Dengeleyici Arketip`
+    : `Bilinçdışı Gölge Matrisi • ${totemCalc.shadowTotem.element || 'Toprak'} • Ay ${moon} • Gölge Arketipi`;
+  const shadowTotemMeaning = `${totemCalc.shadowTotem.shadowTrait || 'Gizli güç'} (Dönüşüm Şifası: ${totemCalc.shadowTotem.protectivePower || 'Koruma kalkanı'})`;
+  const shadowTotemPower = totemCalc.shadowTotem.protectivePower || 'Koruyucu sessiz kudret';
+  const shadowTotemRole = totemCalc.shadowTotem.compositionRole || 'Alt taban koruyucu';
 
-  const allyTotemName = totemCalc?.allyTotem?.name || 'Geyik';
+  const allyTotemName = totemCalc.allyTotem.name;
   const allyTotemOrigin = totemCalc.isBehavioralTestBased
-    ? `İkincil Davranışsal Müttefik • ${totemCalc?.allyTotem?.element || 'Hava'} • İkincil Rezonans`
+    ? `İkincil Davranışsal Müttefik • ${totemCalc.allyTotem.element || 'Hava'} • İkincil Rezonans`
     : `Ruhsal Yükseliş Müttefiki • Yükselen ${asc} • Gece/Gündüz Döngüsü`;
-  const allyTotemMeaning = totemCalc?.allyTotem?.mainSymbolism || 'Zarafet ve sezgi';
-  const allyTotemPower = totemCalc?.allyTotem?.strongSide || 'Işık ve netlik';
-  const allyTotemRole = totemCalc?.allyTotem?.compositionRole || 'Üst taç tamamlayıcı';
+  const allyTotemMeaning = totemCalc.allyTotem.mainSymbolism || 'Zarafet ve sezgi';
+  const allyTotemPower = totemCalc.allyTotem.strongSide || 'Işık ve netlik';
+  const allyTotemRole = totemCalc.allyTotem.compositionRole || 'Üst taç tamamlayıcı';
 
   const secondaryAnimals = [shadowTotemName, allyTotemName];
 
