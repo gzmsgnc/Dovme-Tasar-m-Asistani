@@ -1,15 +1,57 @@
 import express, { Request, Response } from 'express';
+import fs from 'fs';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
 import { generateEsotericTattooStencilSvg } from './src/utils/stencilGenerator';
-import { isValidCalendarDate } from './src/utils/astrology';
+import { isValidCalendarDate, resolveCityLocation } from './src/utils/astrology';
+import { calculateEnneagramFromAnswers } from './src/utils/enneagram';
+import { calculateBehavioralTotemResult } from './src/utils/behavioralTotemEngine';
+import { normalizePhoneNumber, isValidEmail } from './src/utils/clientValidation';
+import { PersonData } from './src/types';
 
 dotenv.config();
 
 const PORT = 3000;
+
+// Persistent Server-Side Client Storage
+const DATA_DIR = path.join(process.cwd(), 'data');
+const CLIENTS_STORAGE_FILE = path.join(DATA_DIR, 'clients.json');
+
+const DEMO_ACCOUNT_IDS = new Set([
+  'client_selin_kaya',
+  'client_emir_arslan',
+  'client_derya_yilmaz'
+]);
+
+function getPersistedClients(): PersonData[] {
+  try {
+    if (!fs.existsSync(CLIENTS_STORAGE_FILE)) {
+      return [];
+    }
+    const raw = fs.readFileSync(CLIENTS_STORAGE_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((c: any) => c && c.id && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+  } catch (err) {
+    console.error('Failed reading persisted clients:', err);
+    return [];
+  }
+}
+
+function savePersistedClients(clients: PersonData[]): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    const realOnly = clients.filter(c => c && c.id && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+    fs.writeFileSync(CLIENTS_STORAGE_FILE, JSON.stringify(realOnly, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed writing persisted clients:', err);
+  }
+}
 
 let genAIClient: GoogleGenAI | null = null;
 function getGenAI(): GoogleGenAI | null {
@@ -36,6 +78,233 @@ async function startServer() {
   // Health endpoint
   app.get('/api/health', (req: Request, res: Response) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Client Intake API (Danışan Formu Kaydı & Doğrulaması)
+  app.post('/api/client-intake', (req: Request, res: Response) => {
+    try {
+      const body = req.body || {};
+      const firstName = (body.firstName || '').trim();
+      const lastName = (body.lastName || '').trim();
+      const combinedName = (body.name || `${firstName} ${lastName}`).trim();
+      const phone = (body.phone || '').trim();
+      const email = (body.email || '').trim();
+      const birthDate = (body.birthDate || '').trim();
+      const birthTime = (body.birthTime || '').trim();
+      const birthPlace = (body.birthPlace || '').trim();
+      const motherName = (body.motherName || '').trim();
+      const personalStory = (body.personalStory || '').trim();
+      const enneagramAnswers = body.enneagramAnswers || {};
+      const totemAnswers = body.totemAnswers || {};
+      const submissionId = body.submissionId || body.id;
+
+      // 1. Ad & Soyad Doğrulaması
+      if (!combinedName || combinedName.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: 'Lütfen ad ve soyadınızı eksiksiz giriniz.'
+        });
+      }
+
+      // 2. Telefon Numarası Doğrulaması (Zorunlu, Türkiye & Uluslararası format kontrolü)
+      const phoneValidation = normalizePhoneNumber(phone);
+      if (!phoneValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: phoneValidation.error || 'Geçersiz telefon numarası.'
+        });
+      }
+
+      // 3. E-posta Adresi Doğrulaması (Zorunlu, Format kontrolü)
+      if (!email || !isValidEmail(email)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Geçersiz e-posta adresi. Lütfen geçerli bir e-posta adresi giriniz (Örn: isim@domain.com).'
+        });
+      }
+
+      // 4. Doğum Tarihi Doğrulaması (Gerçek takvim tarihi kontrolü, 31.02 gibi geçersiz tarihler reddedilir)
+      if (!birthDate) {
+        return res.status(400).json({
+          success: false,
+          error: 'Doğum tarihi zorunludur.'
+        });
+      }
+      const dateValidation = isValidCalendarDate(birthDate);
+      if (!dateValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: dateValidation.error || 'Geçersiz doğum tarihi. Lütfen gerçek bir takvim tarihi giriniz.'
+        });
+      }
+
+      // 5. Doğum Saati Doğrulaması
+      if (!birthTime) {
+        return res.status(400).json({
+          success: false,
+          error: 'Doğum saati zorunludur (Yükselen burç hesaplaması için gereklidir).'
+        });
+      }
+
+      // 6. Doğum Yeri Doğrulaması (Kesinlikle İstanbul'a fallback yapılmaz!)
+      if (!birthPlace) {
+        return res.status(400).json({
+          success: false,
+          error: 'Doğum yeri zorunludur.'
+        });
+      }
+      let resolvedLocation: { name: string; lat: number; lon: number; defaultTz: number };
+      try {
+        resolvedLocation = resolveCityLocation(birthPlace);
+      } catch (err: unknown) {
+        return res.status(400).json({
+          success: false,
+          error: err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
+        });
+      }
+
+      // 7. Anne Adı Doğrulaması (Ebced & Yıldızname soy kökü için zorunlu)
+      if (!motherName) {
+        return res.status(400).json({
+          success: false,
+          error: 'Anne adı zorunludur (Ebced ve soy arketipi hesaplamaları için gereklidir).'
+        });
+      }
+
+      // 8. Enneagram Ham Cevapları (5 sorunun tamamı)
+      const enneaKeys = Object.keys(enneagramAnswers);
+      if (enneaKeys.length < 5) {
+        return res.status(400).json({
+          success: false,
+          error: `Enneagram testi eksik (${enneaKeys.length}/5). Lütfen tüm soruları yanıtlayınız.`
+        });
+      }
+
+      // 9. Totem Hayvanı Ham Cevapları (15 sorunun tamamı)
+      const totemKeys = Object.keys(totemAnswers);
+      if (totemKeys.length < 15) {
+        return res.status(400).json({
+          success: false,
+          error: `Totem testi eksik (${totemKeys.length}/15). Lütfen 15 sorunun tamamını yanıtlayınız.`
+        });
+      }
+
+      // 10. Ham cevaplardan stüdyo için arketip ve tip hesaplama
+      const enneaResult = calculateEnneagramFromAnswers(enneagramAnswers);
+      const totemResult = calculateBehavioralTotemResult(totemAnswers, enneaResult.type);
+
+      const clientId = submissionId || `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const nowIso = new Date().toISOString();
+
+      const newClient: PersonData = {
+        id: clientId,
+        name: combinedName,
+        phone: phoneValidation.normalized,
+        email: email.toLowerCase(),
+        birthDate: birthDate,
+        birthTime: birthTime,
+        birthPlace: resolvedLocation.name || birthPlace,
+        motherName: motherName,
+        zodiacSystem: 'Tropical',
+        enneagramType: enneaResult.type,
+        enneagramWing: enneaResult.wing,
+        enneagramAnswers: { ...enneagramAnswers },
+        totemAnswers: { ...totemAnswers },
+        primaryTotemId: totemResult.primaryTotem?.id,
+        secondaryTotemId: totemResult.secondaryTotem?.id,
+        shadowTotemId: totemResult.shadowTotem?.id,
+        totemConfidenceScore: totemResult.confidenceScore,
+        personalStory: personalStory || undefined,
+        notes: personalStory ? `Danışan Formu Notu: ${personalStory}` : undefined,
+        status: 'new',
+        source: 'client_form',
+        createdAt: body.createdAt || nowIso,
+        updatedAt: nowIso
+      };
+
+      // Sunucu kalıcı hafızasına kaydet
+      const existingClients = getPersistedClients();
+      const existingIndex = existingClients.findIndex(c => c.id === newClient.id);
+      let updatedClients: PersonData[];
+      if (existingIndex >= 0) {
+        updatedClients = [...existingClients];
+        updatedClients[existingIndex] = newClient;
+      } else {
+        updatedClients = [newClient, ...existingClients];
+      }
+      savePersistedClients(updatedClients);
+
+      return res.status(200).json({
+        success: true,
+        client: newClient,
+        message: 'Danışan kabul formu başarıyla sunucuya kaydedildi ve stüdyoya iletildi.'
+      });
+    } catch (err: unknown) {
+      console.error('Client intake error:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Form işlenirken sunucuda bir hata oluştu: ' + (err instanceof Error ? err.message : String(err))
+      });
+    }
+  });
+
+  // Danışanları listele (hem /api/clients hem /api/client-intake)
+  app.get(['/api/client-intake', '/api/clients'], (req: Request, res: Response) => {
+    const clients = getPersistedClients();
+    res.json({ success: true, clients });
+  });
+
+  // Danışan silme
+  app.delete(['/api/clients/:id', '/api/client-intake/:id'], (req: Request, res: Response) => {
+    const { id } = req.params;
+    const clients = getPersistedClients();
+    const updated = clients.filter(c => c.id !== id);
+    savePersistedClients(updated);
+    res.json({ success: true, clients: updated });
+  });
+
+  // Danışan senkronizasyonu (Stüdyo ile sunucu arası iki yönlü birleştirme)
+  app.post('/api/clients/sync', (req: Request, res: Response) => {
+    try {
+      const { localClients = [] } = req.body || {};
+      const serverClients = getPersistedClients();
+      
+      const mergedMap = new Map<string, PersonData>();
+      // First insert server clients
+      serverClients.forEach(c => {
+        if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) {
+          mergedMap.set(c.id, c);
+        }
+      });
+      // Merge local clients
+      if (Array.isArray(localClients)) {
+        localClients.forEach((c: PersonData) => {
+          if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) {
+            if (!mergedMap.has(c.id)) {
+              mergedMap.set(c.id, c);
+            } else {
+              const existing = mergedMap.get(c.id)!;
+              const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+              const localTime = new Date(c.updatedAt || c.createdAt || 0).getTime();
+              if (localTime > existingTime) {
+                mergedMap.set(c.id, c);
+              }
+            }
+          }
+        });
+      }
+
+      const mergedList = Array.from(mergedMap.values()).sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+
+      savePersistedClients(mergedList);
+      res.json({ success: true, clients: mergedList });
+    } catch (err: unknown) {
+      res.status(500).json({ success: false, error: String(err) });
+    }
   });
 
   // Deep AI Esoteric & Artistic Synthesis (supports both /api/ai/deep-synthesis and /api/ai/synthesize)

@@ -83,12 +83,122 @@ export function saveClient(client: PersonData): PersonData[] {
 }
 
 /**
+ * Sends a client intake submission directly to the Express server (/api/client-intake).
+ * Persists the result both on the server and in local storage.
+ */
+export async function postClientIntakeToServer(payload: any): Promise<{ success: boolean; client?: PersonData; error?: string }> {
+  try {
+    const res = await fetch('/api/client-intake', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || 'Sunucu form kaydını kabul etmedi.'
+      };
+    }
+
+    if (data.client) {
+      saveClient(data.client);
+    }
+
+    return {
+      success: true,
+      client: data.client
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Sunucu bağlantı hatası oluştu.'
+    };
+  }
+}
+
+/**
+ * Fetches clients from the Express server and synchronizes them with localStorage.
+ */
+export async function syncClientsWithServer(): Promise<PersonData[]> {
+  try {
+    const localClients = getStoredClients();
+    const res = await fetch('/api/clients/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ localClients })
+    });
+
+    if (!res.ok) {
+      // Fallback to GET /api/clients
+      const getRes = await fetch('/api/clients');
+      if (getRes.ok) {
+        const getData = await getRes.json();
+        if (getData.clients && Array.isArray(getData.clients)) {
+          const merged = mergeClientLists(localClients, getData.clients);
+          localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(merged));
+          return merged;
+        }
+      }
+      return localClients;
+    }
+
+    const data = await res.json();
+    if (data.success && Array.isArray(data.clients)) {
+      const sanitized = data.clients.filter((c: any) => c && c.id && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+      localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
+      return sanitized;
+    }
+    return localClients;
+  } catch (err) {
+    console.warn('Server sync error, using local data:', err);
+    return getStoredClients();
+  }
+}
+
+function mergeClientLists(listA: PersonData[], listB: PersonData[]): PersonData[] {
+  const map = new Map<string, PersonData>();
+  listA.forEach(c => {
+    if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) map.set(c.id, c);
+  });
+  listB.forEach(c => {
+    if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) {
+      if (!map.has(c.id)) {
+        map.set(c.id, c);
+      } else {
+        const existing = map.get(c.id)!;
+        const timeExisting = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+        const timeNew = new Date(c.updatedAt || c.createdAt || 0).getTime();
+        if (timeNew > timeExisting) map.set(c.id, c);
+      }
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+}
+
+/**
  * Deletes a client and removes any associated orphaned recipes.
  */
 export function deleteClient(id: string): PersonData[] {
   const clients = getStoredClients().filter(c => c.id !== id);
   localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
   
+  // Background delete on server
+  try {
+    fetch(`/api/clients/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+  } catch {
+    // ignore
+  }
+
   // Clean up associated recipes
   try {
     const recipes = getStoredRecipes().filter(r => r.clientId !== id);

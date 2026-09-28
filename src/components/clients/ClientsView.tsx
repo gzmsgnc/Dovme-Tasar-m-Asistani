@@ -20,10 +20,14 @@ import {
   FileText,
   Share2,
   Layers,
-  Heart
+  Heart,
+  Phone,
+  Mail,
+  RefreshCw
 } from 'lucide-react';
 import { ClientFormModal } from '../modals/ClientFormModal';
 import { ClientIntakeLinkModal } from '../modals/ClientIntakeLinkModal';
+import { syncClientsWithServer } from '../../utils/storage';
 
 interface ClientsViewProps {
   clients: PersonData[];
@@ -33,6 +37,7 @@ interface ClientsViewProps {
   onSaveClient: (client: PersonData) => void;
   onClearAllClients?: () => void;
   onOpenClientForm?: () => void;
+  onClientsSynced?: (synced: PersonData[]) => void;
 }
 
 export const ClientsView: React.FC<ClientsViewProps> = ({
@@ -42,7 +47,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   onAddNewClientClick,
   onSaveClient,
   onClearAllClients,
-  onOpenClientForm
+  onOpenClientForm,
+  onClientsSynced
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClientDetail, setSelectedClientDetail] = useState<PersonData | null>(null);
@@ -52,6 +58,21 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
   const [filterTab, setFilterTab] = useState<'all' | 'form_only'>('all');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncWithServer = async () => {
+    setIsSyncing(true);
+    try {
+      const synced = await syncClientsWithServer();
+      if (onClientsSynced) {
+        onClientsSynced(synced);
+      }
+    } catch (err) {
+      console.error('Sync error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const formClientsCount = clients.filter(c => c.source === 'client_form' || c.status === 'new').length;
 

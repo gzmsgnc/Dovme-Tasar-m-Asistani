@@ -4,6 +4,8 @@ export type { ChakraProfile };
 export interface PersonData {
   id: string;
   name: string;
+  phone?: string;
+  email?: string;
   birthDate: string; // YYYY-MM-DD
   birthTime?: string; // HH:mm
   birthPlace?: string;

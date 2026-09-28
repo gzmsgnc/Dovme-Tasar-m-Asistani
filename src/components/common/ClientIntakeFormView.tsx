@@ -12,7 +12,8 @@ import {
   resolveCityLocation, 
   isCitySupported 
 } from '../../utils/astrology';
-import { saveClient } from '../../utils/storage';
+import { saveClient, postClientIntakeToServer } from '../../utils/storage';
+import { normalizePhoneNumber, isValidEmail } from '../../utils/clientValidation';
 import { PersonData } from '../../types';
 import { 
   Sparkles, 
@@ -30,7 +31,9 @@ import {
   AlertCircle,
   RotateCcw,
   Layers,
-  FileCheck
+  FileCheck,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 interface ClientIntakeFormViewProps {
@@ -42,12 +45,14 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
   onReturnToStudio,
   onFormSubmitted
 }) => {
-  // Current wizard step: 1: Kişisel Bilgiler, 2: Doğum Bilgileri, 3: Enneagram, 4: Totem
+  // Current wizard step: 1: İletişim & Kişisel, 2: Doğum & Aile, 3: Enneagram, 4: Totem
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   // Form Fields
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [motherName, setMotherName] = useState<string>('');
   const [birthDate, setBirthDate] = useState<string>('');
   const [birthTime, setBirthTime] = useState<string>('');
@@ -62,6 +67,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedClientData, setSubmittedClientData] = useState<PersonData | null>(null);
 
   // Helper validation functions
@@ -73,9 +79,24 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     if (!lastName.trim()) {
       errs.lastName = 'Lütfen soyadınızı giriniz.';
     }
-    if (!motherName.trim()) {
-      errs.motherName = 'Lütfen anne adınızı giriniz (Ebced ve soy kökü arketipi için gereklidir).';
+    
+    // Telefon Numarası Kontrolü (Zorunlu)
+    if (!phone.trim()) {
+      errs.phone = 'Lütfen telefon numaranızı giriniz.';
+    } else {
+      const pVal = normalizePhoneNumber(phone);
+      if (!pVal.valid) {
+        errs.phone = pVal.error || 'Geçersiz telefon numarası.';
+      }
     }
+
+    // E-posta Adresi Kontrolü (Zorunlu)
+    if (!email.trim()) {
+      errs.email = 'Lütfen e-posta adresinizi giriniz.';
+    } else if (!isValidEmail(email)) {
+      errs.email = 'Geçersiz e-posta formatı. Lütfen geçerli bir e-posta giriniz (Örn: isim@domain.com).';
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -110,6 +131,11 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
       }
     }
 
+    // Anne Adı Kontrolü (Ebced & soy arketipi için)
+    if (!motherName.trim()) {
+      errs.motherName = 'Lütfen anne adınızı giriniz (Ebced ve soy kökü arketipi için gereklidir).';
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -141,12 +167,12 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     setGeneralError(null);
     if (!validateStep1()) {
       setCurrentStep(1);
-      setGeneralError('Lütfen 1. Adımdaki kişisel bilgileri eksiksiz doldurunuz.');
+      setGeneralError('Lütfen 1. Adımdaki iletişim ve kişisel bilgileri eksiksiz doldurunuz.');
       return false;
     }
     if (!validateStep2()) {
       setCurrentStep(2);
-      setGeneralError('Lütfen 2. Adımdaki doğum tarihi ve doğum yeri bilgilerini kontrol ediniz.');
+      setGeneralError('Lütfen 2. Adımdaki doğum tarihi, saati, konumu ve anne adı bilgilerini kontrol ediniz.');
       return false;
     }
     if (!validateStep3()) {
@@ -178,69 +204,104 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     }
   };
 
-  // Final Submission
-  const handleSubmitForm = (e?: React.FormEvent) => {
+  // Final Submission to Server (/api/client-intake)
+  const handleSubmitForm = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     if (!validateAll()) {
       return;
     }
 
+    setIsSubmitting(true);
+    setGeneralError(null);
+
     try {
-      // 1. Doğum tarihi ve doğum yeri kesin doğrulama
+      // 1. Doğrulama kontrolleri
       validateCalendarDate(birthDate);
       const resolvedLoc = resolveCityLocation(birthPlace);
+      const phoneNorm = normalizePhoneNumber(phone);
+      if (!phoneNorm.valid) {
+        throw new Error(phoneNorm.error || 'Geçersiz telefon numarası.');
+      }
+      if (!isValidEmail(email)) {
+        throw new Error('Geçersiz e-posta adresi.');
+      }
 
       // 2. Ham cevaplardan arka planda Enneagram ve Totem tespiti
-      // (Not: Müşteri arayüzünde BU SONUÇLAR GÖSTERİLMEZ, yalnızca stüdyo kayıt modeli için hesaplanır)
       const enneaResult = calculateEnneagramFromAnswers(enneagramAnswers);
       const totemResult = calculateBehavioralTotemResult(totemAnswers, enneaResult.type);
 
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       const newClientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const nowIso = new Date().toISOString();
 
-      const newClientRecord: PersonData = {
+      const clientPayload = {
         id: newClientId,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         name: fullName,
+        phone: phoneNorm.normalized,
+        email: email.trim().toLowerCase(),
         birthDate: birthDate.trim(),
         birthTime: birthTime.trim(),
         birthPlace: resolvedLoc.name || birthPlace.trim(),
         motherName: motherName.trim(),
+        personalStory: personalStory.trim() || undefined,
+        notes: personalStory.trim() ? `Danışan Formu Notu: ${personalStory.trim()}` : undefined,
+        enneagramAnswers: { ...enneagramAnswers },
+        totemAnswers: { ...totemAnswers },
+        source: 'client_form',
+        status: 'new',
+        createdAt: nowIso,
+        updatedAt: nowIso
+      };
+
+      // 3. Sunucuya Gönder (Express POST /api/client-intake)
+      const serverRes = await postClientIntakeToServer(clientPayload);
+      if (!serverRes.success) {
+        throw new Error(serverRes.error || 'Sunucu form kaydını kabul etmedi.');
+      }
+
+      const savedRecord = serverRes.client || ({
+        ...clientPayload,
         zodiacSystem: 'Tropical',
         enneagramType: enneaResult.type,
         enneagramWing: enneaResult.wing,
-        enneagramAnswers: { ...enneagramAnswers },
-        totemAnswers: { ...totemAnswers },
         primaryTotemId: totemResult.primaryTotem?.id,
         secondaryTotemId: totemResult.secondaryTotem?.id,
         shadowTotemId: totemResult.shadowTotem?.id,
-        totemConfidenceScore: totemResult.confidenceScore,
-        personalStory: personalStory.trim() || undefined,
-        notes: personalStory.trim() ? `Danışan Formu Notu: ${personalStory.trim()}` : undefined,
-        status: 'new',
-        source: 'client_form',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+        totemConfidenceScore: totemResult.confidenceScore
+      } as PersonData);
 
-      // 3. Kalıcı depolamaya kaydet
-      saveClient(newClientRecord);
+      // Local storage yedekleme de yap
+      saveClient(savedRecord);
+
+      // Sekmeler ve pencereler arası güncelleme yayını
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tattoo_assistant_data_updated', { 
+          detail: { type: 'client_intake', client: savedRecord } 
+        }));
+      }
 
       // 4. State güncelle ve başarı ekranına geç
-      setSubmittedClientData(newClientRecord);
+      setSubmittedClientData(savedRecord);
       setIsSubmitted(true);
 
       if (onFormSubmitted) {
-        onFormSubmitted(newClientRecord);
+        onFormSubmitted(savedRecord);
       }
     } catch (err: unknown) {
       setGeneralError(err instanceof Error ? err.message : 'Form gönderimi sırasında bir hata oluştu.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleResetForm = () => {
     setFirstName('');
     setLastName('');
+    setPhone('');
+    setEmail('');
     setMotherName('');
     setBirthDate('');
     setBirthTime('');
@@ -252,6 +313,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     setGeneralError(null);
     setCurrentStep(1);
     setIsSubmitted(false);
+    setIsSubmitting(false);
     setSubmittedClientData(null);
   };
 
@@ -310,16 +372,16 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                   <span className="text-white font-medium">{submittedClientData.name}</span>
                 </div>
                 <div>
+                  <span className="text-[10px] text-[#666] block uppercase">İletişim:</span>
+                  <span className="text-white font-medium">{submittedClientData.phone} • {submittedClientData.email}</span>
+                </div>
+                <div>
                   <span className="text-[10px] text-[#666] block uppercase">Doğum Tarihi & Yeri:</span>
                   <span className="text-white font-medium">{submittedClientData.birthDate} • {submittedClientData.birthPlace}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-[#666] block uppercase">Doğum Saati:</span>
-                  <span className="text-white font-medium">{submittedClientData.birthTime}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#666] block uppercase">Anne Adı:</span>
-                  <span className="text-white font-medium">{submittedClientData.motherName}</span>
+                  <span className="text-[10px] text-[#666] block uppercase">Doğum Saati & Anne Adı:</span>
+                  <span className="text-white font-medium">{submittedClientData.birthTime} • Anne: {submittedClientData.motherName}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-[#666] block uppercase">Enneagram Testi:</span>
@@ -407,8 +469,8 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
           {/* Stepper Tabs */}
           <div className="pt-4 grid grid-cols-4 gap-2 max-w-xl mx-auto">
             {[
-              { num: 1, label: 'Kişisel', detail: 'Ad & Soyad' },
-              { num: 2, label: 'Doğum', detail: 'Tarih & Konum' },
+              { num: 1, label: 'İletişim', detail: 'Ad, Tel & E-posta' },
+              { num: 2, label: 'Doğum & Aile', detail: 'Tarih, Konum & Anne' },
               { num: 3, label: 'Enneagram', detail: `${enneagramAnswered}/5 Yanıt` },
               { num: 4, label: 'Totem', detail: `${totemAnswered}/15 Yanıt` }
             ].map((s) => {
@@ -458,17 +520,17 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 1: KİŞİSEL BİLGİLER & AİLE BİLGİSİ */}
+        {/* STEP 1: İLETİŞİM VE KİŞİSEL BİLGİLER */}
         {/* ========================================================================= */}
         {currentStep === 1 && (
           <div className="p-6 sm:p-7 rounded-2xl bg-[#0a0a0a] border border-[#1c1c1c] space-y-6 shadow-xl animate-fadeIn">
             <div className="border-b border-[#181818] pb-3">
               <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2 text-[#c4a47c]">
                 <User className="w-4 h-4 text-[#c4a47c]" />
-                <span>1. BÖLÜM: KİŞİSEL VE AİLE BİLGİLERİ</span>
+                <span>1. BÖLÜM: İLETİŞİM VE KİŞİSEL BİLGİLER</span>
               </h2>
               <p className="text-xs text-[#777] font-mono mt-0.5">
-                Pisagor numeroloji matrisi ve soy arketipi hesaplamaları için temel kimlik bilgileriniz.
+                Randevu koordinasyonu, tasarım taslağı teslimi ve Pisagor numeroloji matrisi için temel kimlik ve iletişim bilgileriniz.
               </p>
             </div>
 
@@ -519,30 +581,61 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 )}
               </div>
 
-              {/* Anne Adı */}
-              <div className="sm:col-span-2 space-y-1.5 pt-1">
+              {/* Telefon Numarası */}
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-mono text-[#aaa] flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5 text-[#c4a47c]" />
-                    <span>Anne Adı (Aile Bilgisi)</span>
+                    <Phone className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>Telefon Numarası</span>
                     <span className="text-rose-400">*</span>
                   </label>
-                  <span className="text-[10px] font-mono text-[#777]">Ebced & Yıldızname Soy Hesabı</span>
+                  <span className="text-[10px] font-mono text-[#777]">TR Cep Formatı</span>
                 </div>
                 <input
-                  type="text"
-                  value={motherName}
+                  type="tel"
+                  value={phone}
                   onChange={(e) => {
-                    setMotherName(e.target.value);
-                    if (errors.motherName) setErrors(prev => ({ ...prev, motherName: '' }));
+                    setPhone(e.target.value);
+                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
                   }}
-                  placeholder="Örn: Emine (Soy kökü ve kadim koruma arketipi için)"
-                  className={`w-full px-3.5 py-2.5 bg-[#121212] border rounded-lg text-xs text-white placeholder-[#555] focus:outline-none transition-colors ${
-                    errors.motherName ? 'border-rose-500/80 bg-rose-950/10' : 'border-[#222] focus:border-[#c4a47c]'
+                  placeholder="05XX XXX XX XX veya +90 5XX..."
+                  className={`w-full px-3.5 py-2.5 bg-[#121212] border rounded-lg text-xs text-white placeholder-[#555] focus:outline-none transition-colors font-mono ${
+                    errors.phone ? 'border-rose-500/80 bg-rose-950/10' : 'border-[#222] focus:border-[#c4a47c]'
                   }`}
                 />
-                {errors.motherName && (
-                  <p className="text-[11px] text-rose-400 font-mono">{errors.motherName}</p>
+                {errors.phone ? (
+                  <p className="text-[11px] text-rose-400 font-mono">{errors.phone}</p>
+                ) : (
+                  <p className="text-[10px] text-[#666] font-mono">Örn: 0532 123 45 67 veya +90 532 123 45 67</p>
+                )}
+              </div>
+
+              {/* E-posta Adresi */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-mono text-[#aaa] flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>E-posta Adresi</span>
+                    <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[10px] font-mono text-[#777]">Tasarım & Randevu Detayları</span>
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+                  }}
+                  placeholder="danisan@example.com"
+                  className={`w-full px-3.5 py-2.5 bg-[#121212] border rounded-lg text-xs text-white placeholder-[#555] focus:outline-none transition-colors font-mono ${
+                    errors.email ? 'border-rose-500/80 bg-rose-950/10' : 'border-[#222] focus:border-[#c4a47c]'
+                  }`}
+                />
+                {errors.email ? (
+                  <p className="text-[11px] text-rose-400 font-mono">{errors.email}</p>
+                ) : (
+                  <p className="text-[10px] text-[#666] font-mono">Örn: selin.kaya@gmail.com</p>
                 )}
               </div>
             </div>
@@ -553,7 +646,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 onClick={handleNextStep}
                 className="px-6 py-2.5 rounded-lg bg-[#c4a47c] hover:bg-[#b89569] text-black font-bold text-xs font-mono uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-[#c4a47c]/15"
               >
-                <span>İlerle: Doğum Bilgileri</span>
+                <span>İlerle: Doğum & Aile Bilgileri</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -561,17 +654,17 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 2: DOĞUM BİLGİLERİ */}
+        {/* STEP 2: DOĞUM & AİLE BİLGİLERİ */}
         {/* ========================================================================= */}
         {currentStep === 2 && (
           <div className="p-6 sm:p-7 rounded-2xl bg-[#0a0a0a] border border-[#1c1c1c] space-y-6 shadow-xl animate-fadeIn">
             <div className="border-b border-[#181818] pb-3">
               <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2 text-[#c4a47c]">
                 <Calendar className="w-4 h-4 text-[#c4a47c]" />
-                <span>2. BÖLÜM: DOĞUM BİLGİLERİ</span>
+                <span>2. BÖLÜM: DOĞUM VE AİLE BİLGİLERİ</span>
               </h2>
               <p className="text-xs text-[#777] font-mono mt-0.5">
-                Güneş, Ay, Yükselen burç (ASC) ve astronomik gezegen koordinatları için kesin veriler.
+                Güneş, Ay, Yükselen burç (ASC), astronomik gezegen koordinatları ve kadim Ebced/Yıldızname soy kökü için kesin veriler.
               </p>
             </div>
 
@@ -647,6 +740,33 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 )}
                 {errors.birthPlace && (
                   <p className="text-[11px] text-rose-400 font-mono leading-tight">{errors.birthPlace}</p>
+                )}
+              </div>
+
+              {/* Anne Adı */}
+              <div className="sm:col-span-3 space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-mono text-[#aaa] flex items-center gap-1">
+                    <Heart className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>Anne Adı (Aile Bilgisi)</span>
+                    <span className="text-rose-400">*</span>
+                  </label>
+                  <span className="text-[10px] font-mono text-[#777]">Ebced & Yıldızname Soy Hesabı</span>
+                </div>
+                <input
+                  type="text"
+                  value={motherName}
+                  onChange={(e) => {
+                    setMotherName(e.target.value);
+                    if (errors.motherName) setErrors(prev => ({ ...prev, motherName: '' }));
+                  }}
+                  placeholder="Örn: Emine (Soy kökü ve kadim koruma arketipi için)"
+                  className={`w-full px-3.5 py-2.5 bg-[#121212] border rounded-lg text-xs text-white placeholder-[#555] focus:outline-none transition-colors ${
+                    errors.motherName ? 'border-rose-500/80 bg-rose-950/10' : 'border-[#222] focus:border-[#c4a47c]'
+                  }`}
+                />
+                {errors.motherName && (
+                  <p className="text-[11px] text-rose-400 font-mono">{errors.motherName}</p>
                 )}
               </div>
 
@@ -873,25 +993,38 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 <span>Form Tamamlama ve Gönderim Doğrulaması</span>
               </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono">
                 <div className="p-2 rounded bg-[#090909] border border-[#222]">
                   <span className="text-[10px] text-[#666] block">Danışan:</span>
                   <span className="text-white truncate block">{firstName || '-'} {lastName || ''}</span>
                 </div>
                 <div className="p-2 rounded bg-[#090909] border border-[#222]">
-                  <span className="text-[10px] text-[#666] block">Doğum:</span>
-                  <span className="text-white truncate block">{birthDate || '-'}</span>
+                  <span className="text-[10px] text-[#666] block">Telefon & E-posta:</span>
+                  <span className="text-white truncate block">{phone || '-'}</span>
+                  <span className="text-[#888] text-[10px] truncate block">{email || '-'}</span>
+                </div>
+                <div className="p-2 rounded bg-[#090909] border border-[#222]">
+                  <span className="text-[10px] text-[#666] block">Doğum & Anne:</span>
+                  <span className="text-white truncate block">{birthDate || '-'} ({birthPlace || '-'})</span>
+                  <span className="text-[#888] text-[10px] truncate block">Anne: {motherName || '-'}</span>
                 </div>
                 <div className="p-2 rounded bg-[#090909] border border-[#222]">
                   <span className="text-[10px] text-[#666] block">Enneagram:</span>
                   <span className={enneagramAnswered === 5 ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
-                    {enneagramAnswered} / 5
+                    {enneagramAnswered} / 5 Yanıtlandı
                   </span>
                 </div>
                 <div className="p-2 rounded bg-[#090909] border border-[#222]">
                   <span className="text-[10px] text-[#666] block">Totem Testi:</span>
                   <span className={totemAnswered === 15 ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
-                    {totemAnswered} / 15
+                    {totemAnswered} / 15 Yanıtlandı
+                  </span>
+                </div>
+                <div className="p-2 rounded bg-[#090909] border border-[#222]">
+                  <span className="text-[10px] text-[#666] block">Kayıt Kanalı:</span>
+                  <span className="text-emerald-400 block flex items-center gap-1 font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Stüdyo Sunucusu</span>
                   </span>
                 </div>
               </div>
@@ -900,7 +1033,8 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="px-4 py-2 rounded-lg bg-[#141414] hover:bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-lg bg-[#141414] hover:bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Geri: Enneagram</span>
@@ -909,10 +1043,20 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 <button
                   type="button"
                   onClick={handleSubmitForm}
-                  className="px-7 py-3 rounded-xl bg-gradient-to-r from-[#b89569] via-[#c4a47c] to-[#d4b58c] hover:from-[#c4a47c] hover:to-[#e0c29b] text-black font-extrabold text-sm font-mono uppercase tracking-wider flex items-center gap-2.5 cursor-pointer transition-all shadow-xl shadow-[#c4a47c]/25 hover:scale-[1.01]"
+                  disabled={isSubmitting}
+                  className="px-7 py-3 rounded-xl bg-gradient-to-r from-[#b89569] via-[#c4a47c] to-[#d4b58c] hover:from-[#c4a47c] hover:to-[#e0c29b] text-black font-extrabold text-sm font-mono uppercase tracking-wider flex items-center gap-2.5 cursor-pointer transition-all shadow-xl shadow-[#c4a47c]/25 hover:scale-[1.01] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Sparkles className="w-4 h-4 text-black" />
-                  <span>FORMU TAMAMLA VE GÖNDER</span>
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                      <span>SUNUCUYA İLETİLİYOR...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-black" />
+                      <span>FORMU TAMAMLA VE GÖNDER</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
