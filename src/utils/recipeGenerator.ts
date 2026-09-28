@@ -148,8 +148,43 @@ export function generateTattooRecipe(
     ? 'Minimum 22 x 15 cm | İdeal: 30 x 20 cm (Detayların 10 yıl sonra net okunabilmesi için)'
     : 'Minimum 14 x 8 cm | İdeal: 18 x 10 cm (Mikro detay güvenliği)';
 
-  const overallFeasibilityScore = 94;
-  const summaryEvaluation = 'Tasarım hem estetik hem de teknik dövme zanaatı açısından yüksek uygulanabilirliğe sahiptir. İğne derinliği, negatif alan ve yaşlanma parametreleri optimize edilmiştir.';
+  // Dinamik Zanaat ve Deri Uygulanabilirlik Skoru Hesaplaması (0 - 100)
+  let calculatedScore = 90;
+
+  // 1. Bölge Zorluğu ve Deri Hareketi
+  const placementLower = parameters.bodyPlacement.toLowerCase();
+  if (placementLower.includes('kaburga') || placementLower.includes('göğüs kafesi') || placementLower.includes('sternum') || placementLower.includes('karın')) {
+    calculatedScore -= 8; // Solunum hareketi, gerilme ve elastikiyet
+  } else if (placementLower.includes('boyun') || placementLower.includes('el') || placementLower.includes('parmak') || placementLower.includes('ayak')) {
+    calculatedScore -= 12; // Sürtünme ve ince epidermis tabakası
+  } else if (placementLower.includes('sırt') || placementLower.includes('kürek') || placementLower.includes('omuz')) {
+    calculatedScore += 5; // Geniş, düz, stabil kanvas
+  } else if (placementLower.includes('önkol') || placementLower.includes('üst kol') || placementLower.includes('baldır')) {
+    calculatedScore += 4; // İdeal stabil zemin ve düşük deformasyon
+  }
+
+  // 2. Stil & İğne İnceltme Uyumu
+  if (isFineLine) {
+    calculatedScore -= 3; // İnce iğne titizliği ve 1.5mm emniyet aralığı gerektirir
+  }
+  if (isDotwork) {
+    calculatedScore += 2; // Stippling doku yaşlanmaya karşı dirençlidir
+  }
+  if (isHeavyBlack) {
+    calculatedScore += 3; // Doygun siyah bloklar uzun ömürlü okunabilirliğe sahiptir
+  }
+
+  // 3. Yoğunluk & Negatif Alan Dengesi
+  if (parameters.density.includes('Yoğun') || parameters.density.includes('Maksimalist')) {
+    calculatedScore -= 4; // Yüksek detay yoğunluğu kontrollü el işçiliği ister
+  } else if (parameters.density.includes('Minimal') || parameters.density.includes('Hafif')) {
+    calculatedScore += 4; // Geniş negatif alan cildi korur ve okunabilirliği artırır
+  }
+
+  const overallFeasibilityScore = Math.max(68, Math.min(99, calculatedScore));
+  const summaryEvaluation = overallFeasibilityScore >= 90
+    ? `Tasarım ${parameters.bodyPlacement} bölgesi için mükemmel zanaat uyumuna (${overallFeasibilityScore}/100) sahiptir. Cilt elastikiyeti ve iğne konfigürasyonu uzun vadeli dayanıklılık sunar.`
+    : `Tasarım ${parameters.bodyPlacement} anatomisinde uygulanabilir (${overallFeasibilityScore}/100) durumdadır. Seçilen stil ve bölgenin esneme dinamikleri nedeniyle seans sırasında mikro-açı kontrolleri önerilir.`;
 
   const feasibility: TattooFeasibility = {
     lineWeight,

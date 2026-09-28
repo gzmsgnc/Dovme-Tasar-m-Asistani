@@ -15,11 +15,16 @@ export function deriveSymbolismProfile(
 
   // 1. DETERMINISTIC PERSONAL TOTEM CALCULATION
   // Kullanıcının kişisel verilerinden (Doğum tarihi, saati, yeri, isim, element ve test yanıtları) dinamik olarak hesaplanır.
+  const actualBirthDate = personalData?.birthDate || astrology.usedBirthDate;
+  if (!actualBirthDate || !actualBirthDate.includes('-')) {
+    throw new Error('Sembolizm profili için doğum tarihi zorunludur. Kişiye özel veriler eksik.');
+  }
+
   const personalInput: PersonalTotemInput = {
-    name: personalData?.name || numerology.lifePathTitle || 'Danışan',
-    birthDate: personalData?.birthDate || '1990-01-01',
-    birthTime: personalData?.birthTime || '12:00',
-    birthPlace: personalData?.birthPlace || 'Anadolu',
+    name: personalData?.name || 'Danışan',
+    birthDate: actualBirthDate,
+    birthTime: personalData?.birthTime,
+    birthPlace: personalData?.birthPlace,
     motherName: personalData?.motherName,
     personalNumbers: personalData?.personalNumbers,
     personalStory: personalData?.personalStory,

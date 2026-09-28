@@ -462,10 +462,15 @@ export function getSignFromLongitude(longitude: number): {
 }
 
 export function getSunSign(birthDateStr: string): ZodiacSignInfo {
-  if (!birthDateStr) return ZODIAC_SIGNS[0];
+  if (!birthDateStr || !birthDateStr.includes('-')) {
+    throw new Error('Güneş burcu hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit veya tahmini burç atanamaz.');
+  }
   const parts = birthDateStr.split('-');
   const month = parseInt(parts[1], 10);
   const day = parseInt(parts[2], 10);
+  if (isNaN(month) || isNaN(day)) {
+    throw new Error('Geçersiz doğum tarihi formatı.');
+  }
 
   for (const sign of ZODIAC_SIGNS) {
     if (
@@ -475,7 +480,7 @@ export function getSunSign(birthDateStr: string): ZodiacSignInfo {
       return sign;
     }
   }
-  return ZODIAC_SIGNS[0];
+  throw new Error(`Belirtilen doğum günü (${day}/${month}) için Zodyak burcu aralığı eşleştirilemedi.`);
 }
 
 export function calculateAstrology(
@@ -484,14 +489,22 @@ export function calculateAstrology(
   birthPlace?: string,
   zodiacSystem: 'Tropical' | 'Sidereal' = 'Tropical'
 ): AstrologyProfile {
+  if (!birthDate || !birthDate.trim() || !birthDate.includes('-')) {
+    throw new Error('Astrolojik harita hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit veya tahmini harita kullanılamaz.');
+  }
+
   const hasBirthTime = Boolean(birthTime && birthTime.trim());
   const location = resolveCityLocation(birthPlace);
   
   // Parse date and time
-  const [yearStr, monthStr, dayStr] = (birthDate || '1991-11-24').split('-');
-  const year = parseInt(yearStr || '1991', 10);
-  const month = parseInt(monthStr || '11', 10);
-  const day = parseInt(dayStr || '24', 10);
+  const [yearStr, monthStr, dayStr] = birthDate.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error('Doğum tarihi yıl, ay ve gün rakamlarından oluşmalıdır.');
+  }
 
   let hours = 12;
   let minutes = 0;

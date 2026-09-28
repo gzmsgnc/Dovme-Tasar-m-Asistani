@@ -56,20 +56,37 @@ async function startServer() {
         });
       }
 
-      const clientName = person.name || 'Danışan';
-      const birthDate = person.birthDate || 'Belirtilmedi';
-      const lifePath = numerology.lifePathNumber || person.lifePath || '7';
-      const lifePathTitle = numerology.lifePathTitle || 'Ruhani Arayış';
-      const sunSign = astrology.sunSign || 'Koç';
-      const moonSign = astrology.moonSign || 'Balık';
-      const ascSign = astrology.ascendantSign || 'Yay';
-      const dominantElement = astrology.dominantElement || 'Ateş';
-      const enneaType = enneagram.wing || enneagram.typeName || '4w5';
-      const coreMotivation = enneagram.coreMotivation || 'Özgünlük ve derin anlam';
-      const shadowTraits = Array.isArray(enneagram.shadowTraits) ? enneagram.shadowTraits.join(', ') : 'Gölge entegrasyonu';
-      const mainSymbol = parameters.mainSymbol || person.primaryTotem || 'Kurt / Geyik';
-      const secondarySymbols = Array.isArray(parameters.secondarySymbols) ? parameters.secondarySymbols.join(', ') : 'Kutsal Geometri';
-      const selectedStyles = Array.isArray(parameters.selectedStyles) ? parameters.selectedStyles.join(', ') : 'Fine Line, Dotwork';
+      const clientName = person.name?.trim();
+      const birthDate = person.birthDate?.trim();
+      const lifePath = numerology.lifePathNumber || person.lifePath;
+      const lifePathTitle = numerology.lifePathTitle;
+      const sunSign = astrology.sunSign;
+      const moonSign = astrology.moonSign;
+      const ascSign = astrology.ascendantSign;
+      const dominantElement = astrology.dominantElement;
+      const enneaType = enneagram.wing || enneagram.typeName;
+      const coreMotivation = enneagram.coreMotivation;
+      const shadowTraits = Array.isArray(enneagram.shadowTraits) && enneagram.shadowTraits.length > 0
+        ? enneagram.shadowTraits.join(', ')
+        : (enneagram.shadowAspect || '');
+      const mainSymbol = parameters.mainSymbol || person.primaryTotem;
+
+      // 1. ANA KURAL: VERİ UYDURMA YOK - Eksik kişisel veri kontrolü
+      if (!clientName || !birthDate || !lifePath || !sunSign || !enneaType || !mainSymbol) {
+        return res.status(400).json({
+          success: false,
+          missingData: true,
+          error: 'Bu sonuç için gerekli kişisel veri eksik.',
+          message: 'Kişisel veri eksikken tahmini veya sabit varsayılan verilerle ezoterik sentez üretilemez. Lütfen danışanın doğum tarihi, ismi ve analiz verilerini tamamlayın.'
+        });
+      }
+
+      const secondarySymbols = Array.isArray(parameters.secondarySymbols) && parameters.secondarySymbols.length > 0
+        ? parameters.secondarySymbols.join(', ')
+        : 'Kutsal Geometri & Botanik Akış';
+      const selectedStyles = Array.isArray(parameters.selectedStyles) && parameters.selectedStyles.length > 0
+        ? parameters.selectedStyles.join(', ')
+        : 'Fine Line, Geometric';
       const bodyPlacement = parameters.bodyPlacement || 'Önkol İç';
       const visualAtmosphere = parameters.visualAtmosphere || 'Mistik & Ezoterik';
       const colorScheme = parameters.colorScheme || 'Saf Monokrom Siyah';
@@ -201,20 +218,34 @@ Lütfen JSON formatında yanıt ver:
     const requestId = requestedReqId || `REQ-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 
     // Extract rich metadata for high-precision vector stencil & prompt building
-    const mainSymbol = recipe?.parameters?.mainSymbol || 'Kurt (Wolf)';
-    const secondarySymbols = recipe?.parameters?.secondarySymbols || ['Kutsal Lotus', 'Kutsal Geometri'];
-    const subtleDetails = recipe?.subtleDetails || ['19 İlahi Yardım Mührü', 'Kozmik Takımyıldız'];
-    const lifePathNumber = recipe?.numerology?.lifePathNumber || '7';
-    const sunSign = recipe?.astrology?.sunSign || 'Akrep';
-    const moonSign = recipe?.astrology?.moonSign || 'Balık';
-    const ascendantSign = recipe?.astrology?.ascendantSign || 'Yay';
-    const hasDivine19 = recipe?.numerology?.divineHelp19?.has19 ?? true;
-    const styles = recipe?.parameters?.selectedStyles || ['Fine Line', 'Dotwork', 'Geometric'];
+    const mainSymbol = recipe?.parameters?.mainSymbol;
+    const lifePathNumber = recipe?.numerology?.lifePathNumber;
+    const sunSign = recipe?.astrology?.sunSign;
+    const clientName = recipe?.clientName || recipe?.personData?.name;
+
+    if (!recipe || !mainSymbol || !lifePathNumber || !sunSign) {
+      return res.status(400).json({
+        success: false,
+        missingData: true,
+        error: 'Bu sonuç için gerekli kişisel reçete verisi eksik.',
+        message: 'Kişisel sembol, yaşam yolu ve astrolojik veriler olmadan dövme taslağı veya stencil üretilemez.'
+      });
+    }
+
+    const secondarySymbols = Array.isArray(recipe?.parameters?.secondarySymbols) && recipe.parameters.secondarySymbols.length > 0
+      ? recipe.parameters.secondarySymbols
+      : ['Kutsal Geometri', 'Botanik Akış'];
+    const subtleDetails = Array.isArray(recipe?.subtleDetails) && recipe.subtleDetails.length > 0
+      ? recipe.subtleDetails
+      : ['Kozmik Takımyıldız'];
+    const moonSign = recipe?.astrology?.moonSign || '';
+    const ascendantSign = recipe?.astrology?.ascendantSign || '';
+    const hasDivine19 = recipe?.numerology?.divineHelp19?.has19 ?? false;
+    const styles = recipe?.parameters?.selectedStyles || ['Fine Line', 'Geometric'];
     const colorScheme = recipe?.parameters?.colorScheme || 'Saf Monokrom Siyah';
     const composition = recipe?.parameters?.composition || 'Merkezi Kutsal Odak';
     const orientation = recipe?.parameters?.orientation || 'Dikey (Anatomik)';
     const bodyPlacement = recipe?.parameters?.bodyPlacement || 'Önkol İç';
-    const clientName = recipe?.clientName || 'Danışan';
 
     // Select the optimal prompt based on mode
     let targetPrompt = prompt;

@@ -17,7 +17,8 @@ import {
   deleteClient, 
   getStoredRecipes, 
   saveRecipe, 
-  deleteRecipe 
+  deleteRecipe,
+  clearAllData
 } from './utils/storage';
 
 export function App() {
@@ -77,6 +78,13 @@ export function App() {
   const handleDeleteRecipe = (id: string) => {
     const updated = deleteRecipe(id);
     setRecipes(updated);
+  };
+
+  const handleClearAllData = () => {
+    clearAllData();
+    setClients([]);
+    setRecipes([]);
+    setSelectedPersonForDesign(null);
   };
 
   const handleStartDesignForClient = (client: PersonData) => {
@@ -147,6 +155,7 @@ export function App() {
               onDeleteClient={handleDeleteClient}
               onAddNewClientClick={handleAddNewClientClick}
               onSaveClient={handleSaveClient}
+              onClearAllClients={handleClearAllData}
             />
           )}
 

@@ -45,13 +45,30 @@ export function executeSymbolicIntegrationEngine(params: {
 }): SymbolicIntegrationModelResult {
   const { person, numerology, astrology, enneagram, symbolism, chakra, designParameters } = params;
 
+  // 1. ANA KURAL - VERİ UYDURMA YOK: Girdi doğrulama kontrolü
+  if (!person || !person.name?.trim() || !person.birthDate) {
+    throw new Error('Sembol Entegrasyon Motoru için danışanın isim ve doğum tarihi verileri zorunludur. Eksik veriyle sembol üretilemez.');
+  }
+  if (!numerology || !numerology.lifePathNumber) {
+    throw new Error('Sembol Entegrasyon Motoru için numerolojik yaşam yolu verisi zorunludur.');
+  }
+  if (!astrology || !astrology.sunSign) {
+    throw new Error('Sembol Entegrasyon Motoru için astrolojik harita verisi zorunludur.');
+  }
+  if (!enneagram || !enneagram.type) {
+    throw new Error('Sembol Entegrasyon Motoru için Enneagram profil verisi zorunludur.');
+  }
+  if (!symbolism || !symbolism.totemAnimal) {
+    throw new Error('Sembol Entegrasyon Motoru için kişiye özel hesaplanmış totem hayvanı ve sembolizm profili zorunludur.');
+  }
+
   // 1. SYMBOL REGISTRY (Sembol Kayıt Defteri) Oluştur
   const symbols: SymbolRegistryItem[] = [];
   const visualTranslations: SymbolVisualTranslation[] = [];
   const traceability: SymbolTraceabilityItem[] = [];
 
   // A. Kutsal Geometri / Yaşam Çiçeği / Temel Armatür (Primary)
-  const sacredGeoName = symbolism.geometricSymbol || 'Metatron Küpü & Kutsal Geometri';
+  const sacredGeoName = symbolism.geometricSymbol || symbolism.sacredObject || 'Kutsal Geometri & Yaşam Çiçeği';
   symbols.push({
     symbolId: 'sym_sacred_geo',
     symbolName: sacredGeoName,
@@ -183,7 +200,10 @@ export function executeSymbolicIntegrationEngine(params: {
   });
 
   // D. Ruhani Totem Hayvanı - Görsel Soyutlama (Secondary / Hidden)
-  const primaryTotemName = symbolism.totemAnimal || 'Kurt';
+  const primaryTotemName = symbolism.totemAnimal || (symbolism.totemHierarchy && symbolism.totemHierarchy.length > 0 ? symbolism.totemHierarchy[0].name : '');
+  if (!primaryTotemName) {
+    throw new Error('Sembol entegrasyonu için kişisel totem hayvanı verisi zorunludur. Sabit veya tahmini hayvan atanamaz.');
+  }
   const totemProfile = getTotemVisualProfile(primaryTotemName);
   const includeTotemInDesign = designParameters.includeTotemInDesign ?? false;
 
@@ -880,8 +900,8 @@ function buildMasterIntegratedAiPrompt(opts: {
   const styleNames = designParameters.selectedStyles?.join(', ') || 'Fine Line, Micro Dotwork, Sacred Geometry';
   const placement = designParameters.bodyPlacement || 'Forearm Inner';
   const primaryTotem = totemProfile.animalName;
-  const flora = symbols.find(s => s.symbolCategory === 'Flora')?.symbolName || 'Sacred Lotus';
-  const geo = symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName || 'Metatron Cube';
+  const flora = symbols.find(s => s.symbolCategory === 'Flora')?.symbolName || 'Harmonized Botanical Form';
+  const geo = symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName || 'Sacred Geometry Matrix';
 
   return `
 A single unified, monolithic master esoteric tattoo flash plate artwork designed specifically for ${person.name}. 

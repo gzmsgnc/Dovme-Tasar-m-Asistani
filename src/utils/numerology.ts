@@ -61,13 +61,24 @@ export const NUMBER_TITLES: Record<number, { title: string; keywords: string[] }
 };
 
 export function calculateNumerology(name: string, birthDate: string): NumerologyProfile {
-  const normalizedName = (name || '').toLowerCase().trim();
+  if (!name || !name.trim()) {
+    throw new Error('Numeroloji Pisagor analizi için danışan ismi zorunludur. Sabit veya tahmini isim kullanılamaz.');
+  }
+  if (!birthDate || !birthDate.trim() || !birthDate.includes('-')) {
+    throw new Error('Numeroloji Yaşam Yolu hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit sayı kullanılamaz.');
+  }
+
+  const normalizedName = name.toLowerCase().trim();
   
   // 1. Life Path (Yaşam Yolu) Calculation: Day + Month + Year digits
-  const parts = (birthDate || '1990-01-01').split('-');
-  const yStr = parts[0] || '1990';
-  const mStr = parts[1] || '01';
-  const dStr = parts[2] || '01';
+  const parts = birthDate.split('-');
+  const yStr = parts[0];
+  const mStr = parts[1];
+  const dStr = parts[2];
+  
+  if (!yStr || !mStr || !dStr) {
+    throw new Error('Doğum tarihi formatı YYYY-AA-GG şeklinde tam olmalıdır.');
+  }
   
   const allDigits = `${dStr}${mStr}${yStr}`.split('').map(Number);
   const rawLifePathSum = allDigits.reduce((acc, curr) => acc + curr, 0);

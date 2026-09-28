@@ -44,21 +44,25 @@ export function escapeXml(unsafe: string | number | undefined | null): string {
 }
 
 export function generateEsotericTattooStencilSvg(options: StencilOptions = {}): string {
+  if (!options.mainSymbol || options.lifePathNumber === undefined || !options.sunSign) {
+    throw new Error('Stencil üretimi için ana sembol, yaşam yolu ve güneş burcu zorunludur. Kişisel veri olmadan stencil üretilemez.');
+  }
+
   const {
-    mainSymbol = 'Kutsal Geometri & Odak Sembol',
-    secondarySymbols = ['Kutsal Lotus', 'Metatron Küpü'],
-    subtleDetails = ['19 İlahi Yardım Mührü', 'Kozmik Takımyıldız'],
-    lifePathNumber = '7',
-    sunSign = 'Akrep',
-    moonSign = 'Balık',
-    ascendantSign = 'Yay',
-    hasDivine19 = true,
-    styles = ['Fine Line', 'Dotwork', 'Geometric'],
+    mainSymbol,
+    secondarySymbols = ['Kutsal Geometri', 'Botanik Akış'],
+    subtleDetails = ['Kozmik Takımyıldız'],
+    lifePathNumber,
+    sunSign,
+    moonSign = '',
+    ascendantSign = '',
+    hasDivine19 = options.hasDivine19 ?? false,
+    styles = ['Fine Line', 'Geometric'],
     colorScheme = 'Saf Monokrom Siyah',
     composition = 'Merkezi Kutsal Odak',
     orientation = 'Dikey (Anatomik)',
     bodyPlacement = 'Önkol İç',
-    clientName = 'Danışan',
+    clientName = options.clientName || 'Danışan',
     seed = Math.floor(Math.random() * 1000000),
     variationIndex = 1,
     requestId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`,

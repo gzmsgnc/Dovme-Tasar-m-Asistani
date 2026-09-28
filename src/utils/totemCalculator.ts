@@ -112,16 +112,29 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
     sunSign
   } = personalData;
 
-  // 1. Doğum Tarihi Vektörü
-  let year = 1990;
-  let month = 1;
-  let day = 1;
+  if (!birthDate || !birthDate.trim() || !birthDate.includes('-')) {
+    throw new Error('Totem hayvanı hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit veya tahmini hayvan atanamaz.');
+  }
 
-  if (birthDate && birthDate.includes('-')) {
-    const parts = birthDate.split('-');
-    year = parseInt(parts[0], 10) || 1990;
-    month = parseInt(parts[1], 10) || 1;
-    day = parseInt(parts[2], 10) || 1;
+  // 1. Doğum Tarihi Vektörü
+  const parts = birthDate.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error('Geçersiz doğum tarihi biçimi.');
+  }
+
+  // Yaşam Yolu hesaplaması (eğer parametrede geçilmediyse doğrudan doğum tarihinden hesaplanır)
+  let actualLifePath = lifePathNumber;
+  if (!actualLifePath) {
+    const digits = `${day}${month}${year}`.split('').map(Number);
+    let sum = digits.reduce((a, b) => a + b, 0);
+    while (sum > 9 && sum !== 11 && sum !== 22 && sum !== 33) {
+      sum = sum.toString().split('').map(Number).reduce((a, b) => a + b, 0);
+    }
+    actualLifePath = sum;
   }
 
   const dayOfYear = getDayOfYear(year, month, day);
@@ -148,13 +161,13 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
   const planetaryRulers = ['Güneş (Pazar)', 'Ay (Pazartesi)', 'Mars (Salı)', 'Merkür (Çarşamba)', 'Jüpiter (Perşembe)', 'Venüs (Cuma)', 'Satürn (Cumartesi)'];
   const planetaryDayRuler = planetaryRulers[dayOfWeek] || 'Güneş';
 
-  const placeClean = (birthPlace || 'Anadolu').trim();
+  const placeClean = (birthPlace && birthPlace.trim()) || 'Anadolu';
   const placeSignature = hashString(placeClean);
 
-  const nameClean = (name || 'Yolcu').trim();
+  const nameClean = (name && name.trim()) || 'Danışan';
   const nameSignature = hashString(nameClean);
   const motherSignature = motherName && motherName.trim() ? hashString(motherName.trim()) * 13 : 0;
-  const lpSignature = (lifePathNumber || 7) * 997;
+  const lpSignature = actualLifePath * 997;
   const elementBonusSeed = dominantElement ? hashString(dominantElement) * 17 : 31;
 
   const totalDeterministicHash = Math.abs(
@@ -167,7 +180,7 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
   if (totemAnswers && Object.keys(totemAnswers).length >= 3) {
     const behavioralReport = calculateBehavioralTotemResult(totemAnswers, enneagramType || 4, {
       dominantElement,
-      lifePathNumber,
+      lifePathNumber: actualLifePath,
       sunSign
     });
 
@@ -227,7 +240,7 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
       circadianQuadrant,
       planetaryDayRuler,
       elementalDominance: primaryTotem.element,
-      rationale: `Doğum Tarihi (${year}-${month}-${day}), Doğum Saati (${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} • ${circadianQuadrant}), Doğum Yeri (${placeClean}), Yaşam Yolu ${lifePathNumber || 7} ve İsim Frekansının bileşik rezonansından hesaplanmıştır.`
+      rationale: `Doğum Tarihi (${year}-${month}-${day}), Doğum Saati (${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} • ${circadianQuadrant}), Doğum Yeri (${placeClean}), Yaşam Yolu ${actualLifePath} ve İsim Frekansının bileşik rezonansından hesaplanmıştır.`
     }
   };
 }

@@ -26,6 +26,7 @@ interface ClientsViewProps {
   onDeleteClient: (id: string) => void;
   onAddNewClientClick: () => void;
   onSaveClient: (client: PersonData) => void;
+  onClearAllClients?: () => void;
 }
 
 export const ClientsView: React.FC<ClientsViewProps> = ({
@@ -33,13 +34,15 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   onStartDesignForClient,
   onDeleteClient,
   onAddNewClientClick,
-  onSaveClient
+  onSaveClient,
+  onClearAllClients
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClientDetail, setSelectedClientDetail] = useState<PersonData | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<PersonData | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,17 +64,54 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setClientToEdit(null);
-            setIsClientModalOpen(true);
-          }}
-          className="px-4 py-2 rounded bg-[#c4a47c] hover:bg-[#b89569] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#c4a47c]/15 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Yeni Danışan Ekle</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {onClearAllClients && clients.length > 0 && (
+            showPurgeConfirm ? (
+              <div className="flex items-center gap-1.5 bg-rose-950/40 border border-rose-700/60 p-1.5 rounded-lg animate-fadeIn">
+                <span className="text-[10px] text-rose-300 font-mono px-1">Tüm kayıtlar silinsin mi?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClearAllClients();
+                    setShowPurgeConfirm(false);
+                  }}
+                  className="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded cursor-pointer transition-all"
+                >
+                  Evet, Sil
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPurgeConfirm(false)}
+                  className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] rounded cursor-pointer transition-all"
+                >
+                  İptal
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowPurgeConfirm(true)}
+                className="px-3 py-2 rounded bg-[#141414] hover:bg-rose-950/30 border border-[#333] hover:border-rose-700/60 text-[#888] hover:text-rose-300 text-xs font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                title="Tüm demo/test kayıtlarını kalıcı olarak temizler"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden sm:inline">Kayıtları Temizle</span>
+              </button>
+            )
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              setClientToEdit(null);
+              setIsClientModalOpen(true);
+            }}
+            className="px-4 py-2 rounded bg-[#c4a47c] hover:bg-[#b89569] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#c4a47c]/15 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yeni Danışan Ekle</span>
+          </button>
+        </div>
       </header>
 
       {/* Search Bar */}
