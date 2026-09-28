@@ -11,10 +11,12 @@ import {
   Eye, 
   Printer, 
   Download,
-  FileText
+  FileText,
+  FileCode
 } from 'lucide-react';
 import { ClientConsultationDossierModal } from '../modals/ClientConsultationDossierModal';
 import { PDFExportButton } from '../common/PDFExportButton';
+import { downloadRecipeAsJson } from '../../utils/jsonExport';
 
 interface ArchiveViewProps {
   recipes: TattooRecipe[];
@@ -254,6 +256,14 @@ ${recipe.negativePrompt}
                     variant="compact"
                     label="PDF"
                   />
+                  <button
+                    type="button"
+                    onClick={() => downloadRecipeAsJson(recipe)}
+                    className="p-2 rounded-lg bg-[#141416] hover:bg-[#1f1f24] border border-[#2a2a33] hover:border-cyan-400 text-cyan-300 text-xs font-mono flex items-center justify-center transition-colors cursor-pointer"
+                    title="Reçeteyi JSON olarak indir"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 <button
                   type="button"
@@ -463,6 +473,15 @@ ${recipe.negativePrompt}
               >
                 <FileText className="w-4 h-4 text-[#c4a47c]" />
                 <span>Danışan Dosyasını Aç (Ekler Dahil)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadRecipeAsJson(selectedRecipe)}
+                className="py-2.5 px-4 rounded bg-[#16161b] hover:bg-[#202026] border border-[#333] hover:border-cyan-400 text-cyan-300 text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                title="Tüm reçeteyi ve sembol analizini JSON olarak indir"
+              >
+                <FileCode className="w-3.5 h-3.5" />
+                <span>JSON İndir</span>
               </button>
               <button
                 type="button"

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { exportAllDataAsJSON, importDataFromJSON } from '../../utils/storage';
-import { Database, Download, Upload, Copy, Check, AlertCircle } from 'lucide-react';
+import { exportAllDataAsJSON, importDataFromJSON, clearAllData } from '../../utils/storage';
+import { Database, Download, Upload, Copy, Check, AlertCircle, Trash2 } from 'lucide-react';
 
 interface BackupModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   const [importText, setImportText] = useState('');
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   if (!isOpen) return null;
 
@@ -151,6 +152,47 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             <Upload className="w-3.5 h-3.5" />
             <span>Yedeği Geri Yükle</span>
           </button>
+        </div>
+
+        {/* Clear/Reset Section */}
+        <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+          <span className="text-xs font-bold text-rose-400 block">3. Kayıtları & Test Verilerini Temizle</span>
+          <p className="text-[11px] text-zinc-400">
+            Tarayıcınızdaki tüm kayıtlı danışanları, test verilerini ve reçete arşivini kalıcı olarak siler.
+          </p>
+          {showClearConfirm ? (
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  clearAllData();
+                  setShowClearConfirm(false);
+                  setStatusMessage({ text: 'Tüm kayıtlar ve test verileri başarıyla temizlendi.', isError: false });
+                  onDataRestored();
+                }}
+                className="flex-1 py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Evet, Hepsini Kalıcı Sil</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="py-1.5 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 transition-all cursor-pointer"
+              >
+                Vazgeç
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              className="w-full py-2 px-3 rounded-lg bg-zinc-900 border border-rose-900/60 hover:bg-rose-950/40 text-xs font-semibold text-rose-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Tüm Test/Danışan Kayıtlarını Sıfırla</span>
+            </button>
+          )}
         </div>
 
         <div className="pt-1">

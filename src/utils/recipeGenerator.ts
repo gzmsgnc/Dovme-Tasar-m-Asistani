@@ -12,6 +12,7 @@ import {
 import { calculateChakraProfile } from './chakra';
 import { generateShadowArchetypeAnalysis } from './shadowArchetypeAnalysis';
 import { encodeToMorse } from './morseCode';
+import { executeSymbolicIntegrationEngine } from './symbolIntegrationEngine';
 
 export function generateTattooRecipe(
   person: PersonData,
@@ -358,6 +359,16 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     parameters
   );
 
+  const symbolicIntegration = executeSymbolicIntegrationEngine({
+    person,
+    numerology,
+    astrology,
+    enneagram,
+    symbolism,
+    chakra,
+    designParameters: parameters
+  });
+
   return {
     id: `recipe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     clientId: person.id,
@@ -374,6 +385,7 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     morseCodePattern,
     shadowAnalysis,
     shadowDossierMarkdown: shadowAnalysis.fullMarkdownDossier,
+    symbolicIntegration,
     symbolRationales: rationales,
     subtleDetails,
     symbolInterconnection: symbolism.symbolInterconnection,
@@ -383,7 +395,7 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     artisticAtmosphereGuide,
     feasibility,
     summaryRationale,
-    masterEnglishPrompt,
+    masterEnglishPrompt: symbolicIntegration.masterIntegratedAiPrompt || masterEnglishPrompt,
     masterOutlinePrompt,
     masterShadedPrompt,
     midjourneyPrompt: shadowAnalysis.section12Prompts.midjourneyMasterPrompt || midjourneyPrompt,

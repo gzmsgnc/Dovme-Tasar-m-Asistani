@@ -23,12 +23,14 @@ import {
 interface ShadowAnalysisViewerProps {
   report: ShadowArchetypeAnalysisReport;
   onDownloadMarkdown?: () => void;
+  onDownloadJson?: () => void;
   onOpenClientDossier?: () => void;
 }
 
 export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
   report,
   onDownloadMarkdown,
+  onDownloadJson,
   onOpenClientDossier
 }) => {
   const [copiedType, setCopiedType] = useState<string | null>(null);
@@ -122,6 +124,18 @@ export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
             {copiedType === 'mj' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Sparkles className="w-3.5 h-3.5" />}
             <span>Midjourney Promptunu Kopyala</span>
           </button>
+
+          {onDownloadJson && (
+            <button
+              type="button"
+              onClick={onDownloadJson}
+              className="px-3 py-1.5 rounded-lg bg-[#141418] hover:bg-[#1f1f24] border border-[#333] hover:border-cyan-400 text-cyan-300 font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              title="Tüm raporu ve sembol entegrasyonunu JSON formatında indir"
+            >
+              <Download className="w-3.5 h-3.5 text-cyan-400" />
+              <span>İndir (.json)</span>
+            </button>
+          )}
 
           {onDownloadMarkdown && (
             <button
@@ -824,20 +838,25 @@ export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
           </div>
         )}
 
-        {/* SECTION 12: Midjourney v6.1 / Niji 6 Master Prompt & AI Suite */}
+        {/* SECTION 12: Gemini Tasarım Promptu & AI Suite */}
         {(activeTab === 'all' || activeTab === 'prompts') && (
-          <div className="p-5 rounded-xl bg-[#0a0a0a] border border-[#c4a47c]/30 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-[#c4a47c]/20 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-[#c4a47c]/10 text-[#c4a47c] border border-[#c4a47c]/30">
-                  <Sparkles className="w-4 h-4" />
+          <div className="p-5 rounded-xl bg-[#09090b] border border-[#c4a47c]/30 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#c4a47c]/20 pb-3 gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-[#c4a47c]/20 text-[#c4a47c] border border-[#c4a47c]/40">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-white text-sm sm:text-base font-bold font-serif tracking-wide flex items-center gap-2">
+                    <span>🎨 Gemini Tasarım Promptu</span>
+                  </h3>
                 </div>
                 <div>
-                  <h3 className="text-[#c4a47c] text-xs uppercase tracking-widest font-mono font-bold">
+                  <h4 className="text-[#c4a47c] text-xs uppercase tracking-widest font-mono font-bold">
                     Bölüm 12: Midjourney v6.1 / Niji 6 Master Prompt & AI Suite
-                  </h3>
-                  <span className="text-[10px] text-[#777] font-mono">
-                    Tattoo Flash Plate | Sıfır Mockup / Sıfır İnsan Bedeni
+                  </h4>
+                  <span className="text-[10px] text-[#888] font-mono">
+                    Tattoo Flash Plate | Sıfır Mockup / Sıfır İnsan Bedeni (Tasarım çıkarmak için Gemini kullanılacaktır)
                   </span>
                 </div>
               </div>
@@ -845,7 +864,7 @@ export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
               <button
                 type="button"
                 onClick={() => handleCopy(report.section12Prompts.midjourneyMasterPrompt, 'mj_sec12')}
-                className="px-3 py-1.5 rounded-lg bg-[#c4a47c] hover:bg-[#b89569] text-black text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#c4a47c]/20"
+                className="px-4 py-2 rounded-lg bg-[#c4a47c] hover:bg-[#b89569] text-black text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#c4a47c]/20"
               >
                 {copiedType === 'mj_sec12' ? <Check className="w-3.5 h-3.5 text-black" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedType === 'mj_sec12' ? 'KOPYALANDI' : 'Midjourney Promptunu Kopyala'}</span>
@@ -853,66 +872,66 @@ export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
             </div>
 
             {/* Prompt Cards */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Midjourney v6.1 */}
-              <div className="p-4 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-2">
+              <div className="p-3.5 rounded-lg bg-[#0e0e11] border border-[#222] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-[#c4a47c] font-bold uppercase">
+                  <span className="text-xs font-mono text-[#c4a47c] font-bold">
                     1. Midjourney v6.1 / Niji 6 Master Prompt:
                   </span>
                   <button
                     type="button"
                     onClick={() => handleCopy(report.section12Prompts.midjourneyMasterPrompt, 'sub_mj')}
-                    className="text-[10px] font-mono text-[#888] hover:text-[#c4a47c] flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 rounded bg-[#181820] hover:bg-[#252530] text-[11px] font-mono text-[#c4a47c] hover:text-white border border-[#333] flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     {copiedType === 'sub_mj' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    Kopyala
+                    <span>{copiedType === 'sub_mj' ? 'Kopyalandı' : 'Kopyala'}</span>
                   </button>
                 </div>
                 <textarea
                   readOnly
                   value={report.section12Prompts.midjourneyMasterPrompt}
-                  rows={6}
+                  rows={4}
                   className="w-full bg-transparent text-xs font-mono text-[#eee] leading-relaxed resize-none outline-none select-all"
                 />
               </div>
 
               {/* DALL-E 3 */}
-              <div className="p-4 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-2">
+              <div className="p-3.5 rounded-lg bg-[#0e0e11] border border-[#222] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-cyan-300 font-bold uppercase">
+                  <span className="text-xs font-mono text-cyan-300 font-bold">
                     2. DALL-E 3 Master Tattoo Flash Plate Prompt:
                   </span>
                   <button
                     type="button"
                     onClick={() => handleCopy(report.section12Prompts.dalle3Prompt, 'sub_dalle')}
-                    className="text-[10px] font-mono text-[#888] hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 rounded bg-[#181820] hover:bg-[#252530] text-[11px] font-mono text-cyan-300 hover:text-white border border-[#333] flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     {copiedType === 'sub_dalle' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    Kopyala
+                    <span>{copiedType === 'sub_dalle' ? 'Kopyalandı' : 'Kopyala'}</span>
                   </button>
                 </div>
                 <textarea
                   readOnly
                   value={report.section12Prompts.dalle3Prompt}
-                  rows={4}
+                  rows={3}
                   className="w-full bg-transparent text-xs font-mono text-[#ddd] leading-relaxed resize-none outline-none select-all"
                 />
               </div>
 
               {/* 03RL Thermal Stencil Transfer */}
-              <div className="p-4 rounded-lg bg-[#0e0e0e] border border-[#222] space-y-2">
+              <div className="p-3.5 rounded-lg bg-[#0e0e11] border border-[#222] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-[#c4a47c] font-bold uppercase">
+                  <span className="text-xs font-mono text-[#c4a47c] font-bold">
                     3. 03RL Termal Stencil Transfer Çizimi (Saf Çizgi):
                   </span>
                   <button
                     type="button"
                     onClick={() => handleCopy(report.section12Prompts.stencilPrompt, 'sub_stencil')}
-                    className="text-[10px] font-mono text-[#888] hover:text-[#c4a47c] flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 rounded bg-[#181820] hover:bg-[#252530] text-[11px] font-mono text-[#c4a47c] hover:text-white border border-[#333] flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     {copiedType === 'sub_stencil' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    Kopyala
+                    <span>{copiedType === 'sub_stencil' ? 'Kopyalandı' : 'Kopyala'}</span>
                   </button>
                 </div>
                 <textarea
@@ -924,10 +943,10 @@ export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
               </div>
 
               {/* Anti-Slop & Anti-Mockup Negatif Prompt */}
-              <div className="p-3.5 rounded-lg bg-rose-950/20 border border-rose-500/30 space-y-1.5 font-mono text-xs">
+              <div className="p-3 rounded-lg bg-rose-950/20 border border-rose-500/30 space-y-1 font-mono text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-rose-300 font-bold uppercase">
-                    🚫 Anti-Mockup & Anti-Skin Negatif Prompt:
+                    🚫 Anti-Mockup & Anti-Skin Negatif Prompt (Tasarım Çıkarmak İçin Gemini Kullanılacaktır):
                   </span>
                   <button
                     type="button"

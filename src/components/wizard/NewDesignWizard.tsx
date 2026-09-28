@@ -17,6 +17,8 @@ import { TATTOO_STYLES } from '../../utils/styles';
 import { generateTattooRecipe } from '../../utils/recipeGenerator';
 import { calculateEbcedAndYildizname } from '../../utils/ebced';
 import { ShadowAnalysisViewer } from './ShadowAnalysisViewer';
+import { SymbolIntegrationViewer } from '../symbols/SymbolIntegrationViewer';
+import { downloadRecipeAsJson } from '../../utils/jsonExport';
 import { EnneagramQuizModal } from '../modals/EnneagramQuizModal';
 import { TotemQuizModal } from '../modals/TotemQuizModal';
 import { CalculationDetailModal } from '../modals/CalculationDetailModal';
@@ -164,7 +166,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [generatedRecipe, setGeneratedRecipe] = useState<TattooRecipe | null>(null);
   const [copiedPromptType, setCopiedPromptType] = useState<string | null>(null);
   const [promptViewTab, setPromptViewTab] = useState<'shadow-dossier' | 'client-letter' | 'midjourney' | 'dalle3' | 'flux' | 'stencil' | 'specsheet' | 'explanation' | 'negative'>('shadow-dossier');
-  const [step5ViewMode, setStep5ViewMode] = useState<'shadow-report' | 'studio-grid'>('shadow-report');
+  const [step5ViewMode, setStep5ViewMode] = useState<'shadow-report' | 'symbol-integration' | 'studio-grid'>('shadow-report');
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
   // Visual Sketch & 03RL Stencil Generation State
@@ -547,6 +549,12 @@ ${r.turkishPromptExplanation}
       onSelectClient(generatedRecipe.personData);
     }
     setIsSaved(true);
+  };
+
+  // Comprehensive Tattoo Recipe JSON Exporter
+  const handleDownloadRecipeJson = () => {
+    if (!generatedRecipe) return;
+    downloadRecipeAsJson(generatedRecipe);
   };
 
   // Comprehensive Tattoo Recipe & Prompt Document Exporter (.md)
@@ -2593,6 +2601,18 @@ ${r.turkishPromptExplanation}
               </button>
               <button
                 type="button"
+                onClick={() => setStep5ViewMode('symbol-integration')}
+                className={`px-3.5 py-2 rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  step5ViewMode === 'symbol-integration'
+                    ? 'bg-[#c4a47c] text-black shadow-md shadow-[#c4a47c]/20'
+                    : 'text-[#888] hover:text-white bg-[#141414]'
+                }`}
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>🔯 Sembol Entegrasyon Modeli & Ayrıştırma</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setStep5ViewMode('studio-grid')}
                 className={`px-3.5 py-2 rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
                   step5ViewMode === 'studio-grid'
@@ -2618,6 +2638,15 @@ ${r.turkishPromptExplanation}
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={handleDownloadRecipeJson}
+                className="px-3 py-1.5 rounded-lg bg-[#141418] hover:bg-[#1f1f24] border border-[#333] hover:border-cyan-400 text-cyan-300 text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
+                title="Tüm reçeteyi ve sembolik entegrasyonu standartlaştırılmış JSON dosyası olarak indir"
+              >
+                <Download className="w-3.5 h-3.5 text-cyan-400" />
+                <span>JSON İndir</span>
+              </button>
+              <button
+                type="button"
                 onClick={handleStartFreshDesign}
                 className="px-3 py-1.5 rounded-lg bg-[#141414] hover:bg-[#1f1f1f] border border-[#333] hover:border-[#c4a47c] text-[#ccc] hover:text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
                 title="Tüm form verilerini sıfırlayarak yeni bir kişi ve tasarım başlatır"
@@ -2640,7 +2669,13 @@ ${r.turkishPromptExplanation}
             <ShadowAnalysisViewer
               report={generatedRecipe.shadowAnalysis}
               onDownloadMarkdown={handleDownloadFullRecipeMarkdown}
+              onDownloadJson={handleDownloadRecipeJson}
               onOpenClientDossier={() => setShowClientDossierModal(true)}
+            />
+          ) : step5ViewMode === 'symbol-integration' && generatedRecipe.symbolicIntegration ? (
+            <SymbolIntegrationViewer
+              integration={generatedRecipe.symbolicIntegration}
+              onDownloadJson={handleDownloadRecipeJson}
             />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-[#1a1a1a] rounded-xl overflow-hidden border border-[#1a1a1a]">

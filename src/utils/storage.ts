@@ -194,3 +194,13 @@ export function importDataFromJSON(jsonString: string): { success: boolean; mess
     return { success: false, message: `İçe aktarma hatası: ${msg}` };
   }
 }
+
+/**
+ * Permanently clears all client and recipe data (including test/demo records) from storage.
+ */
+export function clearAllData(): void {
+  localStorage.removeItem(CLIENTS_STORAGE_KEY);
+  localStorage.removeItem(RECIPES_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_CLIENTS_KEY);
+  localStorage.removeItem(LEGACY_RECIPES_KEY);
+}

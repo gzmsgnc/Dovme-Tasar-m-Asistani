@@ -20,6 +20,7 @@ import {
 import { TattooRecipe } from '../../types';
 import { generateWhatsAppShareLink } from '../../utils/enneagramSharing';
 import { PDFExportButton } from '../common/PDFExportButton';
+import { downloadRecipeAsJson } from '../../utils/jsonExport';
 
 interface ClientConsultationDossierModalProps {
   isOpen: boolean;
@@ -141,6 +142,15 @@ Tüm çakra analizlerinizi, gölge arketip raporunuzu, dövmenizin parçaların�
             >
               <Download className="w-3.5 h-3.5 text-[#c4a47c]" />
               <span>Yazı (.txt)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadRecipeAsJson(recipe)}
+              className="py-1.5 px-3 rounded-lg bg-[#161616] hover:bg-[#222] border border-[#333] hover:border-cyan-400 text-xs text-cyan-300 font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
+              title="Tüm konsültasyon reçetesini ve sembol entegrasyon analizini JSON olarak indir"
+            >
+              <Download className="w-3.5 h-3.5 text-cyan-400" />
+              <span>JSON (.json)</span>
             </button>
             <button
               type="button"

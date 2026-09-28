@@ -1,4 +1,5 @@
 import { ChakraProfile } from './utils/chakra';
+export type { ChakraProfile };
 
 export interface PersonData {
   id: string;
@@ -125,6 +126,7 @@ export interface AstrologyProfile {
 
 export interface EnneagramProfile {
   type: number; // 1-9
+  coreType?: number; // alias for type
   typeName: string;
   wing: string; // e.g. "4w5"
   coreMotivation: string;
@@ -298,6 +300,7 @@ export interface TattooRecipe {
   shadowDossierMarkdown?: string;
   generatedSketchUrl?: string;
   userNotes?: string;
+  symbolicIntegration?: SymbolicIntegrationModelResult;
 }
 
 export interface ShadowArchetypeAnalysisReport {
@@ -491,4 +494,221 @@ export interface StyleLibraryItem {
   promptKeywords: string[];
   complexityRating: number; // 1-5
   visualTag: string;
+}
+
+// ============================================================================
+// SEMBOL ENTEGRASYON MODELİ (SYMBOL INTEGRATION ENGINE) VERİ YAPILARI
+// ============================================================================
+
+export type SymbolSourceType = 
+  | 'CALCULATED'           // Gerçek hesaplama sonucu (Numeroloji, Astroloji, Enneagram, Ebced)
+  | 'TRADITIONAL'          // Tarihsel/kültürel olarak tescilli kadim sembol (Lotus, Metatron, Yaşam Çiçeği vb.)
+  | 'TOTEM_DERIVED'        // Totem hayvanının anatomik/çizgisel soyutlamasından türetilmiş motif
+  | 'VISUAL_ABSTRACTION'   // Kişisel değerlerin geometrik/stilize soyutlaması
+  | 'MODEL_GENERATED';     // Sembolleri birbirine kilitlemek için üretilen ortak bağlayıcı geometri
+
+export type SymbolPriority = 'PRIMARY' | 'SECONDARY' | 'HIDDEN' | 'ACCENT' | 'SUBTLE_FILL';
+
+export type IntegrationType = 
+  | 'INTERLOCKED'          // İç içe geçmiş kenetlenen geometri
+  | 'NESTED'               // Birbiri içine yerleşmiş hiyerarşik form
+  | 'OVERLAPPED'           // Kesişim alanı ortaklaşan katman
+  | 'SHARED_LINE'          // Tek bir çizginin iki sembolü birden çizmesi (Ortak Çizgi)
+  | 'NEGATIVE_SPACE'       // İki sembolün arasındaki boşluğun üçüncü bir sembolü oluşturması
+  | 'CONTINUOUS_LINE'      // Kesintisiz tek hat boyunca akan bağlantı
+  | 'HYBRID';              // Çoklu entegrasyon yöntemi
+
+export interface SymbolRegistryItem {
+  symbolId: string;
+  symbolName: string;
+  symbolCategory: string; // 'Numeroloji' | 'Astroloji' | 'Enneagram' | 'Totem' | 'Çakra' | 'Flora' | 'Kutsal Geometri' | 'Ezoterik'
+  sourceCategory?: string; // alias for symbolCategory
+  sourceType: SymbolSourceType;
+  sourceAnalysis: string; // e.g. 'Numeroloji Yaşam Yolu 7', 'Güneş Boğa Burcu', 'Enneagram 4w5'
+  sourceValue: string;
+  semanticMeaning: string;
+  visualMeaning: string;
+  priority: SymbolPriority;
+  confidence: number; // 0 - 100
+  required: boolean;
+  selected: boolean;
+  basisOrOrigin?: string; // Belgelenebilir kültürel kaynak veya 'AI-derived visual abstraction'
+}
+
+export interface SymbolVisualTranslation {
+  symbolId: string;
+  symbolName: string;
+  visualForm: string; // e.g. 'Işınsal taç yaprak geometrisi ve kesişim yayları'
+  geometryType: 'geometric' | 'organic' | 'calligraphic' | 'hybrid' | 'radial';
+  lineStyle: '03RL ultra-fine' | 'continuous single-line' | 'whip-shaded' | 'dotwork-stippled';
+  scale: 'focal' | 'medium' | 'micro';
+  orientation: string;
+  complexity: 'minimal' | 'balanced' | 'intricate';
+  abstractionLevel: 'direct' | 'stylized' | 'anatomical_abstraction' | 'geometric_abstraction';
+  visualDescription: string;
+  sharedStrokePotential: string;
+  negativeSpacePotential: string;
+}
+
+export interface SymbolIntegrationLink {
+  integrationId: string;
+  symbolIds: string[];
+  integrationType: IntegrationType;
+  sharedLinesDescription: string;
+  overlappingRegions: string;
+  nestedSymbols: string[];
+  negativeSpaceRole: string;
+  continuousPathDetails: string;
+  primarySymbolId: string;
+  secondarySymbolIds: string[];
+  hiddenSymbolIds: string[];
+  rationale: string;
+}
+
+export interface IntegratedDesignGeometry {
+  compositionType: 'RADIAL' | 'VERTICAL' | 'HORIZONTAL' | 'ORGANIC' | 'GEOMETRIC' | 'HYBRID';
+  symmetry: 'Bilateral' | 'Radial' | 'Dynamic Asymmetric' | 'Chiral';
+  balance: string;
+  flow: string;
+  density: string;
+  focalPoint: string;
+  negativeSpaceRatio: string;
+  lineWeight: string;
+  scale: string;
+  orientation: string;
+  bodyPlacement: string;
+}
+
+export interface SymbolLocationMapItem {
+  symbolId: string;
+  symbolName: string;
+  region: string; // e.g. 'Merkez Kutsal Odak', 'Üst Işınsal Hale', 'Omurga Hattı', 'Negatif Boşluk Silueti'
+  x: number; // 0.0 - 1.0 (Normalize Koordinat)
+  y: number; // 0.0 - 1.0 (Normalize Koordinat)
+  width: number; // 0.0 - 1.0
+  height: number; // 0.0 - 1.0
+  rotation: number; // derece cinsinden
+  visibility: 'Belirgin' | 'İncelikli' | 'Gizli Negatif Alan';
+  layer: SymbolPriority;
+  highlightColor: string; // e.g. '#a855f7' Mor, '#10b981' Yeşil, '#f59e0b' Kehribar vb.
+  highlightPathSvg?: string; // İnteraktif vurgulama için SVG path/polyline verisi
+  interactiveSvgSnippet?: string;
+}
+
+export interface SymbolMapDeconstructionLayer {
+  symbolId: string;
+  symbolName: string;
+  role: SymbolPriority;
+  color: string;
+  source: string;
+  semanticMeaning: string;
+  visualForm: string;
+  locationInDesign: string;
+  integrationMethod: string;
+  confidence: number;
+  svgElementIds: string[];
+  explanationText: string;
+}
+
+export interface SymbolMapDeconstruction {
+  totalLayers: number;
+  primaryCount: number;
+  secondaryCount: number;
+  hiddenCount: number;
+  sharedStrokesCount: number;
+  layers: SymbolMapDeconstructionLayer[];
+}
+
+export interface SymbolTraceabilityItem {
+  tattooElement: string;
+  symbolId: string;
+  sourceAnalysis: string; // e.g. 'Numeroloji'
+  sourceValue: string; // e.g. 'Yaşam Yolu 7'
+  whySelected: string;
+  howTransformed: string;
+  wherePlaced: string;
+  isDerivedOrTraditional: SymbolSourceType;
+}
+
+export interface SymbolIntegrationValidationCheck {
+  name: string;
+  passed: boolean;
+  level: 'INFO' | 'WARNING' | 'ERROR';
+  message: string;
+}
+
+export interface SymbolIntegrationValidation {
+  status: 'VALID' | 'WARNING' | 'ERROR';
+  score: number; // 0 - 100
+  checks: SymbolIntegrationValidationCheck[];
+  totalRequiredSymbols: number;
+  integratedSymbolsCount: number;
+  hasSharedStrokes: boolean;
+  hasNegativeSpaceUse: boolean;
+  isTattooFeasible: boolean;
+}
+
+export interface TotemVisualProfile {
+  animalId: string;
+  animalName: string;
+  turkishName: string;
+  element: string;
+  directRepresentationGuide: string;
+  anatomicalAbstraction: {
+    keyFeatures: string[]; // e.g. ['Keskin kulak açısı', 'Çene çizgisi', 'Göz odak hattı']
+    simplifiedVectorDescription: string;
+  };
+  geometricAbstraction: {
+    coreShapes: string[]; // e.g. ['Açılı üçgen düzlemler', 'Dinamik yönlü chevron hatları']
+    symmetryType: string;
+  };
+  traditionalSymbolicAssociations: {
+    hasAuthenticTraditional: boolean;
+    traditionalSymbols: string[];
+    basisOrOrigin: string; // Geleneksel kültür / dayanak ya da 'AI-derived visual abstraction'
+  };
+  patternLanguage: string; // e.g. '03RL kürk ritmi, kesintili çizgi akışı'
+  lineLanguage: string; // e.g. 'Keskin, kararlı, dinamik konik kontur'
+  repetitionMotifs: string[];
+  symmetryAsymmetry: string;
+  negativeSpacePotentials: string[]; // e.g. ['İki lotus yaprağının arasında oluşan kulak silueti']
+  tattooFriendlyAbstraction: string;
+}
+
+export interface SymbolicIntegrationModelResult {
+  version: {
+    analysisVersion: string;
+    symbolVersion: string;
+    integrationVersion: string;
+    designVersion: string;
+  };
+  user: {
+    name: string;
+    birthDate: string;
+    birthPlace?: string;
+  };
+  analysis: {
+    lifePathNumber: number;
+    destinyNumber: number;
+    sunSign: string;
+    moonSign: string;
+    ascendantSign: string;
+    dominantElement: string;
+    enneagramType: number;
+    enneagramWing: string;
+    primaryTotem: string;
+    shadowTotem: string;
+    chakraDeficiencies: string[];
+  };
+  symbols: SymbolRegistryItem[];
+  visualTranslations: SymbolVisualTranslation[];
+  integrations: SymbolIntegrationLink[];
+  designGeometry: IntegratedDesignGeometry;
+  symbolMap: SymbolLocationMapItem[];
+  deconstruction: SymbolMapDeconstruction;
+  traceability: SymbolTraceabilityItem[];
+  validation: SymbolIntegrationValidation;
+  svgUnifiedVectorPreview: string; // Saf tekil siyah dövme vektörü
+  svgDeconstructedVectorPreview: string; // Çok renkli interaktif sembol katmanları
+  masterIntegratedAiPrompt: string; // Bütünsel prompt (ayrı çıkartmalar/ikonlar yerine tek kompozisyon)
 }
