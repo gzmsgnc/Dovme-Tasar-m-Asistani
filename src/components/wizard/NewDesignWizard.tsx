@@ -24,6 +24,7 @@ import { TotemQuizModal } from '../modals/TotemQuizModal';
 import { CalculationDetailModal } from '../modals/CalculationDetailModal';
 import { MorseCodeModal } from '../modals/MorseCodeModal';
 import { EnneagramShareModal } from '../modals/EnneagramShareModal';
+import { ClientIntakeLinkModal } from '../modals/ClientIntakeLinkModal';
 import { ClientConsultationDossierModal } from '../modals/ClientConsultationDossierModal';
 import { ClientEnneagramQuizView } from '../common/ClientEnneagramQuizView';
 import { encodeToMorse } from '../../utils/morseCode';
@@ -100,6 +101,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [showQuizModal, setShowQuizModal] = useState<boolean>(false);
   const [showTotemQuizModal, setShowTotemQuizModal] = useState<boolean>(false);
   const [showCalcModal, setShowCalcModal] = useState<boolean>(false);
+  const [showIntakeLinkModal, setShowIntakeLinkModal] = useState<boolean>(false);
   const [calcModalTab, setCalcModalTab] = useState<'numerology' | 'astrology'>('numerology');
 
   // Current client ID tracking (prevents data collision & ensures update-in-place)
@@ -912,6 +914,15 @@ ${r.turkishPromptExplanation}
                   )}
                   <button
                     type="button"
+                    onClick={() => setShowIntakeLinkModal(true)}
+                    className="text-[11px] font-mono font-bold text-white px-3 py-1 rounded-lg bg-[#141414] hover:bg-[#202020] border border-[#333] hover:border-[#c4a47c] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                    title="Müşteriye tek bir danışan bilgi formu linki oluşturur"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>Danışan Formu Linki</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleStartFreshDesign()}
                     className="text-[11px] font-mono font-bold text-[#c4a47c] hover:text-white px-3 py-1 rounded-lg bg-[#1a1710] hover:bg-[#262114] border border-[#c4a47c]/50 hover:border-[#c4a47c] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
                     title="Formu tamamen temizle ve yeni bir danışan oturumu başlat"
@@ -1660,6 +1671,15 @@ ${r.turkishPromptExplanation}
                 <span className="mr-2">◆</span> Enneagram Kişilik Tipi & Kanat
               </h3>
               <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowIntakeLinkModal(true)}
+                  className="text-[10px] font-mono px-3 py-1 rounded bg-[#1c180e] hover:bg-[#282215] border border-[#c4a47c]/50 text-[#c4a47c] font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  title="Danışana tek bir form linki göndererek ad, soyad, doğum ve tüm testleri toplar"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-[#c4a47c]" />
+                  <span>Danışan Bilgi Formu Linki</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowQuizModal(true)}
@@ -3532,6 +3552,17 @@ ${r.turkishPromptExplanation}
           recipe={generatedRecipe}
         />
       )}
+
+      {/* Tekil Danışan Bilgi Formu Link Modal */}
+      <ClientIntakeLinkModal
+        isOpen={showIntakeLinkModal}
+        onClose={() => setShowIntakeLinkModal(false)}
+        onOpenFormInApp={() => {
+          if (typeof window !== 'undefined') {
+            window.location.search = '?mode=client-form';
+          }
+        }}
+      />
     </div>
   );
 };

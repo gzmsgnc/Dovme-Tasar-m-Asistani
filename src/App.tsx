@@ -7,6 +7,7 @@ import { SymbolLibraryView } from './components/symbols/SymbolLibraryView';
 import { StyleLibraryView } from './components/styles/StyleLibraryView';
 import { BackupModal } from './components/common/BackupModal';
 import { ClientEnneagramQuizView } from './components/common/ClientEnneagramQuizView';
+import { ClientIntakeFormView } from './components/common/ClientIntakeFormView';
 import { 
   PersonData, 
   TattooRecipe 
@@ -34,6 +35,14 @@ export function App() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       return params.get('mode') === 'enneagram-quiz' || params.get('mode') === 'enneagram-test';
+    }
+    return false;
+  });
+  const [isClientFormMode, setIsClientFormMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      return mode === 'client-form' || mode === 'danisan-formu' || mode === 'client' || mode === 'form';
     }
     return false;
   });
@@ -114,6 +123,24 @@ export function App() {
     );
   }
 
+  // Dedicated Client Intake Form Mode (Opened via shareable URL ?mode=client-form)
+  if (isClientFormMode) {
+    return (
+      <ClientIntakeFormView
+        onReturnToStudio={() => {
+          setIsClientFormMode(false);
+          loadData();
+          if (typeof window !== 'undefined') {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }}
+        onFormSubmitted={() => {
+          loadData();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#050505] text-[#e0e0e0] font-sans selection:bg-[#c4a47c]/30 selection:text-[#c4a47c] flex flex-col lg:flex-row">
       {/* Navigation (Sidebar on Desktop, Header + Bottom Nav on Mobile) */}
@@ -156,6 +183,7 @@ export function App() {
               onAddNewClientClick={handleAddNewClientClick}
               onSaveClient={handleSaveClient}
               onClearAllClients={handleClearAllData}
+              onOpenClientForm={() => setIsClientFormMode(true)}
             />
           )}
 

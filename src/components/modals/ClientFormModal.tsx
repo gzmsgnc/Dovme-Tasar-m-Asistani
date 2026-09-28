@@ -149,6 +149,8 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       personalNumbers: personalNumbers.trim() || undefined,
       personalStory: personalStory.trim() || undefined,
       notes: notes.trim() || undefined,
+      status: initialClient?.status,
+      source: initialClient?.source,
       createdAt: initialClient?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

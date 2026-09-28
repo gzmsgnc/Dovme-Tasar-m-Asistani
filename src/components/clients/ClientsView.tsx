@@ -16,9 +16,14 @@ import {
   ArrowRight,
   UserCheck,
   Edit3,
-  Compass
+  Compass,
+  FileText,
+  Share2,
+  Layers,
+  Heart
 } from 'lucide-react';
 import { ClientFormModal } from '../modals/ClientFormModal';
+import { ClientIntakeLinkModal } from '../modals/ClientIntakeLinkModal';
 
 interface ClientsViewProps {
   clients: PersonData[];
@@ -27,6 +32,7 @@ interface ClientsViewProps {
   onAddNewClientClick: () => void;
   onSaveClient: (client: PersonData) => void;
   onClearAllClients?: () => void;
+  onOpenClientForm?: () => void;
 }
 
 export const ClientsView: React.FC<ClientsViewProps> = ({
@@ -35,20 +41,30 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   onDeleteClient,
   onAddNewClientClick,
   onSaveClient,
-  onClearAllClients
+  onClearAllClients,
+  onOpenClientForm
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClientDetail, setSelectedClientDetail] = useState<PersonData | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<PersonData | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
+  const [filterTab, setFilterTab] = useState<'all' | 'form_only'>('all');
 
-  const filteredClients = clients.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.notes && c.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (c.birthPlace && c.birthPlace.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const formClientsCount = clients.filter(c => c.source === 'client_form' || c.status === 'new').length;
+
+  const filteredClients = clients.filter(c => {
+    if (filterTab === 'form_only' && c.source !== 'client_form' && c.status !== 'new') {
+      return false;
+    }
+    return (
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.notes && c.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (c.birthPlace && c.birthPlace.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  });
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 pb-24 space-y-6">
@@ -64,7 +80,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {onClearAllClients && clients.length > 0 && (
             showPurgeConfirm ? (
               <div className="flex items-center gap-1.5 bg-rose-950/40 border border-rose-700/60 p-1.5 rounded-lg animate-fadeIn">
@@ -100,6 +116,17 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             )
           )}
 
+          {/* Danışan Formu Linki Paylaşım Butonu */}
+          <button
+            type="button"
+            onClick={() => setIsLinkModalOpen(true)}
+            className="px-3.5 py-2 rounded bg-[#17140e] hover:bg-[#221c13] border border-[#c4a47c]/50 text-[#c4a47c] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            title="Müşteriye tek bir link göndermek için form bağlantısı oluşturur"
+          >
+            <Share2 className="w-3.5 h-3.5 text-[#c4a47c]" />
+            <span>Danışan Formu Linki</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -114,16 +141,45 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         </div>
       </header>
 
-      {/* Search Bar */}
-      <div className="relative max-w-xl">
-        <Search className="w-4 h-4 text-[#555] absolute left-3.5 top-3" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="İsim, doğum yeri veya özel notlarda ara..."
-          className="w-full pl-10 pr-4 py-2.5 bg-[#0d0d0d] border border-[#1a1a1a] rounded-lg text-xs text-[#e0e0e0] placeholder-[#555] focus:border-[#c4a47c] focus:outline-none"
-        />
+      {/* Search & Filter Row */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-xl">
+          <Search className="w-4 h-4 text-[#555] absolute left-3.5 top-3" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="İsim, doğum yeri veya özel notlarda ara..."
+            className="w-full pl-10 pr-4 py-2.5 bg-[#0d0d0d] border border-[#1a1a1a] rounded-lg text-xs text-[#e0e0e0] placeholder-[#555] focus:border-[#c4a47c] focus:outline-none"
+          />
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1.5 bg-[#0c0c0c] p-1 rounded-lg border border-[#1e1e1e]">
+          <button
+            type="button"
+            onClick={() => setFilterTab('all')}
+            className={`px-3 py-1.5 rounded text-xs font-mono transition-all cursor-pointer ${
+              filterTab === 'all'
+                ? 'bg-[#1e1a12] text-[#c4a47c] font-bold border border-[#c4a47c]/40'
+                : 'text-[#777] hover:text-[#bbb]'
+            }`}
+          >
+            Tümü ({clients.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('form_only')}
+            className={`px-3 py-1.5 rounded text-xs font-mono transition-all cursor-pointer flex items-center gap-1.5 ${
+              filterTab === 'form_only'
+                ? 'bg-emerald-950/60 text-emerald-400 font-bold border border-emerald-500/40'
+                : 'text-[#777] hover:text-emerald-400'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Form ile Gelenler ({formClientsCount})</span>
+          </button>
+        </div>
       </div>
 
       {/* Clients List */}
@@ -176,11 +232,17 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2 font-serif">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2 font-serif flex-wrap">
                         <span>{client.name}</span>
                         {num?.divineHelp19?.has19 && (
                           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#151515] border border-[#c4a47c]/40 text-[#c4a47c]">
                             19 İlahi
+                          </span>
+                        )}
+                        {(client.source === 'client_form' || client.status === 'new') && (
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/50 text-emerald-400 font-bold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span>Yeni Danışan Formu</span>
                           </span>
                         )}
                       </h3>
@@ -201,7 +263,33 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                             <span>{client.birthPlace}</span>
                           </span>
                         )}
+                        {client.motherName && (
+                          <span className="flex items-center gap-1 text-[#888]">
+                            <Heart className="w-3 h-3 text-[#c4a47c]" />
+                            <span>Anne: {client.motherName}</span>
+                          </span>
+                        )}
                       </div>
+
+                      {(client.enneagramAnswers || client.totemAnswers) && (
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-[#888] pt-1">
+                          {client.enneagramAnswers && (
+                            <span className="px-1.5 py-0.5 rounded bg-[#111] border border-[#222]">
+                              Enneagram: {Object.keys(client.enneagramAnswers).length}/5
+                            </span>
+                          )}
+                          {client.totemAnswers && (
+                            <span className="px-1.5 py-0.5 rounded bg-[#111] border border-[#222]">
+                              Totem Testi: {Object.keys(client.totemAnswers).length}/15
+                            </span>
+                          )}
+                          {client.createdAt && (
+                            <span className="text-[#555] ml-auto text-[9px]">
+                              {new Date(client.createdAt).toLocaleDateString('tr-TR')}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -448,6 +536,13 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
           onStartDesignForClient(client);
         }}
         initialClient={clientToEdit}
+      />
+
+      {/* Tekil Danışan Bilgi Formu Link Paylaşım Modal */}
+      <ClientIntakeLinkModal
+        isOpen={isLinkModalOpen}
+        onClose={() => setIsLinkModalOpen(false)}
+        onOpenFormInApp={onOpenClientForm}
       />
     </div>
   );

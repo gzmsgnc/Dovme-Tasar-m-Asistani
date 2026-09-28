@@ -23,6 +23,8 @@ export interface PersonData {
   personalNumbers?: string; // Kişisel Olarak Önemli Sayılar
   personalStory?: string; // Kişisel Hikâye / Temalar
   notes?: string;
+  status?: 'new' | 'in_progress' | 'completed' | string;
+  source?: 'client_form' | 'manual' | string;
   createdAt: string;
   updatedAt: string;
 }
