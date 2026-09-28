@@ -11,6 +11,7 @@ import {
   TotemTestCalculationResult,
   TotemMatchScore
 } from './behavioralTotemEngine';
+import { validateCalendarDate } from './astrology';
 
 export { 
   TOTEM_ANIMALS_52, 
@@ -112,19 +113,8 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
     sunSign
   } = personalData;
 
-  if (!birthDate || !birthDate.trim() || !birthDate.includes('-')) {
-    throw new Error('Totem hayvanı hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit veya tahmini hayvan atanamaz.');
-  }
-
-  // 1. Doğum Tarihi Vektörü
-  const parts = birthDate.split('-');
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10);
-  const day = parseInt(parts[2], 10);
-
-  if (isNaN(year) || isNaN(month) || isNaN(day)) {
-    throw new Error('Geçersiz doğum tarihi biçimi.');
-  }
+  // 1. Gerçek Takvim Tarihi Doğrulaması
+  const { year, month, day } = validateCalendarDate(birthDate);
 
   // Yaşam Yolu hesaplaması (eğer parametrede geçilmediyse doğrudan doğum tarihinden hesaplanır)
   let actualLifePath = lifePathNumber;

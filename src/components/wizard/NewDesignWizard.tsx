@@ -9,7 +9,7 @@ import {
   TattooRecipe 
 } from '../../types';
 import { calculateNumerology } from '../../utils/numerology';
-import { calculateAstrology } from '../../utils/astrology';
+import { calculateAstrology, validateCalendarDate, resolveCityLocation } from '../../utils/astrology';
 import { ENNEAGRAM_TYPES, getEnneagramProfile } from '../../utils/enneagram';
 import { deriveSymbolismProfile } from '../../utils/symbolism';
 import { calculateChakraProfile, ChakraProfile } from '../../utils/chakra';
@@ -178,6 +178,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [sketchSeed, setSketchSeed] = useState<number>(() => Math.floor(100000 + Math.random() * 900000));
   const [sketchVariationIndex, setSketchVariationIndex] = useState<number>(1);
   const [sketchModalOpen, setSketchModalOpen] = useState<boolean>(false);
+  const [profileValidationError, setProfileValidationError] = useState<string | null>(null);
 
   // Library preselection synchronization
   useEffect(() => {
@@ -196,17 +197,34 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
 
   // Auto-calculate profile whenever person data changes
   useEffect(() => {
-    if (name.trim() && birthDate) {
+    // Danışan ismi, doğum tarihi veya doğum yeri eksikse hesaplama yapılmaz
+    if (!name.trim() || !birthDate || !birthPlace?.trim()) {
+      setProfileValidationError(null);
+      setNumerology(null);
+      setAstrology(null);
+      setEnneagram(null);
+      setSymbolism(null);
+      setChakra(null);
+      return;
+    }
+
+    try {
+      // 1. Gerçek takvim tarihi doğrulaması (YYYY-AA-GG, geçerli ay/gün ve artık yıl kontrolü)
+      validateCalendarDate(birthDate);
+
+      // 2. Doğum yeri kontrolü (İstanbul fallback'i KESİNLİKLE kaldırılmıştır)
+      resolveCityLocation(birthPlace);
+
       const num = calculateNumerology(name, birthDate);
       const astro = calculateAstrology(birthDate, birthTime, birthPlace, zodiacSystem);
       const ennea = getEnneagramProfile(selectedEnneaType, selectedWing);
       
       // KİŞİYE ÖZEL DETERMINISTIK TOTEM GİRDİSİ (Doğum tarihi, saati, yeri, isim & Davranışsal Test)
       const personalInput = {
-        name: name.trim() || 'Danışan',
+        name: name.trim(),
         birthDate,
         birthTime: birthTime || '12:00',
-        birthPlace: birthPlace || 'Anadolu',
+        birthPlace: birthPlace.trim(),
         motherName: motherName || '',
         personalNumbers: personalNumbers || '',
         personalStory: personalStory || '',
@@ -223,6 +241,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       setEnneagram(ennea);
       setSymbolism(symb);
       setChakra(chk);
+      setProfileValidationError(null);
 
       // Totem hayvanı KULLANICI AÇIKÇA İŞARETLEMEDİKÇE ana odak yapılmaz!
       if (includeTotemInDesign) {
@@ -233,6 +252,15 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
         }
       }
       setCustomSecondarySymbols([symb.plantFlora, symb.geometricSymbol, symb.sacredObject]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setProfileValidationError(msg);
+      // Hatalı veya eksik veri durumunda profil sonuçları kesinlikle üretilmez
+      setNumerology(null);
+      setAstrology(null);
+      setEnneagram(null);
+      setSymbolism(null);
+      setChakra(null);
     }
   }, [name, birthDate, birthTime, birthPlace, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers]);
 
@@ -1112,18 +1140,46 @@ ${r.turkishPromptExplanation}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-medium text-[#bbb] uppercase tracking-wider block mb-1.5 font-mono">
-                    Doğum Yeri <span className="text-[#555]">(Opsiyonel)</span>
+                    Doğum Yeri / Şehir <span className="text-[#c4a47c]">*</span>
                   </label>
                   <div className="relative">
                     <MapPin className="w-4 h-4 text-[#555] absolute left-3 top-3" />
                     <input
                       type="text"
+                      list="supported-cities-wizard"
                       value={birthPlace}
                       onChange={(e) => setBirthPlace(e.target.value)}
-                      placeholder="Örn: İstanbul"
+                      placeholder="Örn: İstanbul, Ankara, İzmir, Bursa, Londra..."
                       className="w-full pl-9 pr-3 py-2.5 bg-[#111] border border-[#222] rounded-lg text-sm text-[#e0e0e0] placeholder-[#555] focus:border-[#c4a47c] focus:outline-none"
                     />
+                    <datalist id="supported-cities-wizard">
+                      <option value="İstanbul" />
+                      <option value="Ankara" />
+                      <option value="İzmir" />
+                      <option value="Bursa" />
+                      <option value="Antalya" />
+                      <option value="Adana" />
+                      <option value="Konya" />
+                      <option value="Gaziantep" />
+                      <option value="Eskişehir" />
+                      <option value="Trabzon" />
+                      <option value="Samsun" />
+                      <option value="Diyarbakır" />
+                      <option value="Kayseri" />
+                      <option value="Mersin" />
+                      <option value="Muğla" />
+                      <option value="Bodrum" />
+                      <option value="London" />
+                      <option value="Berlin" />
+                      <option value="Paris" />
+                      <option value="Roma" />
+                      <option value="New York" />
+                      <option value="Tokyo" />
+                    </datalist>
                   </div>
+                  <p className="text-[10px] text-[#777] mt-1 font-mono">
+                    Doğum haritası koordinatları ve yerel yıldız zamanı (LST) için geçerli şehir zorunludur.
+                  </p>
                 </div>
 
                 <div>
@@ -1266,6 +1322,13 @@ ${r.turkishPromptExplanation}
             </div>
           </div>
 
+          {profileValidationError && (
+            <div className="p-3.5 rounded-lg bg-rose-950/40 border border-rose-500/50 text-rose-300 text-xs font-mono flex items-start gap-2.5 animate-fadeIn">
+              <span className="text-rose-400 font-bold shrink-0">⚠ Hata:</span>
+              <span>{profileValidationError}</span>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="button"
@@ -1278,8 +1341,11 @@ ${r.turkishPromptExplanation}
 
             <button
               type="button"
-              disabled={!name.trim() || !birthDate}
-              onClick={() => setStep(2)}
+              disabled={!name.trim() || !birthDate || !birthPlace?.trim() || Boolean(profileValidationError) || !astrology || !numerology}
+              onClick={() => {
+                if (profileValidationError || !astrology || !numerology) return;
+                setStep(2);
+              }}
               className="flex-1 py-3 px-4 rounded-lg bg-[#c4a47c] hover:bg-[#b89569] disabled:opacity-40 text-black font-bold text-xs uppercase tracking-widest shadow-lg shadow-[#c4a47c]/15 flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <span>Ezoterik Profili Hesapla & Devam Et</span>

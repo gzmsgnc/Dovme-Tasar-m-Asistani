@@ -142,21 +142,31 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredClients.map((client) => {
-            const num = calculateNumerology(client.name, client.birthDate);
-            const astro = calculateAstrology(client.birthDate, client.birthTime, client.birthPlace);
+            let num: any = null;
+            let astro: any = null;
+            let totem: any = null;
+            let calcError: string | null = null;
+
+            try {
+              num = calculateNumerology(client.name, client.birthDate);
+              astro = calculateAstrology(client.birthDate, client.birthTime, client.birthPlace);
+              totem = calculateTotemAnimal({
+                name: client.name,
+                birthDate: client.birthDate,
+                birthTime: client.birthTime,
+                birthPlace: client.birthPlace,
+                motherName: client.motherName,
+                totemAnswers: client.totemAnswers,
+                enneagramType: client.enneagramType,
+                lifePathNumber: num.lifePathNumber,
+                dominantElement: astro.dominantElement,
+                sunSign: astro.sunSign
+              });
+            } catch (err: unknown) {
+              calcError = err instanceof Error ? err.message : String(err);
+            }
+
             const ennea = getEnneagramProfile(client.enneagramType || 4, client.enneagramWing || '4w5');
-            const totem = calculateTotemAnimal({
-              name: client.name,
-              birthDate: client.birthDate,
-              birthTime: client.birthTime,
-              birthPlace: client.birthPlace,
-              motherName: client.motherName,
-              totemAnswers: client.totemAnswers,
-              enneagramType: client.enneagramType,
-              lifePathNumber: num.lifePathNumber,
-              dominantElement: astro.dominantElement,
-              sunSign: astro.sunSign
-            });
 
             return (
               <div
@@ -168,7 +178,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     <div>
                       <h3 className="text-sm font-bold text-white flex items-center gap-2 font-serif">
                         <span>{client.name}</span>
-                        {num.divineHelp19.has19 && (
+                        {num?.divineHelp19?.has19 && (
                           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#151515] border border-[#c4a47c]/40 text-[#c4a47c]">
                             19 İlahi
                           </span>
@@ -247,33 +257,39 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Esoteric Metrics Row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs pt-1">
-                    <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                      <span className="text-[9px] text-[#555] block uppercase font-mono">Yaşam Yolu</span>
-                      <span className="text-sm font-bold font-mono text-[#c4a47c]">{num.lifePathNumber}</span>
+                  {/* Esoteric Metrics Row or Validation Notice */}
+                  {calcError ? (
+                    <div className="p-2.5 rounded bg-amber-950/20 border border-amber-500/30 text-amber-300 text-[11px] font-mono">
+                      ⚠ {calcError}
                     </div>
+                  ) : num && astro ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs pt-1">
+                      <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                        <span className="text-[9px] text-[#555] block uppercase font-mono">Yaşam Yolu</span>
+                        <span className="text-sm font-bold font-mono text-[#c4a47c]">{num.lifePathNumber}</span>
+                      </div>
 
-                    <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                      <span className="text-[9px] text-[#555] block uppercase font-mono">Güneş / Yükselen</span>
-                      <span className="text-xs font-bold text-white truncate block">{astro.sunSign} / {astro.ascendantSign}</span>
-                    </div>
+                      <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                        <span className="text-[9px] text-[#555] block uppercase font-mono">Güneş / Yükselen</span>
+                        <span className="text-xs font-bold text-white truncate block">{astro.sunSign} / {astro.ascendantSign}</span>
+                      </div>
 
-                    <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                      <span className="text-[9px] text-[#555] block uppercase font-mono">Enneagram</span>
-                      <span className="text-xs font-bold font-mono text-white">{ennea.wing}</span>
-                    </div>
+                      <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                        <span className="text-[9px] text-[#555] block uppercase font-mono">Enneagram</span>
+                        <span className="text-xs font-bold font-mono text-white">{ennea.wing}</span>
+                      </div>
 
-                    <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                      <span className="text-[9px] text-[#555] block uppercase font-mono flex items-center justify-center gap-1">
-                        <Compass className="w-2.5 h-2.5 text-[#c4a47c]" />
-                        <span>Ruh Totemi</span>
-                      </span>
-                      <span className="text-xs font-bold text-[#c4a47c] truncate block" title={totem?.primaryTotem?.name || 'Totem'}>
-                        {totem?.primaryTotem?.name ? totem.primaryTotem.name.split(' ')[0] : 'Totem'}
-                      </span>
+                      <div className="p-2 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                        <span className="text-[9px] text-[#555] block uppercase font-mono flex items-center justify-center gap-1">
+                          <Compass className="w-2.5 h-2.5 text-[#c4a47c]" />
+                          <span>Ruh Totemi</span>
+                        </span>
+                        <span className="text-xs font-bold text-[#c4a47c] truncate block" title={totem?.primaryTotem?.name || 'Totem'}>
+                          {totem?.primaryTotem?.name ? totem.primaryTotem.name.split(' ')[0] : 'Totem'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
 
                   {client.notes && (
                     <p className="text-[11px] text-[#777] line-clamp-1 italic bg-[#0d0d0d] p-2 rounded border border-[#1a1a1a]">
@@ -302,8 +318,17 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#0a0a0a] border border-[#222] rounded-xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl custom-scrollbar">
             {(() => {
-              const num = calculateNumerology(selectedClientDetail.name, selectedClientDetail.birthDate);
-              const astro = calculateAstrology(selectedClientDetail.birthDate, selectedClientDetail.birthTime, selectedClientDetail.birthPlace);
+              let num = null;
+              let astro = null;
+              let calcError: string | null = null;
+
+              try {
+                num = calculateNumerology(selectedClientDetail.name, selectedClientDetail.birthDate);
+                astro = calculateAstrology(selectedClientDetail.birthDate, selectedClientDetail.birthTime, selectedClientDetail.birthPlace);
+              } catch (err: unknown) {
+                calcError = err instanceof Error ? err.message : String(err);
+              }
+
               const ennea = getEnneagramProfile(selectedClientDetail.enneagramType || 4, selectedClientDetail.enneagramWing || '4w5');
 
               return (
@@ -321,42 +346,54 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     </button>
                   </div>
 
-                  {/* Numerology Summary */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
-                      ◆ Numeroloji Matrisi
-                    </span>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                        <span className="text-[9px] text-[#555] block font-mono uppercase">Yaşam Yolu: {num.lifePathNumber}</span>
-                        <span className="text-white font-medium">{num.lifePathTitle}</span>
-                      </div>
-                      <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                        <span className="text-[9px] text-[#555] block font-mono uppercase">Ana Kulvar: {num.destinyNumber}</span>
-                        <span className="text-white font-medium">{num.destinyTitle}</span>
-                      </div>
-                      <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                        <span className="text-[9px] text-[#555] block font-mono uppercase">DM Misyonu: {num.dmNumber}</span>
-                        <span className="text-white font-medium">{num.dmTitle}</span>
-                      </div>
-                      <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
-                        <span className="text-[9px] text-[#555] block font-mono uppercase">19 İlahi Yardım</span>
-                        <span className="text-[#c4a47c] font-medium">{num.divineHelp19.level}</span>
+                  {calcError ? (
+                    <div className="p-3.5 rounded bg-amber-950/20 border border-amber-500/40 text-amber-300 text-xs font-mono space-y-1">
+                      <div className="font-bold">⚠ Doğrulama Hatası:</div>
+                      <div>{calcError}</div>
+                      <div className="text-[11px] text-[#aaa] pt-1">
+                        Doğum haritası ve numeroloji hesaplamasının çalışabilmesi için lütfen danışan bilgilerini düzenleyerek geçerli bir takvim tarihi ve desteklenen bir şehir girin.
                       </div>
                     </div>
-                  </div>
+                  ) : num && astro ? (
+                    <>
+                      {/* Numerology Summary */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
+                          ◆ Numeroloji Matrisi
+                        </span>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                            <span className="text-[9px] text-[#555] block font-mono uppercase">Yaşam Yolu: {num.lifePathNumber}</span>
+                            <span className="text-white font-medium">{num.lifePathTitle}</span>
+                          </div>
+                          <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                            <span className="text-[9px] text-[#555] block font-mono uppercase">Ana Kulvar: {num.destinyNumber}</span>
+                            <span className="text-white font-medium">{num.destinyTitle}</span>
+                          </div>
+                          <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                            <span className="text-[9px] text-[#555] block font-mono uppercase">DM Misyonu: {num.dmNumber}</span>
+                            <span className="text-white font-medium">{num.dmTitle}</span>
+                          </div>
+                          <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
+                            <span className="text-[9px] text-[#555] block font-mono uppercase">19 İlahi Yardım</span>
+                            <span className="text-[#c4a47c] font-medium">{num.divineHelp19.level}</span>
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Astrology & Enneagram */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
-                      ◆ Astroloji & Enneagram
-                    </span>
-                    <div className="p-3.5 rounded bg-[#0d0d0d] border border-[#1a1a1a] text-xs space-y-1.5">
-                      <div className="text-white">Güneş: <strong>{astro.sunSign} ({astro.sunSignElement})</strong> • Ay: <strong>{astro.moonSign}</strong> • Yükselen: <strong>{astro.ascendantSign}</strong></div>
-                      <div className="text-[#aaa]">Enneagram: <strong className="text-white">{ennea.typeName} ({ennea.wing})</strong></div>
-                      <div className="text-[11px] text-[#777] leading-relaxed pt-1 border-t border-[#1a1a1a]">{astro.summary}</div>
-                    </div>
-                  </div>
+                      {/* Astrology & Enneagram */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
+                          ◆ Astroloji & Enneagram
+                        </span>
+                        <div className="p-3.5 rounded bg-[#0d0d0d] border border-[#1a1a1a] text-xs space-y-1.5">
+                          <div className="text-white">Güneş: <strong>{astro.sunSign} ({astro.sunSignElement})</strong> • Ay: <strong>{astro.moonSign}</strong> • Yükselen: <strong>{astro.ascendantSign}</strong></div>
+                          <div className="text-[#aaa]">Enneagram: <strong className="text-white">{ennea.typeName} ({ennea.wing})</strong></div>
+                          <div className="text-[11px] text-[#777] leading-relaxed pt-1 border-t border-[#1a1a1a]">{astro.summary}</div>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
 
                   <div className="pt-3 border-t border-[#1a1a1a] flex gap-2">
                     <button

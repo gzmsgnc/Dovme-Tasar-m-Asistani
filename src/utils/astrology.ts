@@ -226,18 +226,113 @@ const CITY_DATABASE: Record<string, CityLocation> = {
   'roma': { name: 'Roma', lat: 41.9028, lon: 12.4964, defaultTz: 1 }
 };
 
+/**
+ * Konum Doğrulama Hatası (Location validation error)
+ * Doğum yeri boş, tanımsız veya veritabanında çözülemediğinde fırlatılır.
+ * Kesinlikle İstanbul veya başka bir varsayılan şehir kullanılmaz.
+ */
+export class LocationValidationError extends Error {
+  constructor(message = 'Location validation error: Doğum yeri tanınamadı. Doğum haritası hesaplanabilmesi için geçerli bir şehir/konum girilmelidir.') {
+    super(message);
+    this.name = 'LocationValidationError';
+    Object.setPrototypeOf(this, LocationValidationError.prototype);
+  }
+}
+
+/**
+ * Takvim Tarihi Doğrulama Hatası (Date validation error)
+ * Doğum tarihi formatı bozuk olduğunda veya takvimde gerçekte var olmayan bir tarih girildiğinde fırlatılır.
+ */
+export class DateValidationError extends Error {
+  constructor(message = 'Date validation error: Doğum tarihi formatı YYYY-AA-GG şeklinde ve gerçek bir takvim tarihi olmalıdır.') {
+    super(message);
+    this.name = 'DateValidationError';
+    Object.setPrototypeOf(this, DateValidationError.prototype);
+  }
+}
+
 export function resolveCityLocation(cityInput?: string): CityLocation {
   if (!cityInput || !cityInput.trim()) {
-    return { name: 'İstanbul', lat: 41.0082, lon: 28.9784, defaultTz: 2 };
+    throw new LocationValidationError('Location validation error: Doğum yeri tanınamadı. Doğum haritası hesaplanabilmesi için geçerli bir şehir/konum girilmelidir.');
   }
-  const clean = cityInput.trim().toLowerCase();
+  const clean = cityInput.trim().toLocaleLowerCase('tr-TR');
   for (const [key, loc] of Object.entries(CITY_DATABASE)) {
-    if (clean.includes(key) || key.includes(clean)) {
+    const normKey = key.toLocaleLowerCase('tr-TR');
+    if (clean === normKey || clean.includes(normKey) || normKey.includes(clean)) {
       return loc;
     }
   }
-  // Default to Istanbul coordinates if city not matched
-  return { name: cityInput.trim(), lat: 41.0082, lon: 28.9784, defaultTz: 2 };
+  // Şehir veritabanında bulunamadığında kesinlikle İstanbul veya tahmin kullanılmaz:
+  throw new LocationValidationError('Location validation error: Doğum yeri tanınamadı. Doğum haritası hesaplanabilmesi için geçerli bir şehir/konum girilmelidir.');
+}
+
+export function isCitySupported(cityInput?: string): boolean {
+  if (!cityInput || !cityInput.trim()) return false;
+  const clean = cityInput.trim().toLocaleLowerCase('tr-TR');
+  for (const key of Object.keys(CITY_DATABASE)) {
+    const normKey = key.toLocaleLowerCase('tr-TR');
+    if (clean === normKey || clean.includes(normKey) || normKey.includes(clean)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Gerçek Takvim Tarihi Doğrulama Fonksiyonu
+ * 
+ * Doğum tarihinin:
+ * - YYYY-AA-GG (örnek: 1991-04-23) formatında olması,
+ * - Gerçek bir tarih olması,
+ * - Geçerli bir ay (1-12) içermesi,
+ * - Geçerli bir gün içermesi ve ilgili ayın gerçek gün sayısını (artık yıllar dahil) aşmamasını
+ * kesin olarak garanti eder.
+ * 
+ * 1991-99-99, 1991-02-31, 1991-13-10 gibi geçersiz tarihler için açık bir hata fırlatır;
+ * hiçbir tahmini veya normalize edilmiş tarih üretilmez.
+ */
+export function validateCalendarDate(birthDateStr?: string): { year: number; month: number; day: number } {
+  if (!birthDateStr || typeof birthDateStr !== 'string' || !birthDateStr.trim()) {
+    throw new DateValidationError('Date validation error: Doğum tarihi zorunludur. Doğum haritası ve numeroloji hesaplanabilmesi için geçerli bir tarih girilmelidir.');
+  }
+
+  const trimmed = birthDateStr.trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!match) {
+    throw new DateValidationError('Date validation error: Doğum tarihi formatı YYYY-AA-GG (örnek: 1991-04-23) şeklinde olmalıdır.');
+  }
+
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const day = parseInt(match[3], 10);
+
+  if (isNaN(year) || year < 1000 || year > 2500) {
+    throw new DateValidationError(`Date validation error: Geçersiz doğum yılı: ${match[1]}. Yıl 1000 ile 2500 arasında olmalıdır.`);
+  }
+
+  if (month < 1 || month > 12) {
+    throw new DateValidationError(`Date validation error: Geçersiz takvim ayı: ${match[2]}. Ay değeri 01 ile 12 arasında olmalıdır.`);
+  }
+
+  // Artık yıl hesabı: 4'e bölünen yıllar artık yıldır, ancak 100'e bölünüp 400'e bölünmeyenler artık yıl değildir.
+  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+  const daysInMonths = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const maxDays = daysInMonths[month - 1];
+
+  if (day < 1 || day > maxDays) {
+    throw new DateValidationError(`Date validation error: Geçersiz takvim tarihi (${trimmed}): ${year} yılının ${month}. ayı en fazla ${maxDays} gün içerir.`);
+  }
+
+  return { year, month, day };
+}
+
+export function isValidCalendarDate(birthDateStr?: string): { valid: boolean; error?: string } {
+  try {
+    validateCalendarDate(birthDateStr);
+    return { valid: true };
+  } catch (err) {
+    return { valid: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 // Timezone offset for Turkey / Europe historical rules
@@ -462,15 +557,7 @@ export function getSignFromLongitude(longitude: number): {
 }
 
 export function getSunSign(birthDateStr: string): ZodiacSignInfo {
-  if (!birthDateStr || !birthDateStr.includes('-')) {
-    throw new Error('Güneş burcu hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit veya tahmini burç atanamaz.');
-  }
-  const parts = birthDateStr.split('-');
-  const month = parseInt(parts[1], 10);
-  const day = parseInt(parts[2], 10);
-  if (isNaN(month) || isNaN(day)) {
-    throw new Error('Geçersiz doğum tarihi formatı.');
-  }
+  const { month, day } = validateCalendarDate(birthDateStr);
 
   for (const sign of ZODIAC_SIGNS) {
     if (
@@ -489,22 +576,13 @@ export function calculateAstrology(
   birthPlace?: string,
   zodiacSystem: 'Tropical' | 'Sidereal' = 'Tropical'
 ): AstrologyProfile {
-  if (!birthDate || !birthDate.trim() || !birthDate.includes('-')) {
-    throw new Error('Astrolojik harita hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit veya tahmini harita kullanılamaz.');
-  }
+  // 1. Gerçek takvim doğrulaması (YYYY-AA-GG formatı, geçerli ay/gün ve artık yıl kontrolü)
+  const { year, month, day } = validateCalendarDate(birthDate);
+
+  // 2. Doğum yeri kontrolü (Boş veya veritabanında olmayan yerlerde İstanbul fallback'i KESİNLİKLE kaldırılmıştır)
+  const location = resolveCityLocation(birthPlace);
 
   const hasBirthTime = Boolean(birthTime && birthTime.trim());
-  const location = resolveCityLocation(birthPlace);
-  
-  // Parse date and time
-  const [yearStr, monthStr, dayStr] = birthDate.split('-');
-  const year = parseInt(yearStr, 10);
-  const month = parseInt(monthStr, 10);
-  const day = parseInt(dayStr, 10);
-
-  if (isNaN(year) || isNaN(month) || isNaN(day)) {
-    throw new Error('Doğum tarihi yıl, ay ve gün rakamlarından oluşmalıdır.');
-  }
 
   let hours = 12;
   let minutes = 0;

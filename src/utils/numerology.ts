@@ -1,4 +1,5 @@
 import { NumerologyProfile, NumerologyDetail } from '../types';
+import { validateCalendarDate } from './astrology';
 
 // Turkish Pythagorean letter-to-number mapping
 export const PYTHAGOREAN_TABLE: Record<string, number> = {
@@ -64,21 +65,16 @@ export function calculateNumerology(name: string, birthDate: string): Numerology
   if (!name || !name.trim()) {
     throw new Error('Numeroloji Pisagor analizi için danışan ismi zorunludur. Sabit veya tahmini isim kullanılamaz.');
   }
-  if (!birthDate || !birthDate.trim() || !birthDate.includes('-')) {
-    throw new Error('Numeroloji Yaşam Yolu hesaplaması için geçerli bir doğum tarihi (YYYY-AA-GG) zorunludur. Sabit sayı kullanılamaz.');
-  }
+
+  // Gerçek takvim tarihi doğrulaması (YYYY-AA-GG, geçerli ay/gün ve artık yıl kontrolü)
+  const { year, month, day } = validateCalendarDate(birthDate);
 
   const normalizedName = name.toLowerCase().trim();
   
   // 1. Life Path (Yaşam Yolu) Calculation: Day + Month + Year digits
-  const parts = birthDate.split('-');
-  const yStr = parts[0];
-  const mStr = parts[1];
-  const dStr = parts[2];
-  
-  if (!yStr || !mStr || !dStr) {
-    throw new Error('Doğum tarihi formatı YYYY-AA-GG şeklinde tam olmalıdır.');
-  }
+  const yStr = year.toString();
+  const mStr = month.toString().padStart(2, '0');
+  const dStr = day.toString().padStart(2, '0');
   
   const allDigits = `${dStr}${mStr}${yStr}`.split('').map(Number);
   const rawLifePathSum = allDigits.reduce((acc, curr) => acc + curr, 0);

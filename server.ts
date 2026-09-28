@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
 import { generateEsotericTattooStencilSvg } from './src/utils/stencilGenerator';
+import { isValidCalendarDate } from './src/utils/astrology';
 
 dotenv.config();
 
@@ -78,6 +79,16 @@ async function startServer() {
           missingData: true,
           error: 'Bu sonuç için gerekli kişisel veri eksik.',
           message: 'Kişisel veri eksikken tahmini veya sabit varsayılan verilerle ezoterik sentez üretilemez. Lütfen danışanın doğum tarihi, ismi ve analiz verilerini tamamlayın.'
+        });
+      }
+
+      const dateValidation = isValidCalendarDate(birthDate);
+      if (!dateValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          missingData: true,
+          error: dateValidation.error || 'Geçersiz doğum tarihi.',
+          message: 'Gerçek bir takvim tarihi girilmeden kişisel ezoterik sentez üretilemez.'
         });
       }
 

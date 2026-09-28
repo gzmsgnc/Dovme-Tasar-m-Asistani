@@ -1,5 +1,6 @@
 import { NumerologyProfile, AstrologyProfile, EnneagramProfile, SymbolismProfile, TotemAnimalDetail, NeededSymbolDetail } from '../types';
 import { calculateTotemAnimal, PersonalTotemInput } from './totemCalculator';
+import { validateCalendarDate } from './astrology';
 
 export function deriveSymbolismProfile(
   numerology: NumerologyProfile,
@@ -16,9 +17,7 @@ export function deriveSymbolismProfile(
   // 1. DETERMINISTIC PERSONAL TOTEM CALCULATION
   // Kullanıcının kişisel verilerinden (Doğum tarihi, saati, yeri, isim, element ve test yanıtları) dinamik olarak hesaplanır.
   const actualBirthDate = personalData?.birthDate || astrology.usedBirthDate;
-  if (!actualBirthDate || !actualBirthDate.includes('-')) {
-    throw new Error('Sembolizm profili için doğum tarihi zorunludur. Kişiye özel veriler eksik.');
-  }
+  validateCalendarDate(actualBirthDate);
 
   const personalInput: PersonalTotemInput = {
     name: personalData?.name || 'Danışan',

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { calculateEbcedAndYildizname } from '../../utils/ebced';
 import { calculateNumerology } from '../../utils/numerology';
-import { calculateAstrology } from '../../utils/astrology';
+import { calculateAstrology, validateCalendarDate, resolveCityLocation } from '../../utils/astrology';
 import { TotemQuizModal } from './TotemQuizModal';
 import { EnneagramQuizModal } from './EnneagramQuizModal';
 import { TOTEM_ANIMALS_52 } from '../../utils/totemCatalogData';
@@ -111,6 +111,22 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
     if (!birthDate) {
       setErrorMessage('Lütfen doğum tarihini seçin.');
       return null;
+    }
+
+    try {
+      validateCalendarDate(birthDate);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : String(err));
+      return null;
+    }
+
+    if (birthPlace && birthPlace.trim()) {
+      try {
+        resolveCityLocation(birthPlace);
+      } catch (err: unknown) {
+        setErrorMessage(err instanceof Error ? err.message : String(err));
+        return null;
+      }
     }
 
     const id = initialClient?.id || `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -284,11 +300,36 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
                 <MapPin className="w-4 h-4 text-[#555] absolute left-3 top-2.5" />
                 <input
                   type="text"
+                  list="supported-cities-client-modal"
                   value={birthPlace}
                   onChange={(e) => setBirthPlace(e.target.value)}
-                  placeholder="Örn: İstanbul"
+                  placeholder="Örn: İstanbul, Ankara, İzmir, Bursa, Londra..."
                   className="w-full pl-9 pr-3 py-2 bg-[#121212] border border-[#262626] rounded-xl text-white placeholder-zinc-600 focus:border-[#c4a47c] outline-none"
                 />
+                <datalist id="supported-cities-client-modal">
+                  <option value="İstanbul" />
+                  <option value="Ankara" />
+                  <option value="İzmir" />
+                  <option value="Bursa" />
+                  <option value="Antalya" />
+                  <option value="Adana" />
+                  <option value="Konya" />
+                  <option value="Gaziantep" />
+                  <option value="Eskişehir" />
+                  <option value="Trabzon" />
+                  <option value="Samsun" />
+                  <option value="Diyarbakır" />
+                  <option value="Kayseri" />
+                  <option value="Mersin" />
+                  <option value="Muğla" />
+                  <option value="Bodrum" />
+                  <option value="London" />
+                  <option value="Berlin" />
+                  <option value="Paris" />
+                  <option value="Roma" />
+                  <option value="New York" />
+                  <option value="Tokyo" />
+                </datalist>
               </div>
             </div>
 
@@ -515,11 +556,17 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
           clientName={name || 'Danışan'}
           initialAnswers={totemAnswers}
           enneagramType={enneagramType}
-          personalContext={birthDate ? {
-            dominantElement: calculateAstrology(birthDate, birthTime, birthPlace).dominantElement,
-            lifePathNumber: calculateNumerology(name || 'Danışan', birthDate).lifePathNumber,
-            sunSign: calculateAstrology(birthDate, birthTime, birthPlace).sunSign
-          } : undefined}
+          personalContext={birthDate && birthPlace?.trim() ? (() => {
+            try {
+              return {
+                dominantElement: calculateAstrology(birthDate, birthTime, birthPlace).dominantElement,
+                lifePathNumber: calculateNumerology(name || 'Danışan', birthDate).lifePathNumber,
+                sunSign: calculateAstrology(birthDate, birthTime, birthPlace).sunSign
+              };
+            } catch {
+              return undefined;
+            }
+          })() : undefined}
           onClose={() => setShowTotemModal(false)}
           onApplyResult={(answers, result) => {
             setTotemAnswers(answers);
