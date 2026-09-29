@@ -76,9 +76,12 @@ export function generateTattooRecipe(
     ? parameters.secondarySymbols
     : [symbolism.plantFlora, symbolism.geometricSymbol, symbolism.sacredObject];
 
+  // Remove duplicate symbols while preserving the user's calculated hierarchy.
+  const uniqueSecondarySymbols = [...new Set(rawSecondary.filter(Boolean).map(s => s.trim()))];
+
   const secondarySymbols = includeTotem
-    ? rawSecondary
-    : rawSecondary.filter(s => !isTotemAnimalName(s));
+    ? uniqueSecondarySymbols
+    : uniqueSecondarySymbols.filter(s => !isTotemAnimalName(s));
 
   const subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
     ? parameters.subtleDetails
