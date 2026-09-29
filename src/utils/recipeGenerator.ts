@@ -89,11 +89,15 @@ export function generateTattooRecipe(
   // 1. Generate Individual Symbol Rationales
   const rationales: SymbolRationale[] = [];
 
-  // Main Totem / Symbol Rationale
+  // Main symbol provenance: never claim a user-selected symbol was calculated
+  // from a specific profile unless the symbol is actually one of the calculated totems.
+  const isCalculatedPrimaryTotem = mainSymbol.toLowerCase() === symbolism.totemAnimal?.toLowerCase();
   rationales.push({
     symbolName: mainSymbol,
     symbolCategory: '1. Ana Odak Sembolü (Primary Focal Subject)',
-    esotericConnection: `Yaşam Yolu ${numerology.lifePathNumber} (${numerology.lifePathTitle}) ve Güneş ${astrology.sunSign} (${astrology.archetype}) temel iradesinin doğrudan görsel yansımasıdır. Enneagram Tip ${enneagram.wing} profilinin "${enneagram.coreMotivation}" arayışını ve gölge yönü "${enneagram.shadowTraits[0]}" direncini dönüştürmek için seçilmiştir.`,
+    esotericConnection: isCalculatedPrimaryTotem
+      ? `Kişinin davranışsal/kişisel totem hesabından elde edilen ${symbolism.totemAnimal} ana ruh totemidir; Yaşam Yolu ${numerology.lifePathNumber}, Güneş ${astrology.sunSign} ve Enneagram ${enneagram.wing} bağlamıyla birlikte görsel dile çevrilir.`
+      : `Ana odak sembolü danışanın/tasarımcının seçimiyle belirlenmiştir. Kişisel harita (${astrology.sunSign}, Yaşam Yolu ${numerology.lifePathNumber}, Enneagram ${enneagram.wing}) sembolün kendisinin hesaplandığı iddiası olmadan kompozisyon, anlam ve yerleşim kararlarını yönlendirir.`,
     visualRole: `Kompozisyonun 1. derece görsel çekim merkezi. En yüksek kontrast, en net kontur ve en zengin dokusal derinlik bu alanda toplanır.`
   });
 
