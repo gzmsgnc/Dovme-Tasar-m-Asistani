@@ -206,6 +206,12 @@ export interface SymbolismProfile {
   emotionalTheme: string;
   enneagramShadowTraits?: string[];
   enneagramShadowSymbolicMeaning?: string;
+  chakraProfile?: import('./utils/chakra').ChakraProfile;
+  chakraBalanceScore?: number;
+  blockedChakraNumbers?: number[];
+  dominantChakraNumbers?: number[];
+  primaryChakraHealingDirective?: string;
+  primaryChakraAffirmation?: string;
   characterTraitSymbols: string[];
   
   // Refined Hierarchy & Subtle Details
