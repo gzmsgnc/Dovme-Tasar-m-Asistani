@@ -347,13 +347,16 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   // Synchronize when initialPerson prop changes from outside (e.g. from ClientsView or Navigation)
   useEffect(() => {
     if (initialPerson) {
-      if (initialPerson.id !== currentClientId) {
+      const sameClient = initialPerson.id === currentClientId;
+      const savedVersionChanged = initialPerson.updatedAt !== undefined &&
+        initialPerson.updatedAt !== savedClients.find(c => c.id === initialPerson.id)?.updatedAt;
+      if (!sameClient || savedVersionChanged) {
         handleApplyClientData(initialPerson);
       }
     } else if (initialPerson === null && currentClientId !== null) {
       handleStartFreshDesign(false);
     }
-  }, [initialPerson]);
+  }, [initialPerson, currentClientId, savedClients]);
 
   // Handle Loading a Saved Client from Dropdown
   const handleSelectSavedClient = (client: PersonData) => {
