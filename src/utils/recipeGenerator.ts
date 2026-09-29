@@ -27,6 +27,21 @@ export function generateTattooRecipe(
   const stylesStr = parameters.selectedStyles.join(' + ') || 'Fine Line & Geometric';
   const includeTotem = parameters.includeTotemInDesign === true;
 
+  // Guard against stale/mismatched symbolism entering a recipe.
+  // The recipe must use the same calculated totem identity as the symbolism profile.
+  if (!symbolism.totemAnimal?.trim()) {
+    throw new Error('Tarif üretilemedi: hesaplanmış kişisel totem bulunamadı.');
+  }
+  if (symbolism.totemTestResult?.primaryTotem?.name &&
+      symbolism.totemTestResult.primaryTotem.name !== symbolism.totemAnimal) {
+    throw new Error('Tarif üretilemedi: totem sonuçları ile sembolizm profili eşleşmiyor.');
+  }
+  if (symbolism.totemTestResult?.primaryTotem?.id &&
+      symbolism.totemAnimalId &&
+      symbolism.totemTestResult.primaryTotem.id !== symbolism.totemAnimalId) {
+    throw new Error('Tarif üretilemedi: hesaplanmış totem kimlikleri eşleşmiyor.');
+  }
+
   const isTotemAnimalName = (sym: string | undefined): boolean => {
     if (!sym) return false;
     const cleanSym = sym.toLowerCase().trim();
