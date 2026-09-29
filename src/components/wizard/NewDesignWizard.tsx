@@ -391,6 +391,16 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setCustomMainSymbol('');
     setCustomSecondarySymbols([]);
     setGeneratedRecipe(null);
+    setCopiedPromptType(null);
+    setGeneratedSketchUrl(null);
+    setGeneratedSvgUrl(null);
+    setSketchStatus('');
+    setIsGeneratingSketch(false);
+    setSketchModalOpen(false);
+    setSketchVariationIndex(1);
+    setSketchSeed(Math.floor(100000 + Math.random() * 900000));
+    setProfileValidationError(null);
+    setClientSaveFeedback(null);
     setIsSaved(false);
     setNumerology(null);
     setAstrology(null);
