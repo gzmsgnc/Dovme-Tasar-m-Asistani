@@ -11,7 +11,7 @@ import {
 import { calculateNumerology } from '../../utils/numerology';
 import { calculateAstrology, validateCalendarDate, resolveCityLocation, resolveCityLocationAsync } from '../../utils/astrology';
 import { LocationAutocompleteInput } from '../common/LocationAutocompleteInput';
-import { ResolvedLocation } from '../../utils/locationResolver';
+import { ResolvedLocation, normalizeLocationText } from '../../utils/locationResolver';
 import { ENNEAGRAM_TYPES, getEnneagramProfile } from '../../utils/enneagram';
 import { deriveSymbolismProfile } from '../../utils/symbolism';
 import { calculateChakraProfile, ChakraProfile } from '../../utils/chakra';
@@ -220,9 +220,32 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
         validateCalendarDate(birthDate);
 
         // Önce seçilmiş/doğrulanmış konumu kullan; yoksa küresel geocoding ile çöz.
-        const resolvedLoc = selectedLocation || await resolveCityLocationAsync(birthPlace);
+        const normalizedBirthPlace = normalizeLocationText(birthPlace);
+        const normalizedSelectedCandidates = selectedLocation
+          ? [
+              selectedLocation.displayName,
+              selectedLocation.name,
+              selectedLocation.city,
+              `${selectedLocation.city}, ${selectedLocation.country}`,
+              `${selectedLocation.name}, ${selectedLocation.country}`
+            ].filter(Boolean).map(normalizeLocationText)
+          : [];
+        const selectedLocationMatchesInput = !!selectedLocation && (
+          normalizedSelectedCandidates.includes(normalizedBirthPlace) ||
+          normalizedSelectedCandidates.some(candidate =>
+            candidate && (
+              normalizedBirthPlace.includes(candidate) ||
+              candidate.includes(normalizedBirthPlace)
+            )
+          )
+        );
+
+        // Metin değiştirildiyse eski danışanın koordinatını kullanma; yeni doğum yerini yeniden çöz.
+        const resolvedLoc = selectedLocationMatchesInput
+          ? selectedLocation
+          : await resolveCityLocationAsync(birthPlace);
         if (cancelled) return;
-        if (!selectedLocation && resolvedLoc) setSelectedLocation(resolvedLoc as any);
+        if (!selectedLocationMatchesInput && resolvedLoc) setSelectedLocation(resolvedLoc as any);
 
         const num = calculateNumerology(name, birthDate);
         const astro = calculateAstrology(birthDate, birthTime, birthPlace, zodiacSystem, resolvedLoc);
@@ -281,7 +304,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setBirthDate(client.birthDate || '');
     setBirthTime(client.birthTime || '');
     setBirthPlace(client.birthPlace || '');
-    if (client.birthLatitude && client.birthLongitude) {
+    if (typeof client.birthLatitude === 'number' && typeof client.birthLongitude === 'number' && Number.isFinite(client.birthLatitude) && Number.isFinite(client.birthLongitude)) {
       setSelectedLocation({
         id: `loc_${client.id}`,
         name: client.birthPlace || '',
