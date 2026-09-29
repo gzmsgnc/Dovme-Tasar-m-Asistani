@@ -1428,3 +1428,95 @@ export const TOTEM_ANIMALS_52: TotemAnimalProfile[] = [
   }
 ];
 
+/**
+ * Verilen bir animalId'ye göre kataloğu arar.
+ */
+export function getTotemAnimalById(id: string | undefined | null): TotemAnimalProfile | undefined {
+  if (!id || typeof id !== 'string') return undefined;
+  const cleanId = id.trim().toLowerCase();
+  return TOTEM_ANIMALS_52.find(a => a.id.toLowerCase() === cleanId);
+}
+
+/**
+ * Totem hayvanını animalId, tam ad veya Türkçe adına göre KESİN olarak çözer.
+ * 
+ * KRİTİK GÜVENLİK KURALLARI:
+ * 1. Asla gevşek alt dize araması (".includes('at')" gibi) YAPMAZ.
+ * 2. Asla başka bir hayvanın verisini fallback/ödünç olarak KULLANMAZ.
+ * 3. Bozkır Kurdu gibi rastgele varsayılan hayvan atamaz.
+ * 4. Çözülen profil %100 o hayvana aittir (animalId, ad, anatomik ve davranışsal özellikler senkronizedir).
+ */
+export function getTotemAnimalStrict(idOrNameOrProfile: string | TotemAnimalProfile | undefined | null): TotemAnimalProfile {
+  if (!idOrNameOrProfile) {
+    throw new Error('Totem hayvanı verisi boş veya tanımsız olamaz. Eksik veri durumunda başka bir hayvanın verisi kullanılamaz.');
+  }
+
+  // 1. Zaten geçerli bir TotemAnimalProfile nesnesi ise:
+  if (typeof idOrNameOrProfile === 'object' && idOrNameOrProfile.id) {
+    const fromCatalog = getTotemAnimalById(idOrNameOrProfile.id);
+    if (fromCatalog) return fromCatalog;
+    return idOrNameOrProfile as TotemAnimalProfile;
+  }
+
+  if (typeof idOrNameOrProfile !== 'string') {
+    throw new Error(`Geçersiz totem parametresi: ${typeof idOrNameOrProfile}.`);
+  }
+
+  const query = idOrNameOrProfile.trim();
+  if (!query) {
+    throw new Error('Totem sorgusu boş dize olamaz.');
+  }
+
+  const qLower = query.toLowerCase();
+
+  // 2. Doğrudan exact ID eşleşmesi (örn: "manta_vatozu", "asil_yaban_ati", "kurt")
+  const byId = TOTEM_ANIMALS_52.find(a => a.id.toLowerCase() === qLower);
+  if (byId) return byId;
+
+  // 3. Doğrudan exact Name veya TurkishName eşleşmesi
+  const byExactName = TOTEM_ANIMALS_52.find(a => 
+    a.name.toLowerCase() === qLower || 
+    a.turkishName.toLowerCase() === qLower
+  );
+  if (byExactName) return byExactName;
+
+  // 4. Parantez temizliği ile exact eşleşme
+  const cleanWithoutParens = qLower.replace(/\(.*?\)/g, '').trim();
+  const parensContent = (qLower.match(/\((.*?)\)/)?.[1] || '').trim();
+
+  // 4a. Parantez içindeki İngilizce ad ile tam eşleşme
+  if (parensContent) {
+    const byParens = TOTEM_ANIMALS_52.find(a => {
+      const aParens = (a.name.toLowerCase().match(/\((.*?)\)/)?.[1] || '').trim();
+      return aParens === parensContent || a.id.toLowerCase() === parensContent;
+    });
+    if (byParens) return byParens;
+  }
+
+  // 4b. Parantezsiz ana ad ile tam eşleşme (Exact base name)
+  if (cleanWithoutParens) {
+    const byCleanBase = TOTEM_ANIMALS_52.find(a => {
+      const aCleanBase = a.name.toLowerCase().replace(/\(.*?\)/g, '').trim();
+      const aTrClean = a.turkishName.toLowerCase().replace(/\(.*?\)/g, '').trim();
+      return aCleanBase === cleanWithoutParens || aTrClean === cleanWithoutParens;
+    });
+    if (byCleanBase) return byCleanBase;
+  }
+
+  // 4c. Güvenli kelime bazlı eşleşme (Tam kelime sınırlarıyla; rastgele harf içermesi değil!)
+  const queryWords = cleanWithoutParens.split(/\s+/).filter(w => w.length > 2);
+  const byWordMatch = TOTEM_ANIMALS_52.find(a => {
+    const aCleanBase = a.name.toLowerCase().replace(/\(.*?\)/g, '').trim();
+    const aWords = aCleanBase.split(/\s+/);
+    const aTrWords = a.turkishName.toLowerCase().split(/\s+/);
+    return queryWords.some(qw => 
+      aWords.some(aw => aw === qw) || aTrWords.some(atw => atw === qw) || a.id.toLowerCase() === qw
+    );
+  });
+  if (byWordMatch) return byWordMatch;
+
+  // 5. Kesin hata: Başka hayvanın verisi ASLA kullanılmaz
+  throw new Error(`Totem hayvanı kimliği doğrulanamadı: "${query}". Sistem başka bir hayvanın anatomik/davranışsal verisini kesinlikle ödünç alamaz.`);
+}
+
+

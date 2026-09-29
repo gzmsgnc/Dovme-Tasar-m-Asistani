@@ -3,7 +3,9 @@ import {
   BehavioralVector, 
   TotemAnimalProfile, 
   TOTEM_ANIMALS_52,
-  BEHAVIORAL_DIMENSION_LABELS
+  BEHAVIORAL_DIMENSION_LABELS,
+  getTotemAnimalById,
+  getTotemAnimalStrict
 } from './totemCatalogData';
 import { 
   TOTEM_BEHAVIORAL_QUESTIONS, 
@@ -17,7 +19,9 @@ export {
   TOTEM_ANIMALS_52, 
   TOTEM_BEHAVIORAL_QUESTIONS, 
   BEHAVIORAL_DIMENSION_LABELS,
-  calculateBehavioralTotemResult 
+  calculateBehavioralTotemResult,
+  getTotemAnimalById,
+  getTotemAnimalStrict
 };
 export type { 
   BehavioralDimensionKey, 

@@ -35,7 +35,7 @@ export const ClientIntakeLinkModal: React.FC<ClientIntakeLinkModalProps> = ({
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const intakeUrl = `${origin}/?mode=client-form`;
 
-  const whatsappMessage = `✨ Merhaba! ✨\n\nSize özel sembol haritanızı, astrolojik & numerolojik arketipinizi ve dövme tasarım kompozisyonunuzu hazırlayabilmemiz için lütfen aşağıdaki Danışan Bilgi Formu'nu doldurunuz:\n\n🔗 ${intakeUrl}\n\nForm üzerinden ad-soyad, doğum bilgileri, Enneagram ve davranışsal Totem testinizi tamamladığınızda bilgileriniz doğrudan stüdyomuza güvenle ulaşacaktır.\n\nTeşekkür ederiz! ✨🖋️`;
+  const whatsappMessage = `✨ Merhaba! ✨\n\nSize özel sembol haritanızı, astrolojik & numerolojik arketipinizi ve dövme tasarım kompozisyonunuzu hazırlayabilmemiz için lütfen aşağıdaki Danışan Bilgi Formu'nu doldurunuz:\n\n🔗 ${intakeUrl}\n\nForm üzerinden iletişim (telefon, e-posta), doğum bilgileri, Enneagram ve davranışsal Totem testinizi tamamladığınızda bilgileriniz doğrudan stüdyomuza güvenle ulaşacaktır.\n\nTeşekkür ederiz! ✨🖋️`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(intakeUrl);

@@ -1,5 +1,5 @@
 import { TotemVisualProfile } from '../types';
-import { TOTEM_ANIMALS_52, TotemAnimalProfile } from './totemCatalogData';
+import { TOTEM_ANIMALS_52, TotemAnimalProfile, getTotemAnimalStrict } from './totemCatalogData';
 
 /**
  * 52 Kadim Hayvan için Görsel Dil ve Çizgisel Soyutlama Kütüphanesi
@@ -13,8 +13,8 @@ import { TOTEM_ANIMALS_52, TotemAnimalProfile } from './totemCatalogData';
  */
 
 const CURATED_TOTEM_VISUAL_PROFILES: Record<string, Partial<TotemVisualProfile>> = {
-  kurt: {
-    animalId: 'kurt',
+  bozkir_kurdu: {
+    animalId: 'bozkir_kurdu',
     animalName: 'Kurt (Wolf)',
     turkishName: 'Bozkurt & Orman Kurdu',
     element: 'Toprak',
@@ -43,8 +43,8 @@ const CURATED_TOTEM_VISUAL_PROFILES: Record<string, Partial<TotemVisualProfile>>
     tattooFriendlyAbstraction: '03RL mikro-kontur ile çizilmiş 3 çizgilik geometrik siluet; yaşlanmada dağılmayı önlemek için minimum 4mm çizgi aralığı.'
   },
 
-  geyik: {
-    animalId: 'geyik',
+  kizil_geyik: {
+    animalId: 'kizil_geyik',
     animalName: 'Kızıl Geyik (Red Deer)',
     turkishName: 'Kızıl Orman Geyiği',
     element: 'Toprak',
@@ -73,8 +73,8 @@ const CURATED_TOTEM_VISUAL_PROFILES: Record<string, Partial<TotemVisualProfile>>
     tattooFriendlyAbstraction: 'Boynuzların ana çatısını 05RL ile, kılcal çatalları 03RL ile çizerek deri altında net kalıcılık.'
   },
 
-  baykus: {
-    animalId: 'baykus',
+  gece_baykusu: {
+    animalId: 'gece_baykusu',
     animalName: 'Alaca Baykuş (Tawny Owl)',
     turkishName: 'Kadim Alaca Baykuş',
     element: 'Hava',
@@ -103,8 +103,8 @@ const CURATED_TOTEM_VISUAL_PROFILES: Record<string, Partial<TotemVisualProfile>>
     tattooFriendlyAbstraction: 'Gözler net geometrik halka olarak soyutlanır, tüy detayları hafif noktalama ile açık ten alanına bırakılır.'
   },
 
-  yilan: {
-    animalId: 'yilan',
+  boynuzlu_engerek: {
+    animalId: 'boynuzlu_engerek',
     animalName: 'Engerek & Yılan (Serpent / Viper)',
     turkishName: 'Şahmeran & Boynuzlu Engerek',
     element: 'Su',
@@ -133,8 +133,8 @@ const CURATED_TOTEM_VISUAL_PROFILES: Record<string, Partial<TotemVisualProfile>>
     tattooFriendlyAbstraction: 'Yılan tek bir kesintisiz çizgi (monoline) olarak tasarlanabilir; pullar aralıklı noktalama ile hava alır.'
   },
 
-  kartal: {
-    animalId: 'kartal',
+  kaya_kartali: {
+    animalId: 'kaya_kartali',
     animalName: 'Kaya Kartalı (Golden Eagle)',
     turkishName: 'Kutlu Kaya Kartalı',
     element: 'Ateş',
@@ -166,67 +166,32 @@ const CURATED_TOTEM_VISUAL_PROFILES: Record<string, Partial<TotemVisualProfile>>
 
 /**
  * Belirli bir totem hayvanı için görsel dil profilini getirir.
- * Eğer özel küratörlük edilmiş profili varsa onu döndürür,
- * aksi takdirde 52 hayvan kataloğundaki verileri kullanarak standartlaştırılmış
- * şeffaf bir 'AI-derived visual abstraction' profili dinamik olarak inşa eder.
+ * Her animalId için SADECE o hayvana ait veri kaydı kullanılır.
+ * Başka hiçbir hayvanın anatomik veya görsel özellikleri aktarılamaz.
  */
-export function getTotemVisualProfile(animalIdOrName: string): TotemVisualProfile {
+export function getTotemVisualProfile(animalIdOrName: string | TotemAnimalProfile): TotemVisualProfile {
   if (!animalIdOrName) {
-    return generateVisualProfileFromCatalog(TOTEM_ANIMALS_52[0]);
+    throw new Error('Görsel profil üretimi için totem hayvanı kimliği zorunludur. Boş veya tanımsız veriyle görsel profil üretilemez.');
   }
 
-  const clean = animalIdOrName.toLowerCase().trim();
-  // Extract parts e.g. "Penguen (Emperor Penguin)" -> "penguen", "emperor penguin"
-  const cleanWithoutParens = clean.replace(/\(.*?\)/g, '').trim();
-  const parensContent = (clean.match(/\((.*?)\)/)?.[1] || '').trim().toLowerCase();
+  // 1. Doğrudan ve kesin hayvan kimliği çözümü (Asla gevşek arama veya fallback wolf yapılmaz!)
+  const catalogAnimal = getTotemAnimalStrict(animalIdOrName);
 
-  const searchTokens = [
-    clean,
-    cleanWithoutParens,
-    parensContent,
-    clean.replace(/[^a-z0-9]/g, ''),
-    cleanWithoutParens.replace(/[^a-z0-9]/g, '')
-  ].filter(t => t.length > 1);
-
-  // 1. Doğrudan eşleşme kontrolü (Küratörlü Profiller)
-  for (const token of searchTokens) {
-    const directMatch = Object.values(CURATED_TOTEM_VISUAL_PROFILES).find(p => {
-      if (!p) return false;
-      const pId = p.animalId?.toLowerCase() || '';
-      const pName = p.animalName?.toLowerCase() || '';
-      const pTr = p.turkishName?.toLowerCase() || '';
-      return pId === token || pName.includes(token) || token.includes(pId) || pTr.includes(token);
-    });
-
-    if (directMatch && directMatch.animalId && directMatch.animalName) {
-      return directMatch as TotemVisualProfile;
-    }
+  // 2. Doğrudan EXACT ID eşleşmesi (Küratörlü Profiller)
+  const curated = CURATED_TOTEM_VISUAL_PROFILES[catalogAnimal.id];
+  if (curated && curated.animalId === catalogAnimal.id) {
+    const base = generateVisualProfileFromCatalog(catalogAnimal);
+    return {
+      ...base,
+      ...curated,
+      animalId: catalogAnimal.id,
+      animalName: catalogAnimal.name,
+      turkishName: catalogAnimal.turkishName,
+      element: catalogAnimal.element
+    } as TotemVisualProfile;
   }
 
-  // 2. 52 Hayvan Kataloğundan hayvanı bul
-  let catalogAnimal: TotemAnimalProfile | undefined;
-
-  for (const token of searchTokens) {
-    catalogAnimal = TOTEM_ANIMALS_52.find(a => {
-      const aId = a.id.toLowerCase();
-      const aName = a.name.toLowerCase();
-      const aTr = a.turkishName.toLowerCase();
-      return aId === token || 
-             aName.includes(token) || 
-             token.includes(aName) ||
-             aTr.includes(token) ||
-             token.includes(aTr) ||
-             aId.includes(token) ||
-             token.includes(aId);
-    });
-    if (catalogAnimal) break;
-  }
-
-  // Fallback if not found
-  if (!catalogAnimal) {
-    catalogAnimal = TOTEM_ANIMALS_52[0];
-  }
-
+  // 3. 52 Hayvan Kataloğundaki o hayvana özel veriden %100 senkronize profil üret
   return generateVisualProfileFromCatalog(catalogAnimal);
 }
 

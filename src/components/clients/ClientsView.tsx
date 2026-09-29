@@ -137,6 +137,18 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
             )
           )}
 
+          {/* Sunucudan Yenile / Senkronizasyon Butonu */}
+          <button
+            type="button"
+            onClick={handleSyncWithServer}
+            disabled={isSyncing}
+            className="px-3 py-2 rounded bg-[#141414] hover:bg-[#1f1f1f] border border-[#2a2a2a] hover:border-[#c4a47c]/40 text-[#aaa] hover:text-[#c4a47c] font-mono text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+            title="Sunucudaki güncel danışan formlarını ve kayıtlarını senkronize eder"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#c4a47c] ${isSyncing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isSyncing ? 'Eşitleniyor...' : 'Sunucudan Yenile'}</span>
+          </button>
+
           {/* Danışan Formu Linki Paylaşım Butonu */}
           <button
             type="button"
@@ -292,6 +304,33 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                         )}
                       </div>
 
+                      {(client.phone || client.email) && (
+                        <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono pt-1 text-[#999]">
+                          {client.phone && (
+                            <a 
+                              href={`tel:${client.phone}`}
+                              className="flex items-center gap-1 text-[#aaa] hover:text-[#c4a47c] transition-colors"
+                              title="Telefon ile ara"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Phone className="w-3 h-3 text-[#c4a47c]" />
+                              <span>{client.phone}</span>
+                            </a>
+                          )}
+                          {client.email && (
+                            <a 
+                              href={`mailto:${client.email}`}
+                              className="flex items-center gap-1 text-[#aaa] hover:text-[#c4a47c] transition-colors"
+                              title="E-posta gönder"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Mail className="w-3 h-3 text-[#c4a47c]" />
+                              <span>{client.email}</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+
                       {(client.enneagramAnswers || client.totemAnswers) && (
                         <div className="flex items-center gap-2 text-[10px] font-mono text-[#888] pt-1">
                           {client.enneagramAnswers && (
@@ -446,6 +485,30 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     <div>
                       <h3 className="text-base font-bold text-white font-serif">{selectedClientDetail.name}</h3>
                       <p className="text-xs text-[#666] font-mono mt-0.5">{selectedClientDetail.birthDate} • {selectedClientDetail.birthPlace || 'Belirtilmedi'}</p>
+                      {(selectedClientDetail.phone || selectedClientDetail.email) && (
+                        <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#aaa] mt-1">
+                          {selectedClientDetail.phone && (
+                            <a 
+                              href={`tel:${selectedClientDetail.phone}`}
+                              className="flex items-center gap-1 text-[#aaa] hover:text-[#c4a47c] transition-colors"
+                              title="Telefon ile ara"
+                            >
+                              <Phone className="w-3 h-3 text-[#c4a47c]" />
+                              <span>{selectedClientDetail.phone}</span>
+                            </a>
+                          )}
+                          {selectedClientDetail.email && (
+                            <a 
+                              href={`mailto:${selectedClientDetail.email}`}
+                              className="flex items-center gap-1 text-[#aaa] hover:text-[#c4a47c] transition-colors"
+                              title="E-posta gönder"
+                            >
+                              <Mail className="w-3 h-3 text-[#c4a47c]" />
+                              <span>{selectedClientDetail.email}</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => setSelectedClientDetail(null)}

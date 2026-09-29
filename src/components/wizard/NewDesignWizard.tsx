@@ -286,7 +286,13 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setEnneagramAnswers(client.enneagramAnswers || {});
     setIncludeTotemInDesign(false);
     setCustomMainSymbol('');
+    setCustomSecondarySymbols([]);
     setGeneratedRecipe(null);
+    setSymbolism(null);
+    setNumerology(null);
+    setAstrology(null);
+    setEnneagram(null);
+    setChakra(null);
     setIsSaved(false);
   };
 

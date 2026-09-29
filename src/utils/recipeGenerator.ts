@@ -13,6 +13,7 @@ import { calculateChakraProfile } from './chakra';
 import { generateShadowArchetypeAnalysis } from './shadowArchetypeAnalysis';
 import { encodeToMorse } from './morseCode';
 import { executeSymbolicIntegrationEngine } from './symbolIntegrationEngine';
+import { getTotemAnimalStrict } from './totemCatalogData';
 
 export function generateTattooRecipe(
   person: PersonData,
@@ -25,14 +26,27 @@ export function generateTattooRecipe(
   const stylesStr = parameters.selectedStyles.join(' + ') || 'Fine Line & Geometric';
   const includeTotem = parameters.includeTotemInDesign === true;
 
+  const isTotemAnimalName = (sym: string | undefined): boolean => {
+    if (!sym) return false;
+    const cleanSym = sym.toLowerCase().trim();
+    if (cleanSym === symbolism.totemAnimal?.toLowerCase() ||
+        symbolism.totemHierarchy?.some(t => t.name.toLowerCase() === cleanSym) ||
+        symbolism.secondaryAnimals?.some(a => a.toLowerCase() === cleanSym)) {
+      return true;
+    }
+    try {
+      const resolved = getTotemAnimalStrict(cleanSym);
+      if (resolved) return true;
+    } catch {
+      // not a totem animal
+    }
+    return false;
+  };
+
   // Totem hayvanının tasarıma dahil edilme durumu
   let mainSymbol = parameters.mainSymbol;
-  const isTotemAnimalName = mainSymbol === symbolism.totemAnimal ||
-    symbolism.totemHierarchy?.some(t => t.name === mainSymbol) ||
-    symbolism.secondaryAnimals?.includes(mainSymbol);
-
   if (!includeTotem) {
-    if (!mainSymbol || isTotemAnimalName) {
+    if (!mainSymbol || isTotemAnimalName(mainSymbol)) {
       mainSymbol = symbolism.sacredObject || symbolism.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği';
     }
   } else {
@@ -48,11 +62,7 @@ export function generateTattooRecipe(
 
   const secondarySymbols = includeTotem
     ? rawSecondary
-    : rawSecondary.filter(s => 
-        s !== symbolism.totemAnimal &&
-        !symbolism.totemHierarchy?.some(t => t.name === s) &&
-        !symbolism.secondaryAnimals?.includes(s)
-      );
+    : rawSecondary.filter(s => !isTotemAnimalName(s));
 
   const subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
     ? parameters.subtleDetails
@@ -126,14 +136,15 @@ export function generateTattooRecipe(
     lineWeight = '03RL / 05RL stippling pendulum nokta vuruşları ve 05RL kılavuz konturları';
   }
 
+  const densityStr = parameters.density || 'Dengeli & Net (%60)';
   let negativeSpaceRatio = '%45 - %50 (Geniş nefes alanları, derinin doğal ışıltısını öne çıkarır)';
-  if (parameters.density.includes('Yoğun') || parameters.density.includes('Maksimalist')) {
+  if (densityStr.includes('Yoğun') || densityStr.includes('Maksimalist')) {
     negativeSpaceRatio = '%25 - %30 (Yüksek doygunluk ve derin kontrast blokları)';
-  } else if (parameters.density.includes('Minimal')) {
+  } else if (densityStr.includes('Minimal')) {
     negativeSpaceRatio = '%65 - %70 (Geniş negatif alan, ultra sade estetik)';
   }
 
-  const detailDensity = parameters.density.includes('Yoğun') ? 'Yüksek (Büyük ölçekli yerleşim önerilir)' : 'Dengeli ve Okunabilir';
+  const detailDensity = densityStr.includes('Yoğun') ? 'Yüksek (Büyük ölçekli yerleşim önerilir)' : 'Dengeli ve Okunabilir';
   const agingBlowoutRisk = isFineLine 
     ? 'Düşük-Orta Risk: Çizgiler arasında minimum 1.5 - 2 mm güvenlik mesafesi bırakılmalı, 5-10 yıl içinde pigment yayılması hesaplanmalıdır.'
     : 'Düşük / Güvenli: Konturlar ve negatif alan dengesi uzun vadeli yaşlanmaya karşı dirençlidir.';

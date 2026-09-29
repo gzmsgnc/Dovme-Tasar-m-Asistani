@@ -411,9 +411,9 @@ export const ShadowAnalysisViewer: React.FC<ShadowAnalysisViewerProps> = ({
                   </div>
 
                   <div className="p-2.5 rounded bg-[#141414] border border-[#222] space-y-1 font-mono text-[11px]">
-                    <span className="text-[#c4a47c] block text-[9px] uppercase font-bold">Dövmedeki Görsel & Fiziksel Kodlama:</span>
+                    <span className="text-[#c4a47c] block text-[9px] uppercase font-bold">Arketipik Görsel & Fiziksel Kodlama:</span>
                     <p className="text-[#ccc]">• <strong>Bakış & Baş Açısı:</strong> {totem.gazeDirection} ({totem.headAngle})</p>
-                    <p className="text-[#ccc]">• <strong>Hareket / Pençe / Kanat:</strong> {totem.movementDetail}</p>
+                    <p className="text-[#ccc]">• <strong>Karakteristik Hareket Dili:</strong> {totem.movementDetail}</p>
                     <p className="text-[#ccc]">• <strong>Duruş & Görev:</strong> {totem.posture} | {totem.compositionRole}</p>
                   </div>
                 </div>

@@ -12,7 +12,7 @@ import {
 import { ChakraProfile } from './chakra';
 import { calculateEbcedAndYildizname } from './ebced';
 import { encodeToMorse } from './morseCode';
-import { TOTEM_ANIMALS_52 } from './totemCatalogData';
+import { TOTEM_ANIMALS_52, getTotemAnimalStrict } from './totemCatalogData';
 
 export function generateShadowArchetypeAnalysis(
   person: PersonData,
@@ -248,74 +248,69 @@ export function generateShadowArchetypeAnalysis(
   }
 
   // 4. Totem Animals Analysis (Light + Shadow)
+  const primaryTotemId = (symbolism as any).totemAnimalId || symbolism.totemHierarchy?.[0]?.id;
   const primaryTotemName = symbolism.totemAnimal || (symbolism.totemHierarchy?.[0]?.name ?? 'Ruh Totemi');
+  const shadowGuardianId = symbolism.totemHierarchy?.[1]?.id;
   const shadowGuardianTotem = symbolism.totemHierarchy?.[1]?.name || 'Gölge Muhafız';
+  const ascensionId = symbolism.totemHierarchy?.[2]?.id;
   const ascensionTotem = symbolism.totemHierarchy?.[2]?.name || 'Yükseliş Müttefiki';
 
-  const findAnimal = (query: string) => {
-    const qLower = query.toLowerCase().trim();
-    return TOTEM_ANIMALS_52.find(a => 
-      qLower.includes(a.name.toLowerCase().split(' ')[0]) ||
-      (a.turkishName && qLower.includes(a.turkishName.toLowerCase().split(' ')[0])) ||
-      qLower.includes(a.id)
-    );
-  };
-
-  const primaryProfile = findAnimal(primaryTotemName);
-  const shadowProfile = findAnimal(shadowGuardianTotem);
-  const allyProfile = findAnimal(ascensionTotem);
+  // Kesin ve değişmez hayvan kimliği çözümü: SADECE o hayvana ait veri kaydı kullanılır
+  const primaryProfile = getTotemAnimalStrict(primaryTotemId || primaryTotemName);
+  const shadowProfile = getTotemAnimalStrict(shadowGuardianId || shadowGuardianTotem);
+  const allyProfile = getTotemAnimalStrict(ascensionId || ascensionTotem);
 
   const section4TotemAnimals = [
     {
-      name: primaryTotemName,
+      name: primaryProfile.name,
       role: 'Birincil Ruh Totemi (Primary Life Totem)',
-      mainTotemSymbolism: primaryProfile?.mainSymbolism || `${primaryTotemName}, Yaşam Yolu ${lifePath} ve Güneş ${sunSign} enerjisini temsil eden ana ruhsal arketiptir.`,
-      strongSide: primaryProfile?.strongSide || 'Yüksek sezgisel farkındalık, kriz anlarında yön bulma ve stratejik irade.',
-      protectiveSide: primaryProfile?.protectivePower || 'Kişinin enerji alanını aurik parazitlerden ve dış manipülasyonlardan koruma kalkanı.',
-      instinctiveSide: primaryProfile?.instinctiveSide || 'Doğal döngüleri, tehlikeyi ve fırsatları zihinden önce bedensel duyumla algılama.',
-      shadowSide: primaryProfile?.shadowTrait || 'Aşırı kibir, yabancılaşma ve duygusal bağ kurmaktan kaçınma.',
-      unbalancedBehavior: primaryProfile?.unbalancedBehavior || 'Yalnızlaşarak dünyayı yukarıdan yargılama veya güvensizlikle çevreye mesafe koyma.',
-      suppressedUncontrolledTrait: primaryProfile?.suppressedTrait || 'İçeride biriken ve aniden patlayabilen kontrolsüz öfke / hayal kırıklığı.',
-      tattooPhysicalFeature: primaryProfile?.tattooPhysicalFeature || 'Keskin kas hatları, mikro-dotwork ile gölgelendirilmiş dokular, yarı profilden 3/4 açılı duruş.',
-      gazeDirection: primaryProfile?.gazeDirection || 'Doğrudan izleyiciye değil; sol omzun üzerinden geçmişi ve ufuktaki dönüşümü süzen derin bakış.',
-      headAngle: primaryProfile?.headAngle || '15 derece hafif yukarı ve yana eğik, uyanık ve bilge tetiktelik açısı.',
-      movementDetail: primaryProfile?.compositionRole || 'İçsel potansiyeli saklayan gergin sükunet ve anatomik güç.',
-      posture: primaryProfile?.posture || 'Gövde anatomik olarak dik, omurga hattına paralel kavisli ve güçlü zemin teması.',
-      compositionRole: primaryProfile?.compositionRole || 'Tüm dövmenin 1. derece görsel çekim merkezi (%60-70 ağırlık), en yüksek kontrast ve en net 03RL konturlar.'
+      mainTotemSymbolism: primaryProfile.mainSymbolism,
+      strongSide: primaryProfile.strongSide,
+      protectiveSide: primaryProfile.protectivePower,
+      instinctiveSide: primaryProfile.instinctiveSide,
+      shadowSide: primaryProfile.shadowTrait,
+      unbalancedBehavior: primaryProfile.unbalancedBehavior,
+      suppressedUncontrolledTrait: primaryProfile.suppressedTrait,
+      tattooPhysicalFeature: primaryProfile.tattooPhysicalFeature,
+      gazeDirection: primaryProfile.gazeDirection,
+      headAngle: primaryProfile.headAngle,
+      movementDetail: primaryProfile.posture || primaryProfile.compositionRole,
+      posture: primaryProfile.posture,
+      compositionRole: primaryProfile.compositionRole
     },
     {
-      name: shadowGuardianTotem,
+      name: shadowProfile.name,
       role: 'Gölge & Muhafız Totemi (Shadow & Guardian Totem)',
-      mainTotemSymbolism: shadowProfile?.mainSymbolism || `${shadowGuardianTotem}, kişinin bilinçdışında bekleyen, yüzleşildiğinde en büyük koruyucuya dönüşen gölge gücüdür.`,
-      strongSide: shadowProfile?.strongSide || 'Görünmezlik, sessiz güç, derin odaklanma ve sınır ihlallerini anında püskürtme.',
-      protectiveSide: shadowProfile?.protectivePower || 'Karanlık krizlerde ve psikolojik çöküşlerde tabandan yükselen dayanıklılık desteği.',
-      instinctiveSide: shadowProfile?.instinctiveSide || 'Kelimelere dökülmeyen tehditleri önceden sezip refleksi hazır tutma.',
-      shadowSide: shadowProfile?.shadowTrait || 'Pusuda beklemenin getirdiği kronik şüphecilik, kin tutma ve aniden yok edici hamle yapma isteği.',
-      unbalancedBehavior: shadowProfile?.unbalancedBehavior || 'Duygusal olarak tamamen duvar örüp karanlığa çekilme, kimseyi içeri almama.',
-      suppressedUncontrolledTrait: shadowProfile?.suppressedTrait || 'Yumuşaklığını ve sevilme ihtiyacını zayıflık sanıp vahşice bastırma eğilimi.',
-      tattooPhysicalFeature: shadowProfile?.tattooPhysicalFeature || 'Akıcı gölge formları, negatif alanın içinden beliren siluet, gözlerdeki keskin beyaz ışık parıltısı.',
-      gazeDirection: shadowProfile?.gazeDirection || 'Ana figürün zıt yönüne bakarak dövmenin sınırlarını denetleyen gölge nöbetçisi bakışı.',
-      headAngle: shadowProfile?.headAngle || 'Aşağıya doğru hafif eğik, saklı duruş açısı.',
-      movementDetail: shadowProfile?.compositionRole || 'Ana figürün tabanına dolanarak onu aşağıdan sarmalayan hareket dili.',
-      posture: shadowProfile?.posture || 'Pusuya yatmış, esnek, her an sıçrayabilecek gergin yay formunda kavis.',
-      compositionRole: shadowProfile?.compositionRole || 'İkincil odak noktası (%20-30 ağırlık), ana figürle kontrast oluşturan yumuşak whip shading gölgeleri.'
+      mainTotemSymbolism: shadowProfile.mainSymbolism,
+      strongSide: shadowProfile.strongSide,
+      protectiveSide: shadowProfile.protectivePower,
+      instinctiveSide: shadowProfile.instinctiveSide,
+      shadowSide: shadowProfile.shadowTrait,
+      unbalancedBehavior: shadowProfile.unbalancedBehavior,
+      suppressedUncontrolledTrait: shadowProfile.suppressedTrait,
+      tattooPhysicalFeature: shadowProfile.tattooPhysicalFeature,
+      gazeDirection: shadowProfile.gazeDirection,
+      headAngle: shadowProfile.headAngle,
+      movementDetail: shadowProfile.posture || shadowProfile.compositionRole,
+      posture: shadowProfile.posture,
+      compositionRole: shadowProfile.compositionRole
     },
     {
-      name: ascensionTotem,
+      name: allyProfile.name,
       role: 'Ruhsal Yükseliş Müttefiki (Ascension Ally Totem)',
-      mainTotemSymbolism: allyProfile?.mainSymbolism || `${ascensionTotem}, krizlerin ve dönüşümün ötesindeki yüksek bilinç potansiyelini simgeler.`,
-      strongSide: allyProfile?.strongSide || 'Yüksek perspektif, sezgisel rehberlik ve sükunet.',
-      protectiveSide: allyProfile?.protectivePower || 'Zihni aşağı çeken ağırlıklardan ve karamsarlıktan koruyan arınma aurası.',
-      instinctiveSide: allyProfile?.instinctiveSide || 'Ufkun ötesindeki ışığı ve yeni döngüleri önceden sezinleme.',
-      shadowSide: allyProfile?.shadowTrait || 'Aşırı soyutlaşma, ayakları yere basmama ve dünyevi sorumluluklardan kaçış.',
-      unbalancedBehavior: allyProfile?.unbalancedBehavior || 'Gerçeklikten kopup hayal dünyasına sığınma.',
-      suppressedUncontrolledTrait: allyProfile?.suppressedTrait || 'Dünyevi sınırlarla barışık kalabilme ihtiyacı.',
-      tattooPhysicalFeature: allyProfile?.tattooPhysicalFeature || 'Göğe doğru süzülen kavisler, asil duruş ve ince 03RL detaylar.',
-      gazeDirection: allyProfile?.gazeDirection || 'Gökyüzüne, kozmik zirveye yönelmiş aydınlık bakış.',
-      headAngle: allyProfile?.headAngle || 'Yukarıya dönük, ışığı karşılayan taç açısı.',
-      movementDetail: allyProfile?.compositionRole || 'Yukarı doğru akıcı bir süzülüş ve ruhsal yükseliş dinamiği.',
-      posture: allyProfile?.posture || 'Ruhsal yükseliş ve kanatlanma dinamiği.',
-      compositionRole: allyProfile?.compositionRole || 'Kompozisyonun üst taç bölümünü tamamlayan yükseliş figürü (%15-20 ağırlık).'
+      mainTotemSymbolism: allyProfile.mainSymbolism,
+      strongSide: allyProfile.strongSide,
+      protectiveSide: allyProfile.protectivePower,
+      instinctiveSide: allyProfile.instinctiveSide,
+      shadowSide: allyProfile.shadowTrait,
+      unbalancedBehavior: allyProfile.unbalancedBehavior,
+      suppressedUncontrolledTrait: allyProfile.suppressedTrait,
+      tattooPhysicalFeature: allyProfile.tattooPhysicalFeature,
+      gazeDirection: allyProfile.gazeDirection,
+      headAngle: allyProfile.headAngle,
+      movementDetail: allyProfile.posture || allyProfile.compositionRole,
+      posture: allyProfile.posture,
+      compositionRole: allyProfile.compositionRole
     }
   ];
 
@@ -392,19 +387,7 @@ export function generateShadowArchetypeAnalysis(
   const strongestShadowMotif = `Aşırı savunmacı zırh ve teftiş eden tecrit bakışı (Kilitli kapı arketipi).`;
   const strongestTransformationMotif = `Zırhın arasından göğe doğru açılan altın oran filizi ve serbest kalan kanat hareketi.`;
   
-  const supportingSymbols = [
-    `${primaryTotemName} (Ana Karakter Gücü)`,
-    `${section5ChakraBlockages[0].geometricEquivalent} (Çakra Şifa Matrisi)`,
-    `${symbolism.plantFlora} (Organik Dönüşüm Köprüsü)`,
-    `Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü`
-  ];
-  const eliminatedRedundantSymbols = [
-    `Doğrudan literal çakra ikonları (Aşırı yapay ve klişe olduğu için elendi; organik geometriye yedirildi)`,
-    `Ekstra 3. ve 4. hayvan figürleri (Görsel karmaşayı önlemek ve ana totemin gücünü zayıflatmamak için elendi)`,
-    `Rastgele astrolojik glifler (Sadece tasarımın akışına hizmet eden tekil takımyıldız düğümü tutuldu)`
-  ];
-
-  // 7. Symbolic Visual Dictionary Table
+  // 7. Symbolic Visual Dictionary & Design Inclusion Decisions
   const includeTotem = parameters?.includeTotemInDesign === true;
   let actualMainSymbol = parameters?.mainSymbol;
   const isTotemName = actualMainSymbol === primaryTotemName || 
@@ -420,6 +403,28 @@ export function generateShadowArchetypeAnalysis(
       actualMainSymbol = primaryTotemName;
     }
   }
+
+  const supportingSymbols = includeTotem ? [
+    `${primaryTotemName} (Ana Karakter Gücü)`,
+    `${section5ChakraBlockages[0].geometricEquivalent} (Çakra Şifa Matrisi)`,
+    `${symbolism.plantFlora} (Organik Dönüşüm Köprüsü)`,
+    `Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü`
+  ] : [
+    `${actualMainSymbol} (Ana Kutsal Geometri & Mühür Odağı)`,
+    `${section5ChakraBlockages[0].geometricEquivalent} (Çakra Şifa Matrisi)`,
+    `${symbolism.plantFlora} (Organik Dönüşüm Köprüsü)`,
+    `Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü`
+  ];
+
+  const eliminatedRedundantSymbols = includeTotem ? [
+    `Doğrudan literal çakra ikonları (Aşırı yapay ve klişe olduğu için elendi; organik geometriye yedirildi)`,
+    `Ekstra 3. ve 4. hayvan figürleri (Görsel karmaşayı önlemek ve ana totemin gücünü zayıflatmamak için elendi)`,
+    `Rastgele astrolojik glifler (Sadece tasarımın akışına hizmet eden tekil takımyıldız düğümü tutuldu)`
+  ] : [
+    `Totem hayvan figürleri (${primaryTotemName} ve ${section4TotemAnimals[1]?.name || shadowGuardianTotem}) (Danışan tercihi doğrultusunda dövme görseline KESİNLİKLE hayvan figürü dahil edilmedi, yalnızca kişisel analitik rehber olarak tutuldu)`,
+    `Doğrudan literal çakra ikonları (Aşırı yapay ve klişe olduğu için elendi; organik geometriye yedirildi)`,
+    `Rastgele astrolojik glifler (Sadece tasarımın akışına hizmet eden tekil takımyıldız düğümü tutuldu)`
+  ];
 
   const section7VisualDictionary = includeTotem ? [
     {
@@ -540,14 +545,26 @@ export function generateShadowArchetypeAnalysis(
     axisOrientation: parameters.orientation.includes('Dikey') ? 'Dikey (Anatomik Kas Akışına Uygun)' : 'Dinamik Kavisli Hat',
     symmetryType: 'Organik Asimetrik Denge (Sacred Geometry tabanında asimetrik canlı figürler)',
     balanceType: 'Merkezi Çekim & Yukarı Doğru Yükselen Dinamik Akış',
-    mainFigureDirection: 'Gövde sağa hafif dönük, baş sol omzun üzerinden izleyicinin ufuk çizgisine bakan 3/4 profil',
-    secondaryFiguresPlacement: 'Ana figürün alt gövdesini ve ayaklarını çevreleyen hilal şeklinde taban sarmalı',
-    negativeSpaceLocations: 'Figürün göğüs kafesi çevresi, kanat/gövde açıklıkları ve dış çeper konturlarının dışı',
+    mainFigureDirection: includeTotem 
+      ? 'Gövde sağa hafif dönük, baş sol omzun üzerinden izleyicinin ufuk çizgisine bakan 3/4 profil'
+      : 'Merkezi dikey simetri ekseninde, yukarı doğru yükselen kutsal geometrik mühür ve mandala odağı',
+    secondaryFiguresPlacement: includeTotem
+      ? 'Ana figürün alt gövdesini ve ayaklarını çevreleyen hilal şeklinde taban sarmalı'
+      : 'Merkezi kutsal armatürü çevreleyen organik botanik kıvrımlar ve çakra şifa yantrası hatları',
+    negativeSpaceLocations: includeTotem
+      ? 'Figürün göğüs kafesi çevresi, kanat/gövde açıklıkları ve dış çeper konturlarının dışı'
+      : 'Kutsal geometri halkalarının iç açıklıkları, mandalanın merkezi ve dış kılavuz konturlarının tenle buluştuğu negatif boşluklar',
     geometricFramework: '03RL tek iğneyle atılmış ince kılavuz dairesel yantralar ve altın spiral aksı',
     topSection: 'Hafifleyen mikro dotwork geçişleri, yıldız düğümleri ve göğe açılan negatif alan',
-    centerSection: `${primaryTotemName} figürünün anatomik detayları, gözler, en derin gölge kontrastı ve kalp yantrası`,
-    bottomSection: `${section4TotemAnimals[1]?.name || shadowGuardianTotem} gölgesinin köklenen ağır tabanı, toprak/su sembolizmi ve kilitli enerjinin çözüldüğü nokta`,
-    microDetailsPlacement: 'Geometrik hatların kesişim noktalarında ve ana tüy/kürk gölgelerinin derinliklerinde gizli mikro noktalar'
+    centerSection: includeTotem
+      ? `${primaryTotemName} figürünün anatomik detayları, gözler, en derin gölge kontrastı ve kalp yantrası`
+      : `${actualMainSymbol} kutsal geometrik mühür odağı, altın oran kirişleri, en derin kontrast ve kalp yantrası (Totem hayvanı tasarıma dahil edilmemiştir)`,
+    bottomSection: includeTotem
+      ? `${section4TotemAnimals[1]?.name || shadowGuardianTotem} gölgesinin köklenen ağır tabanı, toprak/su sembolizmi ve kilitli enerjinin çözüldüğü nokta`
+      : `Topraklanan kutsal yantra tabanı, akıcı organik botanik (${symbolism.plantFlora}) ve çözülen blokaj hattı`,
+    microDetailsPlacement: includeTotem
+      ? 'Geometrik hatların kesişim noktalarında ve ana tüy/kürk gölgelerinin derinliklerinde gizli mikro noktalar'
+      : 'Geometrik hatların kesişim noktalarında, mandala çeperlerinde ve botanik yaprak kılcal damarlarında gizli mikro noktalar'
   };
 
   // 10. Esoteric Micro Details
@@ -945,7 +962,7 @@ Bu dövme, yaşam boyu bedeninizde taşıyacağınız kişisel bir güç ve şif
 =====================================================
 DANIŞAN: ${person.name || 'Danışan'}
 ANALİZ TARİHİ: ${new Date().toLocaleDateString('tr-TR')}
-TASARIM BAŞLIĞI: ${primaryTotemName} & ${section4TotemAnimals[1]?.name || shadowGuardianTotem} - Ezoterik Simya ve Gölge Dönüşümü
+TASARIM BAŞLIĞI: ${includeTotem ? `${primaryTotemName} & ${section4TotemAnimals[1]?.name || shadowGuardianTotem}` : `${actualMainSymbol} & ${symbolism.geometricSymbol || 'Kutsal Geometri'}`} - Ezoterik Simya ve Gölge Dönüşümü
 =====================================================
 
 ## 1. DANIŞAN VERİLERİ & EZOTERİK ÖZET
@@ -958,7 +975,7 @@ TASARIM BAŞLIĞI: ${primaryTotemName} & ${section4TotemAnimals[1]?.name || shad
 • **Astrolojik Bulgular:** Güneş ${astrology.sunSign} (${astrology.sunDegreeFormatted}), Ay ${astrology.moonSign} (${astrology.moonDegreeFormatted})${astrology.isMoonNearCusp ? ' [29° Cusp]' : ''}, Yükselen ${astrology.ascendantSign} (${astrology.ascendantDegreeFormatted}), Hakim Element: ${astrology.dominantElement}
 • **Ebced Bulguları:** Kişi İsmi: ${ebcedData.personEbced} | Anne Adı: ${ebcedData.motherEbced} | Toplam Ebced: ${ebcedData.totalEbced} | Tılsımi Sayı: ${ebcedData.talismanicNumber}
 • **Yıldızname Bulguları:** Burç: ${ebcedData.yildiznameBurcName} | Unsur: ${ebcedData.yildiznameElement} | Gezegen Rehberi: ${ebcedData.planetGuide} (${ebcedData.esotericQuality})
-• **Mevcut Totem Hayvanları:** ${person.existingTotems || primaryTotemName + ', ' + (section4TotemAnimals[1]?.name || shadowGuardianTotem)}
+• **Mevcut Totem Hayvanları:** ${person.existingTotems || (includeTotem ? primaryTotemName + ', ' + (section4TotemAnimals[1]?.name || shadowGuardianTotem) : 'Tasarıma dahil edilmedi (Danışan tercihi: Yalnızca ruhani analiz)')}
 • **Mevcut Semboller:** ${person.existingSymbols || symbolism.plantFlora + ', ' + section5ChakraBlockages[0].geometricEquivalent}
 • **Kişisel Olarak Önemli Sayılar:** ${person.personalNumbers || lifePath + ', ' + numerology.destinyNumber + ', 19'}
 • **Kişisel Hikâye / Temalar:** ${person.personalStory || 'Ruhsal uyanış, sınırlarını koruma ve gölge yönleri ışığa dönüştürme arayışı.'}
@@ -1011,12 +1028,12 @@ ${section4TotemAnimals.map((t, idx) => `
 • **GÖLGE TARAFI:** ${t.shadowSide}
 • **Dengesiz Hale Geldiğinde Temsil Ettiği Davranış:** ${t.unbalancedBehavior}
 • **Bastırılmış / Kontrolsüz Yönü:** ${t.suppressedUncontrolledTrait}
-• **Dövmede Kullanılacak Fiziksel Özellik:** ${t.tattooPhysicalFeature}
+• **${includeTotem ? 'Dövmede Kullanılacak Fiziksel Özellik' : 'Arketipik Fiziksel Özellik'}:** ${t.tattooPhysicalFeature}${includeTotem ? '' : ' (Not: Danışan tercihiyle dövme çizimine dahil edilmemiştir)'}
 • **Bakış Yönü:** ${t.gazeDirection}
 • **Baş Açısı:** ${t.headAngle}
-• **Kanat / Kuyruk / Pençe Hareketi:** ${t.movementDetail}
+• **Karakteristik Hareket Dili:** ${t.movementDetail}
 • **Duruşu:** ${t.posture}
-• **Kompozisyondaki Görevi:** ${t.compositionRole}
+• **Kompozisyondaki Görevi:** ${includeTotem ? t.compositionRole : 'Yalnızca içsel/ruhani rehberlik (Dövme görseline doğrudan çizilmeyecektir)'}
 `).join('')}
 
 ---
@@ -1153,7 +1170,7 @@ ${fullClientLetterText}
       astrologySummary: `Güneş ${sunSign}, Ay ${astrology.moonSign}, Yükselen ${astrology.ascendantSign}`,
       ebcedSummary: `İsim Ebced: ${ebcedData.personEbced}, Toplam: ${ebcedData.totalEbced}, Tılsım: ${ebcedData.talismanicNumber}`,
       yildiznameSummary: `${ebcedData.yildiznameBurcName} - ${ebcedData.yildiznameElement} (${ebcedData.planetGuide})`,
-      existingTotems: person.existingTotems || primaryTotemName,
+      existingTotems: person.existingTotems || (includeTotem ? primaryTotemName : 'Yalnızca ruhani analizde (Tasarıma dahil edilmedi)'),
       existingSymbols: person.existingSymbols || symbolism.plantFlora,
       personalNumbers: person.personalNumbers || `${lifePath}, 19`,
       personalStory: person.personalStory || 'Gölge dönüşümü ve ruhani güç arayışı'

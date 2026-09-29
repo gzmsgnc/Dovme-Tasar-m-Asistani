@@ -199,59 +199,57 @@ export function executeSymbolicIntegrationEngine(params: {
     isDerivedOrTraditional: 'CALCULATED'
   });
 
-  // D. Ruhani Totem Hayvanı - Görsel Soyutlama (Secondary / Hidden)
+  // D. Ruhani Totem Hayvanı - Görsel Soyutlama (Yalnızca Danışan İzin Verirse Tasarıma Dahil Edilir)
   const primaryTotemName = symbolism.totemAnimal || (symbolism.totemHierarchy && symbolism.totemHierarchy.length > 0 ? symbolism.totemHierarchy[0].name : '');
   if (!primaryTotemName) {
     throw new Error('Sembol entegrasyonu için kişisel totem hayvanı verisi zorunludur. Sabit veya tahmini hayvan atanamaz.');
   }
   const totemProfile = getTotemVisualProfile(primaryTotemName);
-  const includeTotemInDesign = designParameters.includeTotemInDesign ?? false;
+  const includeTotemInDesign = designParameters.includeTotemInDesign === true;
 
-  symbols.push({
-    symbolId: 'sym_totem',
-    symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
-    symbolCategory: 'Totem',
-    sourceType: totemProfile.traditionalSymbolicAssociations.hasAuthenticTraditional ? 'TRADITIONAL' : 'TOTEM_DERIVED',
-    sourceAnalysis: 'Davranışsal Totem Motoru',
-    sourceValue: `${totemProfile.turkishName} (${totemProfile.element} Elementi)`,
-    semanticMeaning: `${totemProfile.animalName} içgüdüsel gücü: ${totemProfile.patternLanguage}.`,
-    visualMeaning: totemProfile.anatomicalAbstraction.simplifiedVectorDescription,
-    priority: includeTotemInDesign ? 'SECONDARY' : 'HIDDEN',
-    confidence: 96,
-    required: true,
-    selected: true,
-    basisOrOrigin: totemProfile.traditionalSymbolicAssociations.basisOrOrigin
-  });
+  if (includeTotemInDesign) {
+    symbols.push({
+      symbolId: 'sym_totem',
+      symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
+      symbolCategory: 'Totem',
+      sourceType: totemProfile.traditionalSymbolicAssociations.hasAuthenticTraditional ? 'TRADITIONAL' : 'TOTEM_DERIVED',
+      sourceAnalysis: 'Davranışsal Totem Motoru',
+      sourceValue: `${totemProfile.turkishName} (${totemProfile.element} Elementi)`,
+      semanticMeaning: `${totemProfile.animalName} içgüdüsel gücü: ${totemProfile.patternLanguage}.`,
+      visualMeaning: totemProfile.anatomicalAbstraction.simplifiedVectorDescription,
+      priority: 'SECONDARY',
+      confidence: 96,
+      required: true,
+      selected: true,
+      basisOrOrigin: totemProfile.traditionalSymbolicAssociations.basisOrOrigin
+    });
 
-  visualTranslations.push({
-    symbolId: 'sym_totem',
-    symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
-    visualForm: totemProfile.geometricAbstraction.coreShapes.join(' + '),
-    geometryType: 'organic',
-    lineStyle: 'continuous single-line',
-    scale: includeTotemInDesign ? 'medium' : 'micro',
-    orientation: 'Dinamik 3/4 Profil Akışı',
-    complexity: 'balanced',
-    abstractionLevel: 'anatomical_abstraction',
-    visualDescription: totemProfile.directRepresentationGuide,
-    sharedStrokePotential: 'Totemin siluet konturu botanik yaprakların dış kenarıyla birebir aynı çizgiyi paylaşır.',
-    negativeSpacePotential: totemProfile.negativeSpacePotentials.join(' | ')
-  });
+    visualTranslations.push({
+      symbolId: 'sym_totem',
+      symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
+      visualForm: totemProfile.geometricAbstraction.coreShapes.join(' + '),
+      geometryType: 'organic',
+      lineStyle: 'continuous single-line',
+      scale: 'medium',
+      orientation: 'Dinamik 3/4 Profil Akışı',
+      complexity: 'balanced',
+      abstractionLevel: 'anatomical_abstraction',
+      visualDescription: totemProfile.directRepresentationGuide,
+      sharedStrokePotential: 'Totemin siluet konturu botanik yaprakların dış kenarıyla birebir aynı çizgiyi paylaşır.',
+      negativeSpacePotential: totemProfile.negativeSpacePotentials.join(' | ')
+    });
 
-  traceability.push({
-    tattooElement: includeTotemInDesign 
-      ? `${totemProfile.animalName} Anatomik Çizgisel Motifi` 
-      : `${totemProfile.animalName} Negatif Alan Silueti (Gizli Katman)`,
-    symbolId: 'sym_totem',
-    sourceAnalysis: 'Davranışsal Totem Hesaplaması',
-    sourceValue: totemProfile.animalName,
-    whySelected: 'Kişinin içgüdüsel pusulası, koruyucu gücü ve ruhani arketipi.',
-    howTransformed: includeTotemInDesign
-      ? 'Fotogerçekçi hayvan yerine 3 çizgilik geometrik kontur ve siluet soyutlamasına dönüştürüldü.'
-      : 'Doğrudan hayvan çizilmedi; botanik yaprakların arasındaki negatif boşluğa fısıldandı.',
-    wherePlaced: includeTotemInDesign ? 'Merkezi kutsal odak noktasında' : 'Negatif alan boşluğunda gizli',
-    isDerivedOrTraditional: totemProfile.traditionalSymbolicAssociations.hasAuthenticTraditional ? 'TRADITIONAL' : 'TOTEM_DERIVED'
-  });
+    traceability.push({
+      tattooElement: `${totemProfile.animalName} Anatomik Çizgisel Motifi`,
+      symbolId: 'sym_totem',
+      sourceAnalysis: 'Davranışsal Totem Hesaplaması',
+      sourceValue: totemProfile.animalName,
+      whySelected: 'Kişinin içgüdüsel pusulası, koruyucu gücü ve ruhani arketipi.',
+      howTransformed: 'Fotogerçekçi hayvan yerine 3 çizgilik geometrik kontur ve siluet soyutlamasına dönüştürüldü.',
+      wherePlaced: 'Merkezi kutsal odak noktasında',
+      isDerivedOrTraditional: totemProfile.traditionalSymbolicAssociations.hasAuthenticTraditional ? 'TRADITIONAL' : 'TOTEM_DERIVED'
+    });
+  }
 
   // E. Botanik / Flora (Secondary)
   const floraName = symbolism.plantFlora || 'Kutsal Lotus';
@@ -506,20 +504,20 @@ export function executeSymbolicIntegrationEngine(params: {
       highlightColor: '#06b6d4', // Camgöbeği (Cyan)
       highlightPathSvg: 'M 15 28 Q 50 14 85 28 Q 50 22 15 28 Z'
     },
-    {
+    ...(includeTotemInDesign ? [{
       symbolId: 'sym_totem',
       symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
-      region: includeTotemInDesign ? 'Merkezi Odak & Siluet Çizgisi' : 'Negatif Alan Penceresi',
+      region: 'Merkezi Odak & Siluet Çizgisi',
       x: 0.50,
       y: 0.45,
       width: 0.42,
       height: 0.42,
       rotation: 0,
-      visibility: includeTotemInDesign ? 'Belirgin' : 'Gizli Negatif Alan',
-      layer: includeTotemInDesign ? 'SECONDARY' : 'HIDDEN',
+      visibility: 'Belirgin',
+      layer: 'SECONDARY' as const,
       highlightColor: '#f43f5e', // Canlı Kırmızı / Gül
       highlightPathSvg: 'M 38 48 Q 50 32 62 48 Q 50 62 38 48 Z M 44 38 L 50 28 L 56 38'
-    },
+    }] : []),
     {
       symbolId: 'sym_flora',
       symbolName: floraName,

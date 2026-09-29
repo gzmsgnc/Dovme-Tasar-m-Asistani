@@ -154,12 +154,14 @@ export interface EnneagramQuestion {
 }
 
 export interface TotemAnimalDetail {
+  id?: string;
   role: 'Birincil Ruh Totemi' | 'Gölge & Muhafız Totemi' | 'Yükseliş & Ruhsal Müttefik';
   name: string;
   origin: string; // e.g. "Yaşam Yolu 7 + Güneş Akrep + Enneagram 4w5"
   meaning: string;
   archetypalPower: string;
   visualRoleInTattoo: string;
+  profile?: any;
 }
 
 export interface NeededSymbolDetail {
@@ -172,6 +174,7 @@ export interface NeededSymbolDetail {
 
 export interface SymbolismProfile {
   totemAnimal: string;
+  totemAnimalId?: string;
   totemAnimalMeaning: string;
   totemHierarchy: TotemAnimalDetail[]; // 3'lü Ruhani Totem Hiyerarşisi
   neededSymbols: NeededSymbolDetail[]; // Kişinin Haritasına Göre İhtiyaç Duyduğu Semboller

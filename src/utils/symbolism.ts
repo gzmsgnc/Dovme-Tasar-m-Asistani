@@ -65,28 +65,34 @@ export function deriveSymbolismProfile(
 
   const totemHierarchy: TotemAnimalDetail[] = [
     {
+      id: totemCalc.primaryTotem.id,
       role: 'Birincil Ruh Totemi',
       name: primaryTotemName,
       origin: primaryTotemOrigin,
       meaning: primaryTotemMeaning,
       archetypalPower: primaryTotemPower,
-      visualRoleInTattoo: primaryTotemRole
+      visualRoleInTattoo: primaryTotemRole,
+      profile: totemCalc.primaryTotem
     },
     {
+      id: totemCalc.shadowTotem.id,
       role: 'Gölge & Muhafız Totemi',
       name: shadowTotemName,
       origin: shadowTotemOrigin,
       meaning: shadowTotemMeaning,
       archetypalPower: shadowTotemPower,
-      visualRoleInTattoo: shadowTotemRole
+      visualRoleInTattoo: shadowTotemRole,
+      profile: totemCalc.shadowTotem
     },
     {
+      id: totemCalc.allyTotem.id,
       role: 'Yükseliş & Ruhsal Müttefik',
       name: allyTotemName,
       origin: allyTotemOrigin,
       meaning: allyTotemMeaning,
       archetypalPower: allyTotemPower,
-      visualRoleInTattoo: allyTotemRole
+      visualRoleInTattoo: allyTotemRole,
+      profile: totemCalc.allyTotem
     }
   ];
 
@@ -303,6 +309,7 @@ export function deriveSymbolismProfile(
 
   return {
     totemAnimal: primaryTotemName,
+    totemAnimalId: totemCalc.primaryTotem.id,
     totemAnimalMeaning: primaryTotemMeaning,
     calculatedTotemName: primaryTotemName,
     calculatedTotemMeaning: primaryTotemMeaning,
