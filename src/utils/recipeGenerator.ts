@@ -16,6 +16,19 @@ import { executeSymbolicIntegrationEngine } from './symbolIntegrationEngine';
 import { getTotemAnimalStrict } from './totemCatalogData';
 import { generatePersonalSymbolPrescription } from './personalSymbolPrescription';
 
+export function validateRecipeSymbolism(symbolism: SymbolismProfile): void {
+  if (!symbolism.totemAnimal?.trim()) {
+    throw new Error('Tarif üretilemedi: hesaplanmış kişisel totem bulunamadı.');
+  }
+  const primary = symbolism.totemTestResult?.primaryTotem;
+  if (primary?.name && primary.name !== symbolism.totemAnimal) {
+    throw new Error('Tarif üretilemedi: totem sonuçları ile sembolizm profili eşleşmiyor.');
+  }
+  if (primary?.id && symbolism.totemAnimalId && primary.id !== symbolism.totemAnimalId) {
+    throw new Error('Tarif üretilemedi: hesaplanmış totem kimlikleri eşleşmiyor.');
+  }
+}
+
 export function generateTattooRecipe(
   person: PersonData,
   numerology: NumerologyProfile,
@@ -28,19 +41,7 @@ export function generateTattooRecipe(
   const includeTotem = parameters.includeTotemInDesign === true;
 
   // Guard against stale/mismatched symbolism entering a recipe.
-  // The recipe must use the same calculated totem identity as the symbolism profile.
-  if (!symbolism.totemAnimal?.trim()) {
-    throw new Error('Tarif üretilemedi: hesaplanmış kişisel totem bulunamadı.');
-  }
-  if (symbolism.totemTestResult?.primaryTotem?.name &&
-      symbolism.totemTestResult.primaryTotem.name !== symbolism.totemAnimal) {
-    throw new Error('Tarif üretilemedi: totem sonuçları ile sembolizm profili eşleşmiyor.');
-  }
-  if (symbolism.totemTestResult?.primaryTotem?.id &&
-      symbolism.totemAnimalId &&
-      symbolism.totemTestResult.primaryTotem.id !== symbolism.totemAnimalId) {
-    throw new Error('Tarif üretilemedi: hesaplanmış totem kimlikleri eşleşmiyor.');
-  }
+  validateRecipeSymbolism(symbolism);
 
   const isTotemAnimalName = (sym: string | undefined): boolean => {
     if (!sym) return false;
