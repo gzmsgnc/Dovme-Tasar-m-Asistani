@@ -542,7 +542,7 @@ export function generateShadowArchetypeAnalysis(
 
   // 9. Tattoo Composition Architecture
   const section9CompositionArchitecture = {
-    axisOrientation: parameters.orientation.includes('Dikey') ? 'Dikey (Anatomik Kas Akışına Uygun)' : 'Dinamik Kavisli Hat',
+    axisOrientation: parameters.orientation?.includes('Dikey') ? 'Dikey (Anatomik Kas Akışına Uygun)' : 'Dinamik Kavisli Hat',
     symmetryType: 'Organik Asimetrik Denge (Sacred Geometry tabanında asimetrik canlı figürler)',
     balanceType: 'Merkezi Çekim & Yukarı Doğru Yükselen Dinamik Akış',
     mainFigureDirection: includeTotem 
@@ -862,8 +862,8 @@ Bu bölüm, dövme sanatçınızın tasarımı cildinize aktarırken kullanacağ
 ═══════════════════════════════════════════════════════
 • Danışan: ${person.name}
 • Doğum Verileri: ${person.birthDate} ${person.birthTime ? `(${person.birthTime})` : ''} — ${person.birthPlace || 'Belirtilmedi'}
-• Astrolojik Harita: Güneş ${astrology.sunSign} (${astrology.sunDegreeFormatted}) | Ay ${astrology.moonSign} (${astrology.moonDegreeFormatted}) | Yükselen ${astrology.ascendantSign} | Element: ${astrology.dominantElement}
-• Numeroloji Pisagor Matrisi: Yaşam Yolu ${lifePath} (${numerology.lifePathTitle}) | İfade ${numerology.destinyNumber} | Dünya Misyonu (DM) ${numerology.dmNumber} | ${numerology.divineHelp19.has19 ? '19 İlahi Mühür Aktif' : 'Dengeli Matris'}
+• Astrolojik Harita: Güneş ${astrology.sunSign} ${astrology.sunDegreeFormatted ? `(${astrology.sunDegreeFormatted})` : ''} | Ay ${astrology.moonSign} ${astrology.moonDegreeFormatted ? `(${astrology.moonDegreeFormatted})` : ''} | Yükselen ${astrology.ascendantSign} | Element: ${astrology.dominantElement}
+• Numeroloji Pisagor Matrisi: Yaşam Yolu ${lifePath} (${numerology.lifePathTitle || ''}) | İfade ${numerology.destinyNumber} | Dünya Misyonu (DM) ${numerology.dmNumber || ''} | ${numerology.divineHelp19?.has19 ? '19 İlahi Mühür Aktif' : 'Dengeli Matris'}
 • Ebced & Yıldızname Frekansı: Toplam Ebced: ${ebcedData.totalEbced} | Burç: ${ebcedData.yildiznameBurcName} (${ebcedData.yildiznameElement})
 
 ───────────────────────────────────────────────────────
@@ -971,8 +971,8 @@ TASARIM BAŞLIĞI: ${includeTotem ? `${primaryTotemName} & ${section4TotemAnimal
 • **Doğum Saati:** ${person.birthTime || 'Belirtilmedi (Güneş öğle vakti referans alındı)'}
 • **Doğum Yeri:** ${person.birthPlace || 'Belirtilmedi'}
 • **Anne Adı:** ${person.motherName || 'Belirtilmedi (Ebced altın oranla dengelendi)'}
-• **Numerolojik Bulgular:** Yaşam Yolu ${lifePath} (${numerology.lifePathTitle}), Ana Kulvar/İfade ${numerology.destinyNumber} (${numerology.destinyTitle}), Kalp Arzusu ${numerology.soulUrgeNumber}, DM ${numerology.dmNumber} (${numerology.dmTitle}), Karmik Eksik Sayılar: [${numerology.missingNumbers.join(', ') || 'Yok'}]
-• **Astrolojik Bulgular:** Güneş ${astrology.sunSign} (${astrology.sunDegreeFormatted}), Ay ${astrology.moonSign} (${astrology.moonDegreeFormatted})${astrology.isMoonNearCusp ? ' [29° Cusp]' : ''}, Yükselen ${astrology.ascendantSign} (${astrology.ascendantDegreeFormatted}), Hakim Element: ${astrology.dominantElement}
+• **Numerolojik Bulgular:** Yaşam Yolu ${lifePath} (${numerology.lifePathTitle || ''}), Ana Kulvar/İfade ${numerology.destinyNumber} (${numerology.destinyTitle || ''}), Kalp Arzusu ${numerology.soulUrgeNumber}, DM ${numerology.dmNumber || ''} (${numerology.dmTitle || ''}), Karmik Eksik Sayılar: [${numerology.missingNumbers?.join(', ') || 'Yok'}]
+• **Astrolojik Bulgular:** Güneş ${astrology.sunSign} ${astrology.sunDegreeFormatted ? `(${astrology.sunDegreeFormatted})` : ''}, Ay ${astrology.moonSign} ${astrology.moonDegreeFormatted ? `(${astrology.moonDegreeFormatted})` : ''}${astrology.isMoonNearCusp ? ' [29° Cusp]' : ''}, Yükselen ${astrology.ascendantSign} ${astrology.ascendantDegreeFormatted ? `(${astrology.ascendantDegreeFormatted})` : ''}, Hakim Element: ${astrology.dominantElement}
 • **Ebced Bulguları:** Kişi İsmi: ${ebcedData.personEbced} | Anne Adı: ${ebcedData.motherEbced} | Toplam Ebced: ${ebcedData.totalEbced} | Tılsımi Sayı: ${ebcedData.talismanicNumber}
 • **Yıldızname Bulguları:** Burç: ${ebcedData.yildiznameBurcName} | Unsur: ${ebcedData.yildiznameElement} | Gezegen Rehberi: ${ebcedData.planetGuide} (${ebcedData.esotericQuality})
 • **Mevcut Totem Hayvanları:** ${person.existingTotems || (includeTotem ? primaryTotemName + ', ' + (section4TotemAnimals[1]?.name || shadowGuardianTotem) : 'Tasarıma dahil edilmedi (Danışan tercihi: Yalnızca ruhani analiz)')}

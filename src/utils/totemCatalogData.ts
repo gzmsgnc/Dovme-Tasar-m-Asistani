@@ -1458,6 +1458,17 @@ export function getTotemAnimalStrict(idOrNameOrProfile: string | TotemAnimalProf
     return idOrNameOrProfile as TotemAnimalProfile;
   }
 
+function normalizeTr(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+}
+
   if (typeof idOrNameOrProfile !== 'string') {
     throw new Error(`Geçersiz totem parametresi: ${typeof idOrNameOrProfile}.`);
   }
@@ -1468,50 +1479,57 @@ export function getTotemAnimalStrict(idOrNameOrProfile: string | TotemAnimalProf
   }
 
   const qLower = query.toLowerCase();
+  const qNorm = normalizeTr(qLower);
 
   // 2. Doğrudan exact ID eşleşmesi (örn: "manta_vatozu", "asil_yaban_ati", "kurt")
-  const byId = TOTEM_ANIMALS_52.find(a => a.id.toLowerCase() === qLower);
+  const byId = TOTEM_ANIMALS_52.find(a => a.id.toLowerCase() === qLower || normalizeTr(a.id) === qNorm);
   if (byId) return byId;
 
   // 3. Doğrudan exact Name veya TurkishName eşleşmesi
   const byExactName = TOTEM_ANIMALS_52.find(a => 
     a.name.toLowerCase() === qLower || 
-    a.turkishName.toLowerCase() === qLower
+    a.turkishName.toLowerCase() === qLower ||
+    normalizeTr(a.name) === qNorm ||
+    normalizeTr(a.turkishName) === qNorm
   );
   if (byExactName) return byExactName;
 
   // 4. Parantez temizliği ile exact eşleşme
   const cleanWithoutParens = qLower.replace(/\(.*?\)/g, '').trim();
+  const cleanNorm = normalizeTr(cleanWithoutParens);
   const parensContent = (qLower.match(/\((.*?)\)/)?.[1] || '').trim();
+  const parensNorm = normalizeTr(parensContent);
 
   // 4a. Parantez içindeki İngilizce ad ile tam eşleşme
-  if (parensContent) {
+  if (parensNorm) {
     const byParens = TOTEM_ANIMALS_52.find(a => {
       const aParens = (a.name.toLowerCase().match(/\((.*?)\)/)?.[1] || '').trim();
-      return aParens === parensContent || a.id.toLowerCase() === parensContent;
+      return aParens === parensContent || normalizeTr(aParens) === parensNorm || a.id.toLowerCase() === parensContent;
     });
     if (byParens) return byParens;
   }
 
   // 4b. Parantezsiz ana ad ile tam eşleşme (Exact base name)
-  if (cleanWithoutParens) {
+  if (cleanNorm) {
     const byCleanBase = TOTEM_ANIMALS_52.find(a => {
       const aCleanBase = a.name.toLowerCase().replace(/\(.*?\)/g, '').trim();
       const aTrClean = a.turkishName.toLowerCase().replace(/\(.*?\)/g, '').trim();
-      return aCleanBase === cleanWithoutParens || aTrClean === cleanWithoutParens;
+      return aCleanBase === cleanWithoutParens || 
+             aTrClean === cleanWithoutParens ||
+             normalizeTr(aCleanBase) === cleanNorm ||
+             normalizeTr(aTrClean) === cleanNorm;
     });
     if (byCleanBase) return byCleanBase;
   }
 
   // 4c. Güvenli kelime bazlı eşleşme (Tam kelime sınırlarıyla; rastgele harf içermesi değil!)
-  const queryWords = cleanWithoutParens.split(/\s+/).filter(w => w.length > 2);
+  const queryWords = cleanNorm.split(/[\s/_]+/).filter(w => w.length > 2);
   const byWordMatch = TOTEM_ANIMALS_52.find(a => {
-    const aCleanBase = a.name.toLowerCase().replace(/\(.*?\)/g, '').trim();
-    const aWords = aCleanBase.split(/\s+/);
-    const aTrWords = a.turkishName.toLowerCase().split(/\s+/);
-    return queryWords.some(qw => 
-      aWords.some(aw => aw === qw) || aTrWords.some(atw => atw === qw) || a.id.toLowerCase() === qw
-    );
+    const aCleanBase = normalizeTr(a.name.toLowerCase().replace(/\(.*?\)/g, '').trim());
+    const aTrClean = normalizeTr(a.turkishName.toLowerCase().replace(/\(.*?\)/g, '').trim());
+    const aIdWords = a.id.toLowerCase().split('_');
+    const aWords = [...aCleanBase.split(/[\s/_]+/), ...aTrClean.split(/[\s/_]+/), ...aIdWords];
+    return queryWords.some(qw => aWords.some(aw => aw === qw));
   });
   if (byWordMatch) return byWordMatch;
 

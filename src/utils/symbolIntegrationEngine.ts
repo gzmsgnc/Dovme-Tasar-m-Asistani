@@ -460,6 +460,21 @@ export function executeSymbolicIntegrationEngine(params: {
     bodyPlacement: designParameters.bodyPlacement || 'Önkol İç'
   };
 
+  const totemMapItem: SymbolLocationMapItem | null = includeTotemInDesign ? {
+    symbolId: 'sym_totem',
+    symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
+    region: 'Merkezi Odak & Siluet Çizgisi',
+    x: 0.50,
+    y: 0.45,
+    width: 0.42,
+    height: 0.42,
+    rotation: 0,
+    visibility: 'Belirgin',
+    layer: 'SECONDARY',
+    highlightColor: '#f43f5e', // Canlı Kırmızı / Gül
+    highlightPathSvg: 'M 38 48 Q 50 32 62 48 Q 50 62 38 48 Z M 44 38 L 50 28 L 56 38'
+  } : null;
+
   // 4. SYMBOL LOCATION MAP (Normalize Koordinatlar & İnteraktif Vurgulama Alanları)
   const symbolMap: SymbolLocationMapItem[] = [
     {
@@ -504,20 +519,7 @@ export function executeSymbolicIntegrationEngine(params: {
       highlightColor: '#06b6d4', // Camgöbeği (Cyan)
       highlightPathSvg: 'M 15 28 Q 50 14 85 28 Q 50 22 15 28 Z'
     },
-    ...(includeTotemInDesign ? [{
-      symbolId: 'sym_totem',
-      symbolName: `${totemProfile.animalName} Çizgisel Soyutlaması`,
-      region: 'Merkezi Odak & Siluet Çizgisi',
-      x: 0.50,
-      y: 0.45,
-      width: 0.42,
-      height: 0.42,
-      rotation: 0,
-      visibility: 'Belirgin',
-      layer: 'SECONDARY' as const,
-      highlightColor: '#f43f5e', // Canlı Kırmızı / Gül
-      highlightPathSvg: 'M 38 48 Q 50 32 62 48 Q 50 62 38 48 Z M 44 38 L 50 28 L 56 38'
-    }] : []),
+    ...(totemMapItem ? [totemMapItem] : []),
     {
       symbolId: 'sym_flora',
       symbolName: floraName,
