@@ -204,6 +204,8 @@ export interface SymbolismProfile {
   colorThemeDescription: string;
   mainTheme: string;
   emotionalTheme: string;
+  enneagramShadowTraits?: string[];
+  enneagramShadowSymbolicMeaning?: string;
   characterTraitSymbols: string[];
   
   // Refined Hierarchy & Subtle Details
