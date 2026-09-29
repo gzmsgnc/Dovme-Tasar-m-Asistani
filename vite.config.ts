@@ -12,16 +12,18 @@ export default defineConfig(() => {
       },
     },
     build: {
-      // The application intentionally contains several rich visual libraries.
-      // Keep the warning threshold aligned with the actual production bundle
-      // while we incrementally lazy-load route-level views.
       chunkSizeWarningLimit: 1800,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom'],
+            icons: ['lucide-react'],
+          },
+        },
+      },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
