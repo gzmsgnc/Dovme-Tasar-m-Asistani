@@ -498,7 +498,9 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       personalNumbers: personalNumbers.trim() || undefined,
       personalStory: personalStory.trim() || undefined,
       notes: notes.trim() || undefined,
-      createdAt: initialPerson?.createdAt || new Date().toISOString(),
+      createdAt: (currentClientId
+        ? (savedClients.find(c => c.id === currentClientId)?.createdAt || initialPerson?.createdAt)
+        : initialPerson?.createdAt) || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
