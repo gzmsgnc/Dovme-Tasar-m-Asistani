@@ -159,7 +159,10 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
   const planetaryRulers = ['Güneş (Pazar)', 'Ay (Pazartesi)', 'Mars (Salı)', 'Merkür (Çarşamba)', 'Jüpiter (Perşembe)', 'Venüs (Cuma)', 'Satürn (Cumartesi)'];
   const planetaryDayRuler = planetaryRulers[dayOfWeek] || 'Güneş';
 
-  const placeClean = (birthPlace && birthPlace.trim()) || 'Anadolu';
+  if (!birthPlace || !birthPlace.trim()) {
+    throw new Error('Totem hayvanı hesaplaması için doğum yeri zorunludur. Eksik konumla varsayımsal şehir veya bölge kullanılamaz.');
+  }
+  const placeClean = birthPlace.trim();
   const placeSignature = hashString(placeClean);
 
   const nameClean = (name && name.trim()) || 'Danışan';
