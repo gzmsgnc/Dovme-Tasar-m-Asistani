@@ -27,6 +27,24 @@ const DEMO_ACCOUNT_IDS = new Set([
   'client_derya_yilmaz'
 ]);
 
+function isDemoClientRecord(client: any): boolean {
+  if (!client || typeof client !== 'object') return true;
+  if (client.id && DEMO_ACCOUNT_IDS.has(client.id)) return true;
+
+  const name = String(client.name || '').trim().toLocaleLowerCase('tr-TR');
+  const email = String(client.email || '').trim().toLocaleLowerCase('tr-TR');
+  const source = String(client.source || '').trim().toLocaleLowerCase('tr-TR');
+  const status = String(client.status || '').trim().toLocaleLowerCase('tr-TR');
+
+  const demoNamePatterns = ['selin kaya', 'emir arslan', 'derya yılmaz', 'demo', 'test danışan', 'test müşteri', 'test musteri'];
+  return demoNamePatterns.some(pattern => name === pattern || name.includes(pattern))
+    || email.includes('demo@')
+    || email.includes('test@')
+    || source === 'demo'
+    || source === 'test'
+    || status === 'demo';
+}
+
 function getPersistedClients(): PersonData[] {
   try {
     if (!fs.existsSync(CLIENTS_STORAGE_FILE)) {
@@ -35,7 +53,11 @@ function getPersistedClients(): PersonData[] {
     const raw = fs.readFileSync(CLIENTS_STORAGE_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((c: any) => c && c.id && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+    const realOnly = parsed.filter((c: any) => c && c.id && c.name && !isDemoClientRecord(c));
+    if (realOnly.length !== parsed.length) {
+      savePersistedClients(realOnly);
+    }
+    return realOnly;
   } catch (err) {
     console.error('Failed reading persisted clients:', err);
     return [];
@@ -47,7 +69,7 @@ function savePersistedClients(clients: PersonData[]): void {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    const realOnly = clients.filter(c => c && c.id && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+    const realOnly = clients.filter(c => c && c.id && c.name && !isDemoClientRecord(c));
     fs.writeFileSync(CLIENTS_STORAGE_FILE, JSON.stringify(realOnly, null, 2), 'utf-8');
   } catch (err) {
     console.error('Failed writing persisted clients:', err);
