@@ -1,6 +1,7 @@
 import { NumerologyProfile, AstrologyProfile, EnneagramProfile, SymbolismProfile, TotemAnimalDetail, NeededSymbolDetail } from '../types';
 import { calculateTotemAnimal, PersonalTotemInput } from './totemCalculator';
 import { validateCalendarDate } from './astrology';
+import { calculateChakraProfile, ChakraProfile } from './chakra';
 
 export function deriveSymbolismProfile(
   numerology: NumerologyProfile,
@@ -13,6 +14,7 @@ export function deriveSymbolismProfile(
   const moon = astrology.moonSign;
   const asc = astrology.ascendantSign;
   const ennea = enneagram.type;
+  const chakraProfile: ChakraProfile = calculateChakraProfile(numerology, astrology);
 
   // 1. DETERMINISTIC PERSONAL TOTEM CALCULATION
   // Kullanıcının kişisel verilerinden (Doğum tarihi, saati, yeri, isim, element ve test yanıtları) dinamik olarak hesaplanır.
@@ -332,6 +334,12 @@ export function deriveSymbolismProfile(
     colorThemeDescription,
     mainTheme,
     emotionalTheme,
+    chakraProfile,
+    chakraBalanceScore: chakraProfile.overallChakraBalanceScore,
+    blockedChakraNumbers: chakraProfile.blockedChakras.map(chakra => chakra.number),
+    dominantChakraNumbers: chakraProfile.dominantChakras.map(chakra => chakra.number),
+    primaryChakraHealingDirective: chakraProfile.primaryHealingDirective,
+    primaryChakraAffirmation: chakraProfile.primaryChakraAffirmation,
     enneagramShadowTraits: enneagram.shadowTraits,
     enneagramShadowSymbolicMeaning: enneagram.symbolicMeaning,
     characterTraitSymbols,
