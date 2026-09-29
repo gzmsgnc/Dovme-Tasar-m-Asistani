@@ -197,7 +197,10 @@ export function extractCanonicalClientAnalysis(params: {
 
   // 4. Ebced & Mizan (Ezoterik hesaplama zinciri)
   const pNameClean = (person.name || '').trim();
-  const personEbced = calculateSingleEbced(pNameClean) || 108;
+  const personEbced = calculateSingleEbced(pNameClean);
+  if (!pNameClean || personEbced === 0) {
+    throw new Error('Kişisel Ebced hesabı için geçerli danışan adı zorunludur; tahmini Ebced kullanılamaz.');
+  }
   const mNameClean = (person.motherName || '').trim();
   const hasMotherName = mNameClean.length > 0;
   
@@ -214,23 +217,27 @@ export function extractCanonicalClientAnalysis(params: {
   }
 
   const ebcedCalculated = calculateEbcedAndYildizname(pNameClean, hasMotherName ? mNameClean : undefined);
-  const mizanBurc = ebcedCalculated.yildiznameBurcName || 'Mizan (Terazi)';
-  const mizanElement = ebcedCalculated.yildiznameElement || 'Hava';
+  const mizanBurc = ebcedCalculated.yildiznameBurcName;
+  const mizanElement = ebcedCalculated.yildiznameElement;
 
   // 5. Enneagram
-  const enneaType = enneagram.type || 5;
-  const enneaWing = enneagram.wing || `${enneaType}w${enneaType === 9 ? 1 : enneaType + 1}`;
-  const enneaTypeName = enneagram.typeName || `Tip ${enneaType}`;
+  const enneaType = enneagram.type;
+  const enneaWing = enneagram.wing;
+  const enneaTypeName = enneagram.typeName;
+  if (!Number.isInteger(enneaType) || !enneaWing || !enneaTypeName) {
+    throw new Error('Enneagram sonucu doğrulanmadan kişisel sembol reçetesi üretilemez.');
+  }
 
   // 6. Totem Hayvanları
-  const primaryTotem = symbolism.totemAnimal || symbolism.calculatedTotemName || 'Ateş Semenderi';
-  const primaryTotemMeaning = symbolism.totemAnimalMeaning || 'Dönüştürücü içsel irade ve rehberlik';
-  
-  const shadowTotem = symbolism.totemHierarchy?.[1]?.name || symbolism.secondaryAnimals?.[0] || 'Primat';
-  const shadowTotemMeaning = symbolism.totemHierarchy?.[1]?.meaning || 'Bilinçdışı koruma ve gölge entegrasyonu';
-
-  const allyTotem = symbolism.totemHierarchy?.[2]?.name || symbolism.secondaryAnimals?.[1] || 'Dev Manta Vatozu';
-  const allyTotemMeaning = symbolism.totemHierarchy?.[2]?.meaning || 'Zarafet, yükseliş ve sükunet';
+  const primaryTotem = symbolism.totemAnimal || symbolism.calculatedTotemName;
+  const primaryTotemMeaning = symbolism.totemAnimalMeaning || symbolism.calculatedTotemMeaning;
+  const shadowTotem = symbolism.totemHierarchy?.[1]?.name || symbolism.secondaryAnimals?.[0];
+  const shadowTotemMeaning = symbolism.totemHierarchy?.[1]?.meaning;
+  const allyTotem = symbolism.totemHierarchy?.[2]?.name || symbolism.secondaryAnimals?.[1];
+  const allyTotemMeaning = symbolism.totemHierarchy?.[2]?.meaning;
+  if (!primaryTotem || !primaryTotemMeaning || !shadowTotem || !shadowTotemMeaning || !allyTotem || !allyTotemMeaning) {
+    throw new Error('Totem hiyerarşisi tamamlanmadan kişisel sembol reçetesi üretilemez.');
+  }
 
   const includeAnimalInTattoo = designParameters.includeTotemInDesign === true;
   const totemHandlingMode: 'Figüratif Odak' | 'Soyut Sembolik Akış' = includeAnimalInTattoo 
