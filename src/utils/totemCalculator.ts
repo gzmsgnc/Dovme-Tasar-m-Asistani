@@ -202,32 +202,9 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
     };
   }
 
-  // 2. Eğer danışana ait kayıtlı primaryTotemId mevcutsa (daha önce hesaplanıp kaydedilmişse):
-  if (personalData.primaryTotemId) {
-    const savedPrimary = getTotemAnimalById(personalData.primaryTotemId);
-    if (savedPrimary) {
-      const savedShadow = personalData.shadowTotemId ? getTotemAnimalById(personalData.shadowTotemId) : undefined;
-      const savedAlly = personalData.secondaryTotemId ? getTotemAnimalById(personalData.secondaryTotemId) : undefined;
-      return {
-        primaryTotem: savedPrimary,
-        shadowTotem: savedShadow || (TOTEM_ANIMALS_52.find(a => a.id !== savedPrimary.id)!),
-        allyTotem: savedAlly || (TOTEM_ANIMALS_52.find(a => a.id !== savedPrimary.id && (!savedShadow || a.id !== savedShadow.id))!),
-        isBehavioralTestBased: Boolean(personalData.totemConfidenceScore),
-        calculationBreakdown: {
-          birthDateSignature: dateSignature,
-          timeQuadrantSignature: timeSignature,
-          placeSignature,
-          nameMatrixSignature: nameSignature + motherSignature,
-          totalDeterministicHash,
-          circadianQuadrant,
-          planetaryDayRuler,
-          elementalDominance: savedPrimary.element,
-          rationale: `Kayıtlı danışan profiline bağlı Totem Arketipi (${savedPrimary.name}).`
-        }
-      };
-    }
-  }
-
+  // Kayıtlı totem kimlikleri geçmiş sonuç referansıdır; yeni hesaplamayı override edemez.
+  // Böylece önceki danışanın totemi yeni danışana sızmaz.
+  
   // 3. Test henüz tamamlanmamışsa: Doğum, İsim, Element ve Yaşam Yolu matrisinden deterministik seçim
   // 52 hayvan kataloğundan dengeli dağılım
   const primaryIndex = totalDeterministicHash % totalCatalogSize;
