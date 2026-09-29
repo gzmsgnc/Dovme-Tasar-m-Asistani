@@ -78,13 +78,22 @@ export function generateTattooRecipe(
     ...(symbolism.chakraProfile?.dominantChakras ?? []).flatMap(chakra => chakra.healingSymbols.slice(0, 1))
   ];
 
+  const shadowDrivenSymbols = [
+    symbolism.shadowTotemRole,
+    symbolism.shadowTotemName
+      ? `${symbolism.shadowTotemName} — ${symbolism.shadowTotemMeaning || 'gölge entegrasyonu'}`
+      : undefined,
+    ...(symbolism.enneagramShadowTraits ?? []).slice(0, 2).map(trait => `Gölge dönüşümü: ${trait}`)
+  ];
+
   const rawSecondary = parameters.secondarySymbols.length > 0
     ? parameters.secondarySymbols
     : [
         symbolism.plantFlora,
         symbolism.geometricSymbol,
         symbolism.sacredObject,
-        ...chakraDrivenSymbols
+        ...chakraDrivenSymbols,
+        ...shadowDrivenSymbols
       ];
 
   // Remove duplicate symbols while preserving the user's calculated hierarchy.
