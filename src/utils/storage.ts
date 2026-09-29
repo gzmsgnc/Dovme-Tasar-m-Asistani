@@ -250,7 +250,7 @@ export function getStoredRecipes(): TattooRecipe[] {
         try {
           const parsed = JSON.parse(legacyRaw);
           if (Array.isArray(parsed)) {
-            const realOnly = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId));
+            const realOnly = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
             localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realOnly));
             return realOnly;
           }
@@ -265,6 +265,9 @@ export function getStoredRecipes(): TattooRecipe[] {
     if (!Array.isArray(parsed)) return [];
 
     const realRecipes = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
+    if (realRecipes.length !== parsed.length) {
+      localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realRecipes));
+    }
     return realRecipes;
   } catch {
     return [];
