@@ -87,8 +87,33 @@ export const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps>
           const data = await res.json();
           if (data && data.success && Array.isArray(data.locations)) {
             if (data.locations.length > 0) {
-              setSuggestions(data.locations.slice(0, 10));
+              const nextLocations = data.locations.slice(0, 10);
+              setSuggestions(nextLocations);
               setIsOpen(true);
+
+              // Şehir + ülke gibi açık bir tam eşleşme varsa otomatik doğrula.
+              // Birden fazla aday varsa seçim kullanıcıya bırakılır; rastgele seçim yoktur.
+              const normalizedQuery = query
+                .toLocaleLowerCase('tr-TR')
+                .replace(/[.,]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+              const exactMatches = nextLocations.filter((loc) => {
+                const candidates = [
+                  loc.displayName,
+                  loc.name,
+                  loc.city,
+                  `${loc.city}, ${loc.country}`
+                ].filter(Boolean).map((v) =>
+                  String(v).toLocaleLowerCase('tr-TR').replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim()
+                );
+                return candidates.includes(normalizedQuery);
+              });
+
+              if (exactMatches.length === 1 && !selectedLocation) {
+                handleSelect(exactMatches[0]);
+              }
 
               // Check if query is ambiguous without state/region (e.g. "Springfield")
               const distinct = new Set(data.locations.map((l: ResolvedLocation) => `${l.city}_${l.region || ''}_${l.country}`));
