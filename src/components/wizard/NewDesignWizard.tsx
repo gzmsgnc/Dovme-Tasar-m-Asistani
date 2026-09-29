@@ -9,7 +9,7 @@ import {
   TattooRecipe 
 } from '../../types';
 import { calculateNumerology } from '../../utils/numerology';
-import { calculateAstrology, validateCalendarDate, resolveCityLocation } from '../../utils/astrology';
+import { calculateAstrology, validateCalendarDate, resolveCityLocation, resolveCityLocationAsync } from '../../utils/astrology';
 import { LocationAutocompleteInput } from '../common/LocationAutocompleteInput';
 import { ResolvedLocation } from '../../utils/locationResolver';
 import { ENNEAGRAM_TYPES, getEnneagramProfile } from '../../utils/enneagram';
@@ -202,75 +202,77 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
 
   // Auto-calculate profile whenever person data changes
   useEffect(() => {
-    // Danışan ismi, doğum tarihi veya doğum yeri eksikse hesaplama yapılmaz
-    if (!name.trim() || !birthDate || !birthPlace?.trim()) {
-      setProfileValidationError(null);
-      setNumerology(null);
-      setAstrology(null);
-      setEnneagram(null);
-      setSymbolism(null);
-      setChakra(null);
-      return;
-    }
+    let cancelled = false;
 
-    try {
-      // 1. Gerçek takvim tarihi doğrulaması (YYYY-AA-GG, geçerli ay/gün ve artık yıl kontrolü)
-      validateCalendarDate(birthDate);
-
-      // 2. Doğum yeri kontrolü (Dünya çapında çözümleme; kesinlikle İstanbul fallback'i kullanılmaz)
-      const resolvedLoc = selectedLocation || resolveCityLocation(birthPlace);
-      if (!selectedLocation && resolvedLoc) {
-        setSelectedLocation(resolvedLoc as any);
+    const calculateProfiles = async () => {
+      // Danışan ismi, doğum tarihi veya doğum yeri eksikse hesaplama yapılmaz
+      if (!name.trim() || !birthDate || !birthPlace?.trim()) {
+        setProfileValidationError(null);
+        setNumerology(null);
+        setAstrology(null);
+        setEnneagram(null);
+        setSymbolism(null);
+        setChakra(null);
+        return;
       }
 
-      const num = calculateNumerology(name, birthDate);
-      const astro = calculateAstrology(birthDate, birthTime, birthPlace, zodiacSystem, resolvedLoc);
-      const ennea = getEnneagramProfile(selectedEnneaType, selectedWing);
-      
-      // KİŞİYE ÖZEL DETERMINISTIK TOTEM GİRDİSİ (Doğum tarihi, saati, yeri, isim & Davranışsal Test)
-      const personalInput = {
-        name: name.trim(),
-        birthDate,
-        birthTime: birthTime || '12:00',
-        birthPlace: resolvedLoc?.displayName || resolvedLoc?.name || birthPlace.trim(),
-        motherName: motherName || '',
-        personalNumbers: personalNumbers || '',
-        personalStory: personalStory || '',
-        zodiacSystem,
-        totemAnswers: Object.keys(totemAnswers).length > 0 ? totemAnswers : undefined,
-        enneagramType: selectedEnneaType
-      };
+      try {
+        validateCalendarDate(birthDate);
 
-      const symb = deriveSymbolismProfile(num, astro, ennea, personalInput);
-      const chk = calculateChakraProfile(num, astro);
+        // Önce seçilmiş/doğrulanmış konumu kullan; yoksa küresel geocoding ile çöz.
+        const resolvedLoc = selectedLocation || await resolveCityLocationAsync(birthPlace);
+        if (cancelled) return;
+        if (!selectedLocation && resolvedLoc) setSelectedLocation(resolvedLoc as any);
 
-      setNumerology(num);
-      setAstrology(astro);
-      setEnneagram(ennea);
-      setSymbolism(symb);
-      setChakra(chk);
-      setProfileValidationError(null);
+        const num = calculateNumerology(name, birthDate);
+        const astro = calculateAstrology(birthDate, birthTime, birthPlace, zodiacSystem, resolvedLoc);
+        const ennea = getEnneagramProfile(selectedEnneaType, selectedWing);
 
-      // Totem hayvanı KULLANICI AÇIKÇA İŞARETLEMEDİKÇE ana odak yapılmaz!
-      if (includeTotemInDesign) {
-        setCustomMainSymbol(symb.totemAnimal);
-      } else {
-        if (!customMainSymbol || customMainSymbol === symb.totemAnimal || symb.totemHierarchy?.some(t => t.name === customMainSymbol)) {
+        const personalInput = {
+          name: name.trim(),
+          birthDate,
+          birthTime: birthTime || '12:00',
+          birthPlace: resolvedLoc.displayName || resolvedLoc.name || birthPlace.trim(),
+          motherName: motherName || '',
+          personalNumbers: personalNumbers || '',
+          personalStory: personalStory || '',
+          zodiacSystem,
+          totemAnswers: Object.keys(totemAnswers).length > 0 ? totemAnswers : undefined,
+          enneagramType: selectedEnneaType
+        };
+
+        const symb = deriveSymbolismProfile(num, astro, ennea, personalInput);
+        const chk = calculateChakraProfile(num, astro);
+        if (cancelled) return;
+
+        setNumerology(num);
+        setAstrology(astro);
+        setEnneagram(ennea);
+        setSymbolism(symb);
+        setChakra(chk);
+        setProfileValidationError(null);
+
+        if (includeTotemInDesign) {
+          setCustomMainSymbol(symb.totemAnimal);
+        } else if (!customMainSymbol || customMainSymbol === symb.totemAnimal || symb.totemHierarchy?.some(t => t.name === customMainSymbol)) {
           setCustomMainSymbol(symb.sacredObject || symb.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği');
         }
+        setCustomSecondarySymbols([symb.plantFlora, symb.geometricSymbol, symb.sacredObject]);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        setProfileValidationError(msg);
+        setNumerology(null);
+        setAstrology(null);
+        setEnneagram(null);
+        setSymbolism(null);
+        setChakra(null);
       }
-      setCustomSecondarySymbols([symb.plantFlora, symb.geometricSymbol, symb.sacredObject]);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setProfileValidationError(msg);
-      // Hatalı veya eksik veri durumunda profil sonuçları kesinlikle üretilmez
-      setNumerology(null);
-      setAstrology(null);
-      setEnneagram(null);
-      setSymbolism(null);
-      setChakra(null);
-    }
-  }, [name, birthDate, birthTime, birthPlace, selectedLocation, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers]);
+    };
+
+    void calculateProfiles();
+    return () => { cancelled = true; };
+}, [name, birthDate, birthTime, birthPlace, selectedLocation, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers]);
 
   // Helper to load full client data into state cleanly
   const handleApplyClientData = (client: PersonData) => {
