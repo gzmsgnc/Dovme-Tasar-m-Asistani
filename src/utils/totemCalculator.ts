@@ -207,7 +207,9 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
 
   // Kayıtlı totem kimlikleri geçmiş sonuç referansıdır; yeni hesaplamayı override edemez.
   // Böylece önceki danışanın totemi yeni danışana sızmaz.
+  // Not: primaryTotemId/secondaryTotemId/shadowTotemId bilinçli olarak hesaplama girdisi değildir.
   
+
   // 3. Test henüz tamamlanmamışsa: Doğum, İsim, Element ve Yaşam Yolu matrisinden deterministik seçim
   // 52 hayvan kataloğundan dengeli dağılım
   const primaryIndex = totalDeterministicHash % totalCatalogSize;
