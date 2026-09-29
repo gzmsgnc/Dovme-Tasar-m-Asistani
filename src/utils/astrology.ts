@@ -187,7 +187,8 @@ export const ZODIAC_SIGNS: ZodiacSignInfo[] = [
 ];
 
 import { 
-  resolveLocationSync, 
+  resolveLocationSync,
+  resolveLocationAsync,
   LocationValidationError, 
   getTimezoneOffsetHoursForDate, 
   ResolvedLocation 
