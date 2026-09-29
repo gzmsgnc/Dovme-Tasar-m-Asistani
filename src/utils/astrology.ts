@@ -241,6 +241,31 @@ export function resolveCityLocation(cityInput?: string | Partial<ResolvedLocatio
   };
 }
 
+/**
+ * Küresel doğum yeri çözümleme.
+ * Senkron motor yalnızca yerel çekirdek veri tabanını kapsar; bu fonksiyon
+ * yerelde bulunmayan geçerli dünya şehirlerini Photon/Nominatim üzerinden çözer.
+ * Asla İstanbul, sabit koordinat veya tahmini şehir kullanılmaz.
+ */
+export async function resolveCityLocationAsync(
+  cityInput?: string | Partial<ResolvedLocation>,
+  countryCode?: string
+): Promise<CityLocation> {
+  const resolved = await resolveLocationAsync(cityInput, countryCode);
+  return {
+    name: resolved.name,
+    displayName: resolved.displayName,
+    city: resolved.city,
+    region: resolved.region,
+    country: resolved.country,
+    countryCode: resolved.countryCode,
+    lat: resolved.lat,
+    lon: resolved.lon,
+    timezone: resolved.timezone,
+    defaultTz: resolved.defaultTz
+  };
+}
+
 export function isCitySupported(cityInput?: string): boolean {
   if (!cityInput || !cityInput.trim()) return false;
   try {
