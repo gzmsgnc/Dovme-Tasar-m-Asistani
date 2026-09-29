@@ -1,5 +1,6 @@
 import { ChakraProfile } from './utils/chakra';
-export type { ChakraProfile };
+import type { PersonalSymbolPrescription, CanonicalClientAnalysis, PrescriptionSymbol } from './utils/personalSymbolPrescription';
+export type { ChakraProfile, PersonalSymbolPrescription, CanonicalClientAnalysis, PrescriptionSymbol };
 
 export interface PersonData {
   id: string;
@@ -9,6 +10,14 @@ export interface PersonData {
   birthDate: string; // YYYY-MM-DD
   birthTime?: string; // HH:mm
   birthPlace?: string;
+  birthCity?: string;
+  birthRegion?: string;
+  birthCountry?: string;
+  birthCountryCode?: string;
+  birthLatitude?: number;
+  birthLongitude?: number;
+  birthTimezone?: string;
+  birthTimezoneOffset?: number;
   motherName?: string; // Anne Adı (Ebced & Yıldızname ezoterik hesabı için)
   zodiacSystem?: 'Tropical' | 'Sidereal';
   enneagramType?: number; // 1-9 if known or tested
@@ -308,6 +317,7 @@ export interface TattooRecipe {
   generatedSketchUrl?: string;
   userNotes?: string;
   symbolicIntegration?: SymbolicIntegrationModelResult;
+  prescription?: PersonalSymbolPrescription;
 }
 
 export interface ShadowArchetypeAnalysisReport {

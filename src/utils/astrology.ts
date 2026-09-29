@@ -186,57 +186,27 @@ export const ZODIAC_SIGNS: ZodiacSignInfo[] = [
   }
 ];
 
+import { 
+  resolveLocationSync, 
+  LocationValidationError, 
+  getTimezoneOffsetHoursForDate, 
+  ResolvedLocation 
+} from './locationResolver';
+
+export { LocationValidationError };
+
 // Coordinate & Timezone Lookup Database
-interface CityLocation {
+export interface CityLocation {
   name: string;
   lat: number;
   lon: number;
-  defaultTz: number;
-}
-
-const CITY_DATABASE: Record<string, CityLocation> = {
-  'istanbul': { name: 'İstanbul', lat: 41.0082, lon: 28.9784, defaultTz: 2 },
-  'i̇stanbul': { name: 'İstanbul', lat: 41.0082, lon: 28.9784, defaultTz: 2 },
-  'ankara': { name: 'Ankara', lat: 39.9334, lon: 32.8597, defaultTz: 2 },
-  'izmir': { name: 'İzmir', lat: 38.4237, lon: 27.1428, defaultTz: 2 },
-  'i̇zmir': { name: 'İzmir', lat: 38.4237, lon: 27.1428, defaultTz: 2 },
-  'bursa': { name: 'Bursa', lat: 40.1885, lon: 29.0610, defaultTz: 2 },
-  'antalya': { name: 'Antalya', lat: 36.8969, lon: 30.7133, defaultTz: 2 },
-  'adana': { name: 'Adana', lat: 36.9914, lon: 35.3308, defaultTz: 2 },
-  'konya': { name: 'Konya', lat: 37.8746, lon: 32.4932, defaultTz: 2 },
-  'gaziantep': { name: 'Gaziantep', lat: 37.0662, lon: 37.3833, defaultTz: 2 },
-  'eskisehir': { name: 'Eskişehir', lat: 39.7767, lon: 30.5206, defaultTz: 2 },
-  'eskişehir': { name: 'Eskişehir', lat: 39.7767, lon: 30.5206, defaultTz: 2 },
-  'trabzon': { name: 'Trabzon', lat: 41.0027, lon: 39.7168, defaultTz: 2 },
-  'samsun': { name: 'Samsun', lat: 41.2867, lon: 36.33, defaultTz: 2 },
-  'diyarbakir': { name: 'Diyarbakır', lat: 37.9144, lon: 40.2306, defaultTz: 2 },
-  'diyarbakır': { name: 'Diyarbakır', lat: 37.9144, lon: 40.2306, defaultTz: 2 },
-  'kayseri': { name: 'Kayseri', lat: 38.7312, lon: 35.4787, defaultTz: 2 },
-  'mersin': { name: 'Mersin', lat: 36.8121, lon: 34.6415, defaultTz: 2 },
-  'mugla': { name: 'Muğla', lat: 37.2153, lon: 28.3636, defaultTz: 2 },
-  'muğla': { name: 'Muğla', lat: 37.2153, lon: 28.3636, defaultTz: 2 },
-  'bodrum': { name: 'Bodrum', lat: 37.0344, lon: 27.4305, defaultTz: 2 },
-  'london': { name: 'London', lat: 51.5074, lon: -0.1278, defaultTz: 0 },
-  'londra': { name: 'London', lat: 51.5074, lon: -0.1278, defaultTz: 0 },
-  'new york': { name: 'New York', lat: 40.7128, lon: -74.0060, defaultTz: -5 },
-  'berlin': { name: 'Berlin', lat: 52.5200, lon: 13.4050, defaultTz: 1 },
-  'paris': { name: 'Paris', lat: 48.8566, lon: 2.3522, defaultTz: 1 },
-  'tokyo': { name: 'Tokyo', lat: 35.6762, lon: 139.6503, defaultTz: 9 },
-  'rome': { name: 'Roma', lat: 41.9028, lon: 12.4964, defaultTz: 1 },
-  'roma': { name: 'Roma', lat: 41.9028, lon: 12.4964, defaultTz: 1 }
-};
-
-/**
- * Konum Doğrulama Hatası (Location validation error)
- * Doğum yeri boş, tanımsız veya veritabanında çözülemediğinde fırlatılır.
- * Kesinlikle İstanbul veya başka bir varsayılan şehir kullanılmaz.
- */
-export class LocationValidationError extends Error {
-  constructor(message = 'Location validation error: Doğum yeri tanınamadı. Doğum haritası hesaplanabilmesi için geçerli bir şehir/konum girilmelidir.') {
-    super(message);
-    this.name = 'LocationValidationError';
-    Object.setPrototypeOf(this, LocationValidationError.prototype);
-  }
+  defaultTz?: number;
+  timezone?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  countryCode?: string;
+  displayName?: string;
 }
 
 /**
@@ -251,31 +221,34 @@ export class DateValidationError extends Error {
   }
 }
 
-export function resolveCityLocation(cityInput?: string): CityLocation {
-  if (!cityInput || !cityInput.trim()) {
-    throw new LocationValidationError('Location validation error: Doğum yeri tanınamadı. Doğum haritası hesaplanabilmesi için geçerli bir şehir/konum girilmelidir.');
-  }
-  const clean = cityInput.trim().toLocaleLowerCase('tr-TR');
-  for (const [key, loc] of Object.entries(CITY_DATABASE)) {
-    const normKey = key.toLocaleLowerCase('tr-TR');
-    if (clean === normKey || clean.includes(normKey) || normKey.includes(clean)) {
-      return loc;
-    }
-  }
-  // Şehir veritabanında bulunamadığında kesinlikle İstanbul veya tahmin kullanılmaz:
-  throw new LocationValidationError('Location validation error: Doğum yeri tanınamadı. Doğum haritası hesaplanabilmesi için geçerli bir şehir/konum girilmelidir.');
+/**
+ * Doğum yerini dünya çapındaki konum veritabanında çözümler.
+ * Asla tahmini, rastgele veya İstanbul varsayılanı kullanmaz.
+ */
+export function resolveCityLocation(cityInput?: string | Partial<ResolvedLocation>): CityLocation {
+  const resolved = resolveLocationSync(cityInput);
+  return {
+    name: resolved.name,
+    displayName: resolved.displayName,
+    city: resolved.city,
+    region: resolved.region,
+    country: resolved.country,
+    countryCode: resolved.countryCode,
+    lat: resolved.lat,
+    lon: resolved.lon,
+    timezone: resolved.timezone,
+    defaultTz: resolved.defaultTz
+  };
 }
 
 export function isCitySupported(cityInput?: string): boolean {
   if (!cityInput || !cityInput.trim()) return false;
-  const clean = cityInput.trim().toLocaleLowerCase('tr-TR');
-  for (const key of Object.keys(CITY_DATABASE)) {
-    const normKey = key.toLocaleLowerCase('tr-TR');
-    if (clean === normKey || clean.includes(normKey) || normKey.includes(clean)) {
-      return true;
-    }
+  try {
+    resolveLocationSync(cityInput);
+    return true;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 /**
@@ -573,14 +546,17 @@ export function getSunSign(birthDateStr: string): ZodiacSignInfo {
 export function calculateAstrology(
   birthDate: string,
   birthTime?: string,
-  birthPlace?: string,
-  zodiacSystem: 'Tropical' | 'Sidereal' = 'Tropical'
+  birthPlace?: string | Partial<ResolvedLocation>,
+  zodiacSystem: 'Tropical' | 'Sidereal' = 'Tropical',
+  explicitLocation?: Partial<ResolvedLocation>
 ): AstrologyProfile {
   // 1. Gerçek takvim doğrulaması (YYYY-AA-GG formatı, geçerli ay/gün ve artık yıl kontrolü)
   const { year, month, day } = validateCalendarDate(birthDate);
 
   // 2. Doğum yeri kontrolü (Boş veya veritabanında olmayan yerlerde İstanbul fallback'i KESİNLİKLE kaldırılmıştır)
-  const location = resolveCityLocation(birthPlace);
+  const location = explicitLocation && typeof explicitLocation.lat === 'number' && typeof explicitLocation.lon === 'number'
+    ? resolveLocationSync(explicitLocation)
+    : resolveCityLocation(birthPlace);
 
   const hasBirthTime = Boolean(birthTime && birthTime.trim());
 
@@ -592,8 +568,13 @@ export function calculateAstrology(
     minutes = isNaN(m) ? 0 : m;
   }
 
-  // Calculate local timezone offset
-  const tzOffsetHours = getTimezoneOffsetHours(year, month, day, location.defaultTz);
+  // Calculate local timezone offset taking into account real IANA timezone & DST
+  const tzOffsetHours = getTimezoneOffsetHoursForDate(
+    birthDate,
+    birthTime || '12:00',
+    location.timezone,
+    location.defaultTz ?? 3
+  );
   
   // Calculate UT time in decimal hours
   const localDecimalHours = hours + minutes / 60.0;

@@ -17,6 +17,8 @@ import {
 import { calculateEbcedAndYildizname } from '../../utils/ebced';
 import { calculateNumerology } from '../../utils/numerology';
 import { calculateAstrology, validateCalendarDate, resolveCityLocation } from '../../utils/astrology';
+import { LocationAutocompleteInput } from '../common/LocationAutocompleteInput';
+import { ResolvedLocation } from '../../utils/locationResolver';
 import { TotemQuizModal } from './TotemQuizModal';
 import { EnneagramQuizModal } from './EnneagramQuizModal';
 import { TOTEM_ANIMALS_52 } from '../../utils/totemCatalogData';
@@ -40,6 +42,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
   const [birthDate, setBirthDate] = useState('');
   const [birthTime, setBirthTime] = useState('');
   const [birthPlace, setBirthPlace] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<ResolvedLocation | null>(null);
   const [motherName, setMotherName] = useState('');
   const [notes, setNotes] = useState('');
   const [zodiacSystem, setZodiacSystem] = useState<'Tropical' | 'Sidereal'>('Tropical');
@@ -65,6 +68,23 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       setBirthDate(initialClient.birthDate || '');
       setBirthTime(initialClient.birthTime || '');
       setBirthPlace(initialClient.birthPlace || '');
+      if (initialClient.birthLatitude && initialClient.birthLongitude) {
+        setSelectedLocation({
+          id: `loc_${initialClient.id}`,
+          name: initialClient.birthPlace || '',
+          displayName: initialClient.birthPlace || '',
+          city: initialClient.birthCity || initialClient.birthPlace || '',
+          region: initialClient.birthRegion,
+          country: initialClient.birthCountry || '',
+          countryCode: initialClient.birthCountryCode || '',
+          lat: initialClient.birthLatitude,
+          lon: initialClient.birthLongitude,
+          timezone: initialClient.birthTimezone || 'Europe/Istanbul',
+          defaultTz: initialClient.birthTimezoneOffset
+        });
+      } else {
+        setSelectedLocation(null);
+      }
       setMotherName(initialClient.motherName || '');
       setNotes(initialClient.notes || '');
       setZodiacSystem(initialClient.zodiacSystem || 'Tropical');
@@ -120,9 +140,13 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       return null;
     }
 
+    let resolvedLoc: ResolvedLocation | null = selectedLocation;
     if (birthPlace && birthPlace.trim()) {
       try {
-        resolveCityLocation(birthPlace);
+        if (!resolvedLoc) {
+          resolvedLoc = resolveCityLocation(birthPlace) as any;
+          setSelectedLocation(resolvedLoc);
+        }
       } catch (err: unknown) {
         setErrorMessage(err instanceof Error ? err.message : String(err));
         return null;
@@ -135,7 +159,15 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       name: name.trim(),
       birthDate,
       birthTime: birthTime.trim() || undefined,
-      birthPlace: birthPlace.trim() || undefined,
+      birthPlace: resolvedLoc?.displayName || resolvedLoc?.name || birthPlace.trim() || undefined,
+      birthCity: resolvedLoc?.city || undefined,
+      birthRegion: resolvedLoc?.region || undefined,
+      birthCountry: resolvedLoc?.country || undefined,
+      birthCountryCode: resolvedLoc?.countryCode || undefined,
+      birthLatitude: resolvedLoc?.lat,
+      birthLongitude: resolvedLoc?.lon,
+      birthTimezone: resolvedLoc?.timezone,
+      birthTimezoneOffset: resolvedLoc?.defaultTz,
       motherName: motherName.trim() || undefined,
       zodiacSystem,
       enneagramType,
@@ -298,41 +330,22 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
               <label className="text-[11px] font-medium text-[#ccc] uppercase font-mono block mb-1">
                 Doğum Yeri / Şehir
               </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-[#555] absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  list="supported-cities-client-modal"
-                  value={birthPlace}
-                  onChange={(e) => setBirthPlace(e.target.value)}
-                  placeholder="Örn: İstanbul, Ankara, İzmir, Bursa, Londra..."
-                  className="w-full pl-9 pr-3 py-2 bg-[#121212] border border-[#262626] rounded-xl text-white placeholder-zinc-600 focus:border-[#c4a47c] outline-none"
-                />
-                <datalist id="supported-cities-client-modal">
-                  <option value="İstanbul" />
-                  <option value="Ankara" />
-                  <option value="İzmir" />
-                  <option value="Bursa" />
-                  <option value="Antalya" />
-                  <option value="Adana" />
-                  <option value="Konya" />
-                  <option value="Gaziantep" />
-                  <option value="Eskişehir" />
-                  <option value="Trabzon" />
-                  <option value="Samsun" />
-                  <option value="Diyarbakır" />
-                  <option value="Kayseri" />
-                  <option value="Mersin" />
-                  <option value="Muğla" />
-                  <option value="Bodrum" />
-                  <option value="London" />
-                  <option value="Berlin" />
-                  <option value="Paris" />
-                  <option value="Roma" />
-                  <option value="New York" />
-                  <option value="Tokyo" />
-                </datalist>
-              </div>
+              <LocationAutocompleteInput
+                value={birthPlace}
+                onChange={(val) => {
+                  setBirthPlace(val);
+                  setSelectedLocation(null);
+                  if (errorMessage) setErrorMessage(null);
+                }}
+                onLocationSelect={(loc) => {
+                  setSelectedLocation(loc);
+                  setBirthPlace(loc.displayName || loc.name);
+                  if (errorMessage) setErrorMessage(null);
+                }}
+                selectedLocation={selectedLocation}
+                placeholder="Örn: İstanbul, San Francisco, Tokyo, London..."
+                showCountryFilter={true}
+              />
             </div>
 
             <div>

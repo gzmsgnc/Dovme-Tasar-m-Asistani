@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
 import { generateEsotericTattooStencilSvg } from './src/utils/stencilGenerator';
-import { isValidCalendarDate, resolveCityLocation } from './src/utils/astrology';
+import { isValidCalendarDate, resolveCityLocation, CityLocation } from './src/utils/astrology';
+import { searchGlobalLocationsApi, resolveLocationSync, resolveLocationAsync, LocationValidationError } from './src/utils/locationResolver';
 import { calculateEnneagramFromAnswers } from './src/utils/enneagram';
 import { calculateBehavioralTotemResult } from './src/utils/behavioralTotemEngine';
 import { normalizePhoneNumber, isValidEmail } from './src/utils/clientValidation';
@@ -80,8 +81,62 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  // Location Search API (Dünya çapında şehir, kasaba & yerleşim arama)
+  app.get('/api/locations/search', async (req: Request, res: Response) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q : '';
+      const country = typeof req.query.country === 'string' ? req.query.country : undefined;
+      if (!q.trim()) {
+        return res.json({ success: true, locations: [] });
+      }
+      const locations = await searchGlobalLocationsApi(q, country);
+      return res.json({ success: true, locations });
+    } catch (err: unknown) {
+      console.error('Location search error:', err);
+      return res.status(500).json({ success: false, error: 'Konum araması sırasında bir hata oluştu.' });
+    }
+  });
+
+  // Location Resolve API
+  app.post('/api/locations/resolve', async (req: Request, res: Response) => {
+    try {
+      const { query, countryCode, lat, lon } = req.body || {};
+      if (typeof lat === 'number' && typeof lon === 'number' && !isNaN(lat) && !isNaN(lon)) {
+        const resolved = resolveLocationSync({ lat, lon, countryCode });
+        return res.json({ success: true, resolved: true, location: resolved });
+      }
+
+      if (!query || typeof query !== 'string' || !query.trim()) {
+        return res.status(400).json({ success: false, resolved: false, error: 'Doğum yeri boş olamaz.' });
+      }
+
+      try {
+        const resolved = await resolveLocationAsync(query, countryCode);
+        return res.json({ success: true, resolved: true, location: resolved });
+      } catch (syncErr) {
+        if (syncErr instanceof LocationValidationError && syncErr.candidates && syncErr.candidates.length > 1) {
+          return res.status(400).json({
+            success: false,
+            resolved: false,
+            ambiguous: true,
+            error: syncErr.message,
+            candidates: syncErr.candidates
+          });
+        }
+
+        return res.status(400).json({
+          success: false,
+          resolved: false,
+          error: syncErr instanceof Error ? syncErr.message : 'Doğum yeri tanınamadı. Lütfen şehir ve ülke adını kontrol edin.'
+        });
+      }
+    } catch (err: unknown) {
+      return res.status(500).json({ success: false, error: 'Konum doğrulama hatası.' });
+    }
+  });
+
   // Client Intake API (Danışan Formu Kaydı & Doğrulaması)
-  app.post('/api/client-intake', (req: Request, res: Response) => {
+  app.post('/api/client-intake', async (req: Request, res: Response) => {
     try {
       const body = req.body || {};
       const firstName = (body.firstName || '').trim();
@@ -153,14 +208,29 @@ async function startServer() {
           error: 'Doğum yeri zorunludur.'
         });
       }
-      let resolvedLocation: { name: string; lat: number; lon: number; defaultTz: number };
-      try {
-        resolvedLocation = resolveCityLocation(birthPlace);
-      } catch (err: unknown) {
-        return res.status(400).json({
-          success: false,
-          error: err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
+      let resolvedLocation: CityLocation;
+      if (typeof body.birthLatitude === 'number' && typeof body.birthLongitude === 'number' && !isNaN(body.birthLatitude) && !isNaN(body.birthLongitude)) {
+        resolvedLocation = resolveCityLocation({
+          name: birthPlace,
+          lat: body.birthLatitude,
+          lon: body.birthLongitude,
+          timezone: body.birthTimezone,
+          city: body.birthCity,
+          region: body.birthRegion,
+          country: body.birthCountry,
+          countryCode: body.birthCountryCode,
+          defaultTz: body.birthTimezoneOffset
         });
+      } else {
+        try {
+          const asyncLoc = await resolveLocationAsync(birthPlace, body.birthCountryCode);
+          resolvedLocation = resolveCityLocation(asyncLoc);
+        } catch (err: unknown) {
+          return res.status(400).json({
+            success: false,
+            error: err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
+          });
+        }
       }
 
       // 7. Anne Adı Doğrulaması (Ebced & Yıldızname soy kökü için zorunlu)
@@ -203,7 +273,15 @@ async function startServer() {
         email: email.toLowerCase(),
         birthDate: birthDate,
         birthTime: birthTime,
-        birthPlace: resolvedLocation.name || birthPlace,
+        birthPlace: resolvedLocation.displayName || resolvedLocation.name || birthPlace,
+        birthCity: resolvedLocation.city || resolvedLocation.name,
+        birthRegion: resolvedLocation.region,
+        birthCountry: resolvedLocation.country,
+        birthCountryCode: resolvedLocation.countryCode,
+        birthLatitude: resolvedLocation.lat,
+        birthLongitude: resolvedLocation.lon,
+        birthTimezone: resolvedLocation.timezone,
+        birthTimezoneOffset: resolvedLocation.defaultTz,
         motherName: motherName,
         zodiacSystem: 'Tropical',
         enneagramType: enneaResult.type,

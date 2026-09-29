@@ -12,6 +12,8 @@ import {
   resolveCityLocation, 
   isCitySupported 
 } from '../../utils/astrology';
+import { LocationAutocompleteInput } from './LocationAutocompleteInput';
+import { ResolvedLocation } from '../../utils/locationResolver';
 import { saveClient, postClientIntakeToServer } from '../../utils/storage';
 import { normalizePhoneNumber, isValidEmail } from '../../utils/clientValidation';
 import { PersonData } from '../../types';
@@ -57,6 +59,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
   const [birthDate, setBirthDate] = useState<string>('');
   const [birthTime, setBirthTime] = useState<string>('');
   const [birthPlace, setBirthPlace] = useState<string>('');
+  const [selectedLocation, setSelectedLocation] = useState<ResolvedLocation | null>(null);
   const [personalStory, setPersonalStory] = useState<string>('');
 
   // Test Answers (HAM CEVAPLAR)
@@ -125,9 +128,12 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
       errs.birthPlace = 'Lütfen doğum yerinizi giriniz.';
     } else {
       try {
-        resolveCityLocation(birthPlace);
+        const resolved = selectedLocation || resolveCityLocation(birthPlace);
+        if (!selectedLocation && resolved) {
+          setSelectedLocation(resolved as any);
+        }
       } catch (err: unknown) {
-        errs.birthPlace = err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.';
+        errs.birthPlace = err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir ve ülke adı giriniz.';
       }
     }
 
@@ -186,11 +192,27 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     return true;
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     setGeneralError(null);
     if (currentStep === 1) {
       if (validateStep1()) setCurrentStep(2);
     } else if (currentStep === 2) {
+      if (!selectedLocation && birthPlace.trim()) {
+        try {
+          const res = await fetch('/api/locations/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: birthPlace.trim() })
+          });
+          const data = await res.json();
+          if (data && data.success && data.location) {
+            setSelectedLocation(data.location);
+            setBirthPlace(data.location.displayName || data.location.name);
+          }
+        } catch {
+          // fallback to standard validation
+        }
+      }
       if (validateStep2()) setCurrentStep(3);
     } else if (currentStep === 3) {
       if (validateStep3()) setCurrentStep(4);
@@ -218,7 +240,29 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     try {
       // 1. Doğrulama kontrolleri
       validateCalendarDate(birthDate);
-      const resolvedLoc = resolveCityLocation(birthPlace);
+
+      let resolvedLoc = selectedLocation;
+      if (!resolvedLoc && birthPlace.trim()) {
+        try {
+          const res = await fetch('/api/locations/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: birthPlace.trim() })
+          });
+          const data = await res.json();
+          if (data && data.success && data.location) {
+            resolvedLoc = data.location;
+            setSelectedLocation(data.location);
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!resolvedLoc) {
+        resolvedLoc = resolveCityLocation(birthPlace) as any;
+      }
+
       const phoneNorm = normalizePhoneNumber(phone);
       if (!phoneNorm.valid) {
         throw new Error(phoneNorm.error || 'Geçersiz telefon numarası.');
@@ -244,7 +288,15 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
         email: email.trim().toLowerCase(),
         birthDate: birthDate.trim(),
         birthTime: birthTime.trim(),
-        birthPlace: resolvedLoc.name || birthPlace.trim(),
+        birthPlace: resolvedLoc.displayName || resolvedLoc.name || birthPlace.trim(),
+        birthCity: resolvedLoc.city || resolvedLoc.name,
+        birthRegion: resolvedLoc.region,
+        birthCountry: resolvedLoc.country,
+        birthCountryCode: resolvedLoc.countryCode,
+        birthLatitude: resolvedLoc.lat,
+        birthLongitude: resolvedLoc.lon,
+        birthTimezone: resolvedLoc.timezone,
+        birthTimezoneOffset: resolvedLoc.defaultTz,
         motherName: motherName.trim(),
         personalStory: personalStory.trim() || undefined,
         notes: personalStory.trim() ? `Danışan Formu Notu: ${personalStory.trim()}` : undefined,
@@ -717,30 +769,24 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
               </div>
 
               {/* Doğum Yeri */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono text-[#aaa] flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-[#c4a47c]" />
-                  <span>Doğum Yeri (Şehir)</span>
-                  <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="text"
+              <div className="sm:col-span-3 space-y-1.5 pt-1">
+                <LocationAutocompleteInput
                   value={birthPlace}
-                  onChange={(e) => {
-                    setBirthPlace(e.target.value);
+                  onChange={(val) => {
+                    setBirthPlace(val);
+                    setSelectedLocation(null);
                     if (errors.birthPlace) setErrors(prev => ({ ...prev, birthPlace: '' }));
                   }}
-                  placeholder="Örn: İzmir, İstanbul, Ankara..."
-                  className={`w-full px-3.5 py-2.5 bg-[#121212] border rounded-lg text-xs text-white placeholder-[#555] focus:outline-none transition-colors ${
-                    errors.birthPlace ? 'border-rose-500/80 bg-rose-950/10' : 'border-[#222] focus:border-[#c4a47c]'
-                  }`}
+                  onLocationSelect={(loc) => {
+                    setSelectedLocation(loc);
+                    setBirthPlace(loc.displayName || loc.name);
+                    if (errors.birthPlace) setErrors(prev => ({ ...prev, birthPlace: '' }));
+                  }}
+                  selectedLocation={selectedLocation}
+                  error={errors.birthPlace}
+                  showCountryFilter={true}
+                  placeholder="Örn: İstanbul, San Francisco, Tokyo, London, São Paulo, Heidelberg..."
                 />
-                {birthPlace && isCitySupported(birthPlace) && (
-                  <span className="text-[10px] text-emerald-400 font-mono block">✓ Desteklenen şehir doğrulandı</span>
-                )}
-                {errors.birthPlace && (
-                  <p className="text-[11px] text-rose-400 font-mono leading-tight">{errors.birthPlace}</p>
-                )}
               </div>
 
               {/* Anne Adı */}

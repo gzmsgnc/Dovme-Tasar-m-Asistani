@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { TattooRecipe } from '../types';
 import { calculateEbcedAndYildizname } from './ebced';
+import { generatePersonalSymbolPrescription } from './personalSymbolPrescription';
 
 /**
  * Generates an ultra-luxurious, comprehensive multi-page PDF document
@@ -31,6 +32,15 @@ export async function exportRecipeToPDF(
     const params = recipe.parameters || (recipe as any).designParameters || {} as any;
 
     const ebcedResult = p.motherName ? calculateEbcedAndYildizname(p.name, p.motherName) : null;
+    const prescription = recipe.prescription || generatePersonalSymbolPrescription({
+      person: p,
+      numerology: num,
+      astrology: astro,
+      enneagram: ennea,
+      symbolism: symb,
+      chakra,
+      designParameters: params
+    });
 
     // Create offscreen container
     const container = document.createElement('div');
@@ -140,6 +150,54 @@ export async function exportRecipeToPDF(
             <div style="font-size: 11px; color: #c4a47c; margin-top: 2px;">
               Danışan: <strong style="color: #ffffff;">${clientName}</strong>
             </div>
+          </div>
+        </div>
+
+        <!-- 0. KİŞİSEL SEMBOL REÇETESİ (TEK KAYNAK / KANONİK RAPOR) -->
+        <div class="pdf-section-title">
+          <span>✦</span> KİŞİSEL SEMBOL REÇETESİ
+        </div>
+        <div class="pdf-card" style="border: 1px solid rgba(196, 164, 124, 0.4); background: #131210; margin-bottom: 22px;">
+          <div style="font-family: monospace; font-size: 10px; color: #c4a47c; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">
+            BİRLEŞİK ARKETİP
+          </div>
+          <div style="font-family: Georgia, serif; font-style: italic; font-size: 12px; color: #fff; line-height: 1.6; margin-bottom: 12px; padding: 10px 14px; background: rgba(196,164,124,0.08); border-left: 3px solid #c4a47c; border-radius: 4px;">
+            "${prescription.unifiedArchetype}"
+          </div>
+
+          <div style="font-family: monospace; font-size: 10px; color: #c4a47c; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+            SEMBOL REÇETESİ (${prescription.symbols.length} TEMEL SEMBOL)
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+            ${prescription.symbols.map((s, idx) => `
+              <div style="background: #17171e; border: 1px solid #282836; border-radius: 8px; padding: 8px 12px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <strong style="color: #ffffff; font-size: 12px;">${idx + 1}. ${s.symbolName}</strong>
+                  <span style="font-family: monospace; font-size: 9px; padding: 2px 6px; background: #22222e; color: #c4a47c; border-radius: 4px;">${s.designCategory}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 10px; color: #bbb;">
+                  <div><span style="color: #71717a;">Kaynak:</span> <strong style="color: #ddd;">${s.sourceSummary}</strong></div>
+                  <div><span style="color: #71717a;">Tema:</span> <strong style="color: #ddd;">${s.coreTheme}</strong></div>
+                  <div><span style="color: #71717a;">Görev:</span> <strong style="color: #ddd;">${s.designRole}</strong></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="font-family: monospace; font-size: 10px; color: #c4a47c; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">
+            TASARIM FORMÜLÜ
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 10px; font-family: monospace; margin-bottom: 10px;">
+            <div style="background: #17171e; padding: 6px 8px; border-radius: 6px;"><span style="color:#71717a;">Merkez:</span> <strong style="color:#fff;">${prescription.designFormula.center}</strong></div>
+            <div style="background: #17171e; padding: 6px 8px; border-radius: 6px;"><span style="color:#71717a;">Geometri:</span> <strong style="color:#fff;">${prescription.designFormula.supportingGeometry}</strong></div>
+            <div style="background: #17171e; padding: 6px 8px; border-radius: 6px;"><span style="color:#71717a;">Organik:</span> <strong style="color:#fff;">${prescription.designFormula.organicElement}</strong></div>
+            <div style="background: #17171e; padding: 6px 8px; border-radius: 6px;"><span style="color:#71717a;">Mikro Detay:</span> <strong style="color:#fff;">${prescription.designFormula.personalMicroDetail}</strong></div>
+            <div style="background: #17171e; padding: 6px 8px; border-radius: 6px;"><span style="color:#71717a;">Negatif Alan:</span> <strong style="color:#fff;">${prescription.designFormula.negativeSpace}</strong></div>
+            <div style="background: #17171e; padding: 6px 8px; border-radius: 6px;"><span style="color:#71717a;">Görsel Dil:</span> <strong style="color:#c4a47c;">${prescription.designFormula.visualLanguage}</strong></div>
+          </div>
+
+          <div style="font-size: 11px; color: #a1a1aa; font-style: italic; border-top: 1px solid #22222e; padding-top: 8px;">
+            "${prescription.personalClosing}"
           </div>
         </div>
 

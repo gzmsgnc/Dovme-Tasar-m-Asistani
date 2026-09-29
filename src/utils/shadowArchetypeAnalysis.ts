@@ -314,9 +314,13 @@ export function generateShadowArchetypeAnalysis(
     }
   ];
 
-  // 5. Chakra Blockages & Organic Integration
-  const blockedChakras = chakra.chakras.filter(c => c.status !== 'Dengeli');
-  const targetChakras = blockedChakras.length > 0 ? blockedChakras : [chakra.chakras[0], chakra.chakras[3]];
+  // 5. Chakra Blockages & Organic Integration (Strictly Canonical: matches missingNumbers & blockedChakras)
+  const canonicalBlockedChakras = chakra.chakras.filter(c => c.status === 'Blokajlı / Eksik');
+  const targetChakras = canonicalBlockedChakras.length > 0 
+    ? canonicalBlockedChakras 
+    : (chakra.chakras.filter(c => c.status === 'Pasif / Düşük').length > 0 
+        ? chakra.chakras.filter(c => c.status === 'Pasif / Düşük') 
+        : [chakra.chakras[0]]);
 
   const section5ChakraBlockages = targetChakras.map(c => {
     let geom = 'Dört yapraklı kare yantra ve köklenme küpü';
@@ -716,11 +720,11 @@ professional tattoo stencil line art transfer sheet, pure binary black vector ou
       visualRepresentation: `Kompozisyonun anatomik kavislerini belirleyen, gözü yormayan açık ve akıcı dairesel hatlar.`
     },
     {
-      symbolName: `Ebced & Numeroloji Mikro Mühürleri (İlahi 19 & ${ebcedData.totalEbced} Frekansı)`,
-      category: 'Kişiye Özel Ruhsal Kalkan & Soy Mührü',
-      meaning: `Adınızın (${ebcedData.personEbced}) ve annenizin adının (${ebcedData.motherEbced}) kadim ebced toplamı olan ${ebcedData.totalEbced} titreşimi ile Yaşam Yolu ${lifePath} sayınızın kutsal şifresi.`,
-      reason: `Sizi dünya üzerindeki milyarlarca insandan ayıran özgün kimlik ve kök enerjinizi tasarımın merkezine kilitlemek için entegre edildi.`,
-      benefitsAndHealing: `Köklerinizden ve atalarınızdan gelen görünmez bağları onarır. Size ait olmayan karmik yükleri toprağa bırakmanızı sağlar ve üzerinizde taşırken adeta kişisel bir koruma ve enerji kalkanı görevi üstlenir.`,
+      symbolName: `Ebced & Numeroloji Mikro Mühürleri (Kişisel Ebced Toplamı: ${ebcedData.totalEbced})`,
+      category: 'Kişiye Özel Ruhsal ve Soy Mührü',
+      meaning: `Adınızın (${ebcedData.personEbced}) ve annenizin adının (${ebcedData.motherEbced}) kadim Ebced toplamı olan ${ebcedData.totalEbced} sayısı ile Yaşam Yolu ${lifePath} sayınızın sembolik karşılığı.`,
+      reason: `Sizi dünya üzerindeki insanlardan ayıran özgün kimlik ve kök aidiyeti verinizi tasarımın merkezine bağlamak için entegre edildi.`,
+      benefitsAndHealing: `Köklerinizden gelen görünmez bağları sembolik olarak temsil eder; kişisel niyet çalışmasında köklenme ve aidiyet hissini desteklemek üzere kullanılır.`,
       visualRepresentation: `İlk bakışta fark edilmeyen, ancak çok yakından bakıldığında görülen mikro dotwork noktaları ve gizli geometrik çentikler.`
     },
     {
@@ -728,7 +732,7 @@ professional tattoo stencil line art transfer sheet, pure binary black vector ou
       category: 'Kutsal Nefes & Cilt Sağlığı',
       meaning: `Zen felsefesindeki "Mu" (Kutsal Boşluk); varlığın doğduğu ve nefes aldığı alan.`,
       reason: `Dövmenin cildi boğmaması, pigment yayılmasını önlemesi ve en az 10 yıl sonra bile ilk günkü gibi berrak kalması için mimariye dahil edildi.`,
-      benefitsAndHealing: `Yaşamınızda gereksiz şeyleri bırakma (detoks) bilincini güçlendirir. Zihinsel aşırı yüklenmelerde derin bir nefes alıp "boşluğa izin verme" bilgeliğini hatırlatır.`,
+      benefitsAndHealing: `Yaşamınızda sadelik ve ferahlık temasını sembolik olarak hatırlatır; zihinsel durulma anlarında derin bir nefes alıp sakinleşme niyetini destekler.`,
       visualRepresentation: `Tasarımın içinde derin siyahların arasından bir ışık gibi parlayan saf cildiniz.`
     }
   ] : [
@@ -736,48 +740,48 @@ professional tattoo stencil line art transfer sheet, pure binary black vector ou
       symbolName: `Ana Kutsal Sembol: ${actualMainSymbol}`,
       category: 'Ana Odak Sembolü (%65 Görsel Ağırlık)',
       meaning: `Kutsal odak, nizam, koruma ve kozmik iradenin doğrudan görsel izdüşümü.`,
-      reason: `Doğum haritanızdaki Güneş ${astrology.sunSign} ve Yaşam Yolu ${lifePath} (${numerology.lifePathTitle}) enerjinizin en berrak ve saf sembolik yansıması olarak seçildi. Hayatınızda ${coreCharacterTheme} ihtiyacınızı somutlaştırır.`,
-      benefitsAndHealing: `Zihinsel karmaşa ve stres anlarında sizi anında merkezinize döndürür. Kararsızlık hissini yok eder, kararlılık, içsel netlik ve sarsılmaz bir ruhsal omurga kazandırır.`,
+      reason: `Doğum haritanızdaki Güneş ${astrology.sunSign} ve Yaşam Yolu ${lifePath} (${numerology.lifePathTitle}) verilerinizin sembolik yansıması olarak seçildi. Hayatınızda ${coreCharacterTheme} temasını temsil eder.`,
+      benefitsAndHealing: `Zihinsel karmaşa ve stres anlarında merkezlenme hissini çağrıştırır; içsel netlik ve kararlılık niyetini desteklemek üzere kullanılır.`,
       visualRepresentation: `Tasarımın tam kalbinde, en keskin 03RL/05RL konturlar ve zengin grey wash gölgeleriyle anıtsal bir duruşla konumlandırılmıştır.`
     },
     {
       symbolName: `Çakra Şifa Geometrisi (${section5ChakraBlockages[0].geometricEquivalent})`,
       category: `${section5ChakraBlockages[0].chakraNumber}. ${section5ChakraBlockages[0].chakraName} Dengeleyici Geometrisi`,
-      meaning: `${section5ChakraBlockages[0].coreTheme} frekansını düzenleyen kadim evrensel form.`,
-      reason: `Enerji haritanızda tespit edilen ${section5ChakraBlockages[0].symbolicBlockageMeaning} tıkanıklığını kalıcı olarak açmak ve akışı serbest bırakmak amacıyla yerleştirildi.`,
-      benefitsAndHealing: `${section5ChakraBlockages[0].behavioralManifestation} halini dönüştürür. ${section5ChakraBlockages[0].healingTransformationSymbol} frekansını aktive ederek enerjinizin tıkandığı bedensel ve ruhsal kanalları açar; hayata karşı direnç göstermek yerine güvenle akmanızı sağlar.`,
+      meaning: `${section5ChakraBlockages[0].coreTheme} temasını temsil eden kadim evrensel form.`,
+      reason: `Haritanızda sembolik olarak ${section5ChakraBlockages[0].symbolicBlockageMeaning} temasını dengelemek amacıyla yerleştirildi.`,
+      benefitsAndHealing: `${section5ChakraBlockages[0].behavioralManifestation} halini sembolik olarak dönüştürür; ${section5ChakraBlockages[0].healingTransformationSymbol} formuyla tasarım içinde güven ve teslimiyet duygusunu çağrıştırır.`,
       visualRepresentation: `Ana sembolün arkasında 03RL kılcal tek iğneyle hassas biçimde işlenmiş, nefes alan narin mandala çizgileri.`
     },
     {
       symbolName: `Şifa & Dönüşüm Mührü (${section5ChakraBlockages[0].healingTransformationSymbol})`,
-      category: 'Enerjetik Şifa ve Dengeleme Mührü',
-      meaning: `Ruhsal yaraları saran ve direnç noktalarını yumuşatarak ilahi akışa teslim eden arketipik form.`,
-      reason: `Enneagram ${enneagram.wing} profilinizdeki bastırılmış ihtiyaçların (${suppressedAspect}) güvenle şifalanması için eklendi.`,
-      benefitsAndHealing: `İçsel çatışmaları sonlandırır, öz-şefkati güçlendirir ve yaşamınızda hakiki huzur ve teslimiyet alanları açar.`,
+      category: 'Enerjetik Dengeleme Mührü',
+      meaning: `Direnç noktalarını yumuşatarak uyuma açan arketipik form.`,
+      reason: `Enneagram ${enneagram.wing} profilinizdeki bastırılmış ihtiyaçların (${suppressedAspect}) sembolik olarak dengelenmesi için eklendi.`,
+      benefitsAndHealing: `İçsel çatışmaları yumuşatma niyetini destekler; öz-şefkati güçlendiren sembolik bir hatırlatıcıdır.`,
       visualRepresentation: `Ana sembolün alt ekseninde, yukarıya doğru yükselen zarif linework çizgileriyle bütünleşmiştir.`
     },
     {
       symbolName: `Organik Şifa Florası (${symbolism.plantFlora || 'Zeytin Dalı & Sarmaşık'})`,
-      category: 'Organik Şifa & Yaşam Enerjisi',
-      meaning: `Toprak ananın yenileyici nefesi, kırılan dalların yeniden filizlenme döngüsü ve esneklik.`,
+      category: 'Organik Yaşam & Esneklik',
+      meaning: `Yenileyici doğa döngüsü ve esneklik.`,
       reason: `Astrolojik ${astrology.dominantElement} elementinizi yumuşatmak ve tasarıma canlı, organik bir nabız kazandırmak için eklendi.`,
-      benefitsAndHealing: `Katılaşan düşünceleri ve katı kuralları yumuşatır; zorlu hayat deneyimlerinin ardından içinizdeki yaşam sevincini ve tazeliği yeniden uyandırır. Kalbinize ferahlık ve şefkat pompalar.`,
+      benefitsAndHealing: `Zorlu hayat deneyimlerinin ardından tazelenme arzusunu ve esneklik temasını sembolik olarak destekler.`,
       visualRepresentation: `Ana figür ile geometrik zemin arasında akıcı bir şekilde dolanan narin yaprak ve çiçek filizleri.`
     },
     {
       symbolName: 'Kutsal Geometri & Fibonacci Altın Sarmalı',
       category: 'Kozmik İlahi Düzen Matrisi',
       meaning: `Evrenin yaratılışındaki ilahi oran (1:1.618); kaostan doğan mükemmel kozmik ahenk.`,
-      reason: `Zihninizdeki karmaşayı ve belirsizlik kaygısını evrenin matematiksel kusursuzluğuna bağlamak için seçildi.`,
-      benefitsAndHealing: `Panik, acelecilik veya kontrol kaybı hissettiğinizde sizi merkezler. Hayattaki hiçbir şeyin tesadüf olmadığını, her olayın ilahi bir zamanlaması olduğunu bilinçaltınıza fısıldar.`,
+      reason: `Zihninizdeki karmaşayı evrenin matematiksel kusursuzluğuna bağlamak için seçildi.`,
+      benefitsAndHealing: `Zamanlama güvenini ve akışa teslimiyet duygusunu sembolik olarak çağrıştırır.`,
       visualRepresentation: `Kompozisyonun anatomik kavislerini belirleyen, gözü yormayan açık ve akıcı dairesel hatlar.`
     },
     {
-      symbolName: `Ebced & Numeroloji Mikro Mühürleri (İlahi 19 & ${ebcedData.totalEbced} Frekansı)`,
-      category: 'Kişiye Özel Ruhsal Kalkan & Soy Mührü',
-      meaning: `Adınızın (${ebcedData.personEbced}) ve annenizin adının (${ebcedData.motherEbced}) kadim ebced toplamı olan ${ebcedData.totalEbced} titreşimi ile Yaşam Yolu ${lifePath} sayınızın kutsal şifresi.`,
-      reason: `Sizi dünya üzerindeki milyarlarca insandan ayıran özgün kimlik ve kök enerjinizi tasarımın merkezine kilitlemek için entegre edildi.`,
-      benefitsAndHealing: `Köklerinizden ve atalarınızdan gelen görünmez bağları onarır. Size ait olmayan karmik yükleri toprağa bırakmanızı sağlar ve üzerinizde taşırken adeta kişisel bir koruma ve enerji kalkanı görevi üstlenir.`,
+      symbolName: `Ebced & Numeroloji Mikro Mühürleri (Kişisel Ebced Toplamı: ${ebcedData.totalEbced})`,
+      category: 'Kişiye Özel Ruhsal ve Soy Mührü',
+      meaning: `Adınızın (${ebcedData.personEbced}) ve annenizin adının (${ebcedData.motherEbced}) kadim Ebced toplamı olan ${ebcedData.totalEbced} sayısı ile Yaşam Yolu ${lifePath} sayınızın sembolik karşılığı.`,
+      reason: `Sizi dünya üzerindeki insanlardan ayıran özgün kimlik ve kök aidiyeti verinizi tasarımın merkezine bağlamak için entegre edildi.`,
+      benefitsAndHealing: `Köklerinizden gelen görünmez bağları sembolik olarak temsil eder; kişisel niyet çalışmasında köklenme ve aidiyet hissini desteklemek üzere kullanılır.`,
       visualRepresentation: `İlk bakışta fark edilmeyen, ancak çok yakından bakıldığında görülen mikro dotwork noktaları ve gizli geometrik çentikler.`
     },
     {

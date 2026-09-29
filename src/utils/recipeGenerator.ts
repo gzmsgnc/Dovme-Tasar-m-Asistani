@@ -14,6 +14,7 @@ import { generateShadowArchetypeAnalysis } from './shadowArchetypeAnalysis';
 import { encodeToMorse } from './morseCode';
 import { executeSymbolicIntegrationEngine } from './symbolIntegrationEngine';
 import { getTotemAnimalStrict } from './totemCatalogData';
+import { generatePersonalSymbolPrescription } from './personalSymbolPrescription';
 
 export function generateTattooRecipe(
   person: PersonData,
@@ -415,6 +416,16 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     designParameters: parameters
   });
 
+  const prescription = generatePersonalSymbolPrescription({
+    person,
+    numerology,
+    astrology,
+    enneagram,
+    symbolism,
+    chakra,
+    designParameters: parameters
+  });
+
   return {
     id: `recipe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     clientId: person.id,
@@ -432,6 +443,7 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     shadowAnalysis,
     shadowDossierMarkdown: shadowAnalysis.fullMarkdownDossier,
     symbolicIntegration,
+    prescription,
     symbolRationales: rationales,
     subtleDetails,
     symbolInterconnection: symbolism.symbolInterconnection,

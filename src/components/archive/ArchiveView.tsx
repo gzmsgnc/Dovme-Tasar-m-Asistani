@@ -246,10 +246,10 @@ ${recipe.negativePrompt}
                     type="button"
                     onClick={() => setDossierRecipe(recipe)}
                     className="flex-1 py-2 px-3 rounded bg-gradient-to-r from-amber-600/20 to-[#c4a47c]/20 hover:from-amber-600/30 hover:to-[#c4a47c]/30 border border-[#c4a47c]/50 hover:border-[#c4a47c] text-[#f4e6d4] text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                    title="Çakra analizleri, gölge yanlar ve ek dosya parçalarını içeren danışan dosyasını aç"
+                    title="Tek sayfalık Kişisel Sembol Reçetesi ve Denetim Raporunu aç"
                   >
-                    <FileText className="w-3.5 h-3.5 text-[#c4a47c]" />
-                    <span>📁 Danışan Dosyası & Ekler</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#c4a47c]" />
+                    <span>📜 Sembol Reçetesi</span>
                   </button>
                   <PDFExportButton
                     recipe={recipe}

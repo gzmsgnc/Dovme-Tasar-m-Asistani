@@ -10,6 +10,8 @@ import {
 } from '../../types';
 import { calculateNumerology } from '../../utils/numerology';
 import { calculateAstrology, validateCalendarDate, resolveCityLocation } from '../../utils/astrology';
+import { LocationAutocompleteInput } from '../common/LocationAutocompleteInput';
+import { ResolvedLocation } from '../../utils/locationResolver';
 import { ENNEAGRAM_TYPES, getEnneagramProfile } from '../../utils/enneagram';
 import { deriveSymbolismProfile } from '../../utils/symbolism';
 import { calculateChakraProfile, ChakraProfile } from '../../utils/chakra';
@@ -112,6 +114,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [birthDate, setBirthDate] = useState(initialPerson?.birthDate || '');
   const [birthTime, setBirthTime] = useState(initialPerson?.birthTime || '');
   const [birthPlace, setBirthPlace] = useState(initialPerson?.birthPlace || '');
+  const [selectedLocation, setSelectedLocation] = useState<ResolvedLocation | null>(null);
   const [motherName, setMotherName] = useState(initialPerson?.motherName || '');
   const [existingTotems, setExistingTotems] = useState(initialPerson?.existingTotems || '');
   const [existingSymbols, setExistingSymbols] = useState(initialPerson?.existingSymbols || '');
@@ -214,11 +217,14 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       // 1. Gerçek takvim tarihi doğrulaması (YYYY-AA-GG, geçerli ay/gün ve artık yıl kontrolü)
       validateCalendarDate(birthDate);
 
-      // 2. Doğum yeri kontrolü (İstanbul fallback'i KESİNLİKLE kaldırılmıştır)
-      resolveCityLocation(birthPlace);
+      // 2. Doğum yeri kontrolü (Dünya çapında çözümleme; kesinlikle İstanbul fallback'i kullanılmaz)
+      const resolvedLoc = selectedLocation || resolveCityLocation(birthPlace);
+      if (!selectedLocation && resolvedLoc) {
+        setSelectedLocation(resolvedLoc as any);
+      }
 
       const num = calculateNumerology(name, birthDate);
-      const astro = calculateAstrology(birthDate, birthTime, birthPlace, zodiacSystem);
+      const astro = calculateAstrology(birthDate, birthTime, birthPlace, zodiacSystem, resolvedLoc);
       const ennea = getEnneagramProfile(selectedEnneaType, selectedWing);
       
       // KİŞİYE ÖZEL DETERMINISTIK TOTEM GİRDİSİ (Doğum tarihi, saati, yeri, isim & Davranışsal Test)
@@ -226,7 +232,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
         name: name.trim(),
         birthDate,
         birthTime: birthTime || '12:00',
-        birthPlace: birthPlace.trim(),
+        birthPlace: resolvedLoc?.displayName || resolvedLoc?.name || birthPlace.trim(),
         motherName: motherName || '',
         personalNumbers: personalNumbers || '',
         personalStory: personalStory || '',
@@ -264,7 +270,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       setSymbolism(null);
       setChakra(null);
     }
-  }, [name, birthDate, birthTime, birthPlace, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers]);
+  }, [name, birthDate, birthTime, birthPlace, selectedLocation, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers]);
 
   // Helper to load full client data into state cleanly
   const handleApplyClientData = (client: PersonData) => {
@@ -273,6 +279,23 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setBirthDate(client.birthDate || '');
     setBirthTime(client.birthTime || '');
     setBirthPlace(client.birthPlace || '');
+    if (client.birthLatitude && client.birthLongitude) {
+      setSelectedLocation({
+        id: `loc_${client.id}`,
+        name: client.birthPlace || '',
+        displayName: client.birthPlace || '',
+        city: client.birthCity || client.birthPlace || '',
+        region: client.birthRegion,
+        country: client.birthCountry || '',
+        countryCode: client.birthCountryCode || '',
+        lat: client.birthLatitude,
+        lon: client.birthLongitude,
+        timezone: client.birthTimezone || 'Europe/Istanbul',
+        defaultTz: client.birthTimezoneOffset
+      });
+    } else {
+      setSelectedLocation(null);
+    }
     setMotherName(client.motherName || '');
     setExistingTotems(client.existingTotems || '');
     setExistingSymbols(client.existingSymbols || '');
@@ -1154,63 +1177,39 @@ ${r.turkishPromptExplanation}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-medium text-[#bbb] uppercase tracking-wider block mb-1.5 font-mono">
-                    Doğum Yeri / Şehir <span className="text-[#c4a47c]">*</span>
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-[#555] absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      list="supported-cities-wizard"
-                      value={birthPlace}
-                      onChange={(e) => setBirthPlace(e.target.value)}
-                      placeholder="Örn: İstanbul, Ankara, İzmir, Bursa, Londra..."
-                      className="w-full pl-9 pr-3 py-2.5 bg-[#111] border border-[#222] rounded-lg text-sm text-[#e0e0e0] placeholder-[#555] focus:border-[#c4a47c] focus:outline-none"
-                    />
-                    <datalist id="supported-cities-wizard">
-                      <option value="İstanbul" />
-                      <option value="Ankara" />
-                      <option value="İzmir" />
-                      <option value="Bursa" />
-                      <option value="Antalya" />
-                      <option value="Adana" />
-                      <option value="Konya" />
-                      <option value="Gaziantep" />
-                      <option value="Eskişehir" />
-                      <option value="Trabzon" />
-                      <option value="Samsun" />
-                      <option value="Diyarbakır" />
-                      <option value="Kayseri" />
-                      <option value="Mersin" />
-                      <option value="Muğla" />
-                      <option value="Bodrum" />
-                      <option value="London" />
-                      <option value="Berlin" />
-                      <option value="Paris" />
-                      <option value="Roma" />
-                      <option value="New York" />
-                      <option value="Tokyo" />
-                    </datalist>
-                  </div>
-                  <p className="text-[10px] text-[#777] mt-1 font-mono">
-                    Doğum haritası koordinatları ve yerel yıldız zamanı (LST) için geçerli şehir zorunludur.
-                  </p>
-                </div>
+              {/* Doğum Yeri & Konum Çözümleme (Dünya Çapında) */}
+              <div className="space-y-1.5">
+                <LocationAutocompleteInput
+                  value={birthPlace}
+                  onChange={(val) => {
+                    setBirthPlace(val);
+                    setSelectedLocation(null);
+                  }}
+                  onLocationSelect={(loc) => {
+                    setSelectedLocation(loc);
+                    setBirthPlace(loc.displayName || loc.name);
+                  }}
+                  selectedLocation={selectedLocation}
+                  showCountryFilter={true}
+                  placeholder="Örn: İstanbul, San Francisco, Tokyo, London, São Paulo, Heidelberg..."
+                />
+                <p className="text-[10px] text-[#777] font-mono">
+                  Doğum haritası koordinatları ve yerel yıldız zamanı (LST) için dünya çapında geçerli coğrafi konum kullanılır.
+                </p>
+              </div>
 
-                <div>
-                  <label className="text-[11px] font-medium text-[#bbb] uppercase tracking-wider block mb-1.5 font-mono">
-                    Özel Anlam & Notlar
-                  </label>
-                  <input
-                    type="text"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Örn: Dönüşüm, koruyuculuk..."
-                    className="w-full px-3 py-2.5 bg-[#111] border border-[#222] rounded-lg text-sm text-[#e0e0e0] placeholder-[#555] focus:border-[#c4a47c] focus:outline-none"
-                  />
-                </div>
+              {/* Özel Anlam & Notlar */}
+              <div>
+                <label className="text-[11px] font-medium text-[#bbb] uppercase tracking-wider block mb-1.5 font-mono">
+                  Özel Anlam & Notlar
+                </label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Örn: Dönüşüm, koruyuculuk..."
+                  className="w-full px-3 py-2.5 bg-[#111] border border-[#222] rounded-lg text-sm text-[#e0e0e0] placeholder-[#555] focus:border-[#c4a47c] focus:outline-none"
+                />
               </div>
 
               {/* Advanced Esoteric & Personal Data Accordion */}
@@ -2720,10 +2719,10 @@ ${r.turkishPromptExplanation}
                 type="button"
                 onClick={() => setShowClientDossierModal(true)}
                 className="px-3.5 py-2 rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-amber-600/30 to-[#c4a47c]/30 hover:from-amber-600/40 hover:to-[#c4a47c]/40 text-[#f5e6cc] border border-[#c4a47c]/70 shadow-lg shadow-[#c4a47c]/20"
-                title="Çakra analizleri, gölge yanlar ve ek dosya parçalarını içeren şık danışan dosyasını aç"
+                title="Tek sayfalık Kişisel Sembol Reçetesi, Rapor Denetimi ve Prompt brifini aç"
               >
-                <FileText className="w-3.5 h-3.5 text-[#c4a47c]" />
-                <span>📁 Danışan Görüşme & Şifa Dosyası (Ekler Dahil)</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#c4a47c]" />
+                <span>📜 Kişisel Sembol Reçetesi (Tek Sayfa Rapor)</span>
               </button>
             </div>
 
@@ -3403,7 +3402,7 @@ ${r.turkishPromptExplanation}
                 className="w-full py-3 px-3 rounded-lg bg-gradient-to-r from-amber-600/30 via-[#c4a47c]/30 to-amber-700/30 hover:from-amber-600/40 hover:to-[#c4a47c]/40 border border-[#c4a47c]/70 text-[#f5e6cc] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#c4a47c]/10 transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-[#c4a47c]" />
-                <span>📁 Danışana Gönderilecek Şık Dosyayı Aç (Ekler Dahil)</span>
+                <span>📜 Kişisel Sembol Reçetesini Aç (Tek Sayfa Rapor & Denetim)</span>
               </button>
 
               <button
