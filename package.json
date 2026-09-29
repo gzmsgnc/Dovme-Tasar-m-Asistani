@@ -9,7 +9,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx tests/totemEngine.test.ts",
+    "test": "tsx tests/totemEngine.test.ts && tsx tests/recipeIntegrity.test.ts",
     "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
