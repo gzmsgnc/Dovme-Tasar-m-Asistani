@@ -212,6 +212,10 @@ export interface SymbolismProfile {
   dominantChakraNumbers?: number[];
   primaryChakraHealingDirective?: string;
   primaryChakraAffirmation?: string;
+  shadowTotemName?: string;
+  shadowTotemMeaning?: string;
+  shadowTotemPower?: string;
+  shadowTotemRole?: string;
   characterTraitSymbols: string[];
   
   // Refined Hierarchy & Subtle Details
