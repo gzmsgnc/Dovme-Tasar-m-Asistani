@@ -264,7 +264,7 @@ export function getStoredRecipes(): TattooRecipe[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    const realRecipes = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId));
+    const realRecipes = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
     return realRecipes;
   } catch {
     return [];
@@ -323,7 +323,7 @@ export function importDataFromJSON(jsonString: string): { success: boolean; mess
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
     }
     if (parsed.recipes && Array.isArray(parsed.recipes)) {
-      const sanitized = parsed.recipes.filter((r: any) => r && r.title && !DEMO_ACCOUNT_IDS.has(r.clientId));
+      const sanitized = parsed.recipes.filter((r: any) => r && r.title && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
       localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(sanitized));
     }
     return { success: true, message: 'Veriler başarıyla içe aktarıldı!' };
