@@ -12,6 +12,34 @@ const DEMO_ACCOUNT_IDS = new Set([
   'client_derya_yilmaz'
 ]);
 
+function isDemoClient(client: any): boolean {
+  if (!client || typeof client !== 'object') return true;
+  if (client.id && DEMO_ACCOUNT_IDS.has(client.id)) return true;
+
+  // Eski test/demo kayıtları farklı ID ile kaydedilmişse de kullanıcı listesine sızmasın.
+  const name = String(client.name || '').trim().toLocaleLowerCase('tr-TR');
+  const email = String(client.email || '').trim().toLocaleLowerCase('tr-TR');
+  const source = String(client.source || '').trim().toLocaleLowerCase('tr-TR');
+  const status = String(client.status || '').trim().toLocaleLowerCase('tr-TR');
+
+  const demoNamePatterns = [
+    'selin kaya',
+    'emir arslan',
+    'derya yılmaz',
+    'demo',
+    'test danışan',
+    'test musteri',
+    'test müşteri'
+  ];
+
+  return demoNamePatterns.some(pattern => name === pattern || name.includes(pattern))
+    || email.includes('demo@')
+    || email.includes('test@')
+    || source === 'demo'
+    || source === 'test'
+    || status === 'demo';
+}
+
 /**
  * Retrieves all stored real clients.
  * Guarantees zero demo or fake accounts in user view.
@@ -29,7 +57,7 @@ export function getStoredClients(): PersonData[] {
         try {
           const parsed = JSON.parse(legacyRaw);
           if (Array.isArray(parsed)) {
-            const realOnly = parsed.filter(c => c && c.id && !DEMO_ACCOUNT_IDS.has(c.id));
+            const realOnly = parsed.filter(c => c && c.id && !isDemoClient(c));
             localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(realOnly));
             return realOnly;
           }
@@ -44,7 +72,7 @@ export function getStoredClients(): PersonData[] {
     if (!Array.isArray(parsed)) return [];
 
     // Filter out any demo accounts that might have been saved
-    const realClients = parsed.filter(c => c && c.id && !DEMO_ACCOUNT_IDS.has(c.id));
+    const realClients = parsed.filter(c => c && c.id && !isDemoClient(c));
     if (realClients.length !== parsed.length) {
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(realClients));
     }
@@ -150,7 +178,7 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
 
     const data = await res.json();
     if (data.success && Array.isArray(data.clients)) {
-      const sanitized = data.clients.filter((c: any) => c && c.id && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+      const sanitized = data.clients.filter((c: any) => c && c.id && c.name && !isDemoClient(c));
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
       return sanitized;
     }
@@ -164,10 +192,10 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
 function mergeClientLists(listA: PersonData[], listB: PersonData[]): PersonData[] {
   const map = new Map<string, PersonData>();
   listA.forEach(c => {
-    if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) map.set(c.id, c);
+    if (c && c.id && !isDemoClient(c)) map.set(c.id, c);
   });
   listB.forEach(c => {
-    if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) {
+    if (c && c.id && !isDemoClient(c)) {
       if (!map.has(c.id)) {
         map.set(c.id, c);
       } else {
@@ -291,7 +319,7 @@ export function importDataFromJSON(jsonString: string): { success: boolean; mess
   try {
     const parsed = JSON.parse(jsonString);
     if (parsed.clients && Array.isArray(parsed.clients)) {
-      const sanitized = parsed.clients.filter((c: any) => c && c.name && !DEMO_ACCOUNT_IDS.has(c.id));
+      const sanitized = parsed.clients.filter((c: any) => c && c.name && !isDemoClient(c));
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
     }
     if (parsed.recipes && Array.isArray(parsed.recipes)) {
