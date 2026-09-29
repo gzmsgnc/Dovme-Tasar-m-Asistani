@@ -349,6 +349,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setBirthDate('');
     setBirthTime('');
     setBirthPlace('');
+    setSelectedLocation(null);
     setMotherName('');
     setExistingTotems('');
     setExistingSymbols('');
