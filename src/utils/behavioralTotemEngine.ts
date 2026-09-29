@@ -635,6 +635,15 @@ export function generateCrossEnneagramTotemInsight(
  * Ana Davranışsal Totem Hesaplama Fonksiyonu
  * Kullanıcı test yanıtları + isteğe bağlı kişisel astrolojik / numerolojik eğilimler
  */
+function hashAnimalId(id: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash);
+}
+
 export function calculateBehavioralTotemResult(
   answers: Record<number, string>,
   enneagramType: number = 4,
@@ -654,7 +663,24 @@ export function calculateBehavioralTotemResult(
       personalBonus += 0.025;
     }
 
-    const similarityScore = calculateVectorSimilarity(userVector, animal.behavioralVector, personalBonus);
+    // Aynı skor bandındaki hayvanlarda deterministik mikro-ayrıştırıcı:
+    // cevapların kimliği korunur; rastgelelik eklenmez. Böylece yakın eşleşmeler
+    // arasında sonuç, gerçekten verilen cevap deseninden türetilir.
+    const answerSignature = Object.keys(answers)
+      .sort((a, b) => Number(a) - Number(b))
+      .map(qId => `${qId}:${answers[Number(qId)] || ''}`)
+      .join('|');
+    let answerHash = 2166136261;
+    for (let i = 0; i < answerSignature.length; i++) {
+      answerHash ^= answerSignature.charCodeAt(i);
+      answerHash = Math.imul(answerHash, 16777619);
+    }
+    const deterministicTieBreaker = (Math.abs(answerHash ^ hashAnimalId(animal.id)) % 1000) / 100000;
+    const similarityScore = calculateVectorSimilarity(
+      userVector,
+      animal.behavioralVector,
+      personalBonus + deterministicTieBreaker
+    );
     return {
       animal,
       similarityScore
