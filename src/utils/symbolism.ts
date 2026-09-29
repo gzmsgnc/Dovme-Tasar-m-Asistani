@@ -332,6 +332,8 @@ export function deriveSymbolismProfile(
     colorThemeDescription,
     mainTheme,
     emotionalTheme,
+    enneagramShadowTraits: enneagram.shadowTraits,
+    enneagramShadowSymbolicMeaning: enneagram.symbolicMeaning,
     characterTraitSymbols,
     subtleDetails: subtleDetails.slice(0, 2),
     symbolInterconnection,
