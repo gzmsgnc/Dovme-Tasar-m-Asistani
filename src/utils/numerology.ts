@@ -169,21 +169,11 @@ export function calculateNumerology(name: string, birthDate: string): Numerology
     divine19Reason = 'İsimdeki harflerin saf toplamı 19 ilahi sayısını oluşturuyor.';
     divine19Level = 'Yüksek';
     divine19FormulaBreakdown = `İsim Harf Toplamı = 19.`;
-  } else if (chakraCounts[1] >= 2 && chakraCounts[9] >= 2) {
-    has19 = true;
-    divine19Reason = '1 (Kök/İnisiyatif) ve 9 (Taç/Hümanizm) çakralarında güçlü çifte rezonans.';
-    divine19Level = 'Belirgin';
-    divine19FormulaBreakdown = `1. Çakra: ${chakraCounts[1]} adet, 9. Çakra: ${chakraCounts[9]} adet (1-9 Aksı Rezonansı).`;
-  } else if ((lifePath === 1 && destinyNumber === 9) || (lifePath === 9 && destinyNumber === 1) || (chakraCounts[1] > 0 && chakraCounts[9] > 0)) {
-    has19 = true;
-    divine19Reason = 'Yaşam Yolu ve Kulvar arasında Alfa (1) ve Omega (9) ilahi köprüsü.';
-    divine19Level = 'Potansiyel';
-    divine19FormulaBreakdown = `Yaşam Yolu: ${lifePath}, Kulvar: ${destinyNumber} veya 1 ve 9 çakra varlığı.`;
   } else {
     has19 = false;
-    divine19Reason = '19 ilahi yardım kodu bu matriste doğrudan tetiklenmemiştir; diğer numerolojik arketipler ön plandadır.';
+    divine19Reason = '19 kodu yalnızca doğrudan ve denetlenebilir bir 19 değeri oluştuğunda işaretlenir. 1 ve 9 çakralarının birlikte bulunması tek başına 19 kabul edilmez.';
     divine19Level = 'Yok';
-    divine19FormulaBreakdown = `19 kodu bulunamadı.`;
+    divine19FormulaBreakdown = '19 kodu bulunamadı (doğum günü, ham tarih toplamı veya ham isim toplamı 19 değil).';
   }
 
   // 7. Personal Year Calculation
