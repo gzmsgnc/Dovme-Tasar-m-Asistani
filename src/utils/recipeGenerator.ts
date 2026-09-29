@@ -73,9 +73,19 @@ export function generateTattooRecipe(
   }
 
   // İkincil sembollerde totem hayvanı filtrelemesi
+  const chakraDrivenSymbols = [
+    ...(symbolism.chakraProfile?.blockedChakras ?? []).flatMap(chakra => chakra.healingSymbols.slice(0, 2)),
+    ...(symbolism.chakraProfile?.dominantChakras ?? []).flatMap(chakra => chakra.healingSymbols.slice(0, 1))
+  ];
+
   const rawSecondary = parameters.secondarySymbols.length > 0
     ? parameters.secondarySymbols
-    : [symbolism.plantFlora, symbolism.geometricSymbol, symbolism.sacredObject];
+    : [
+        symbolism.plantFlora,
+        symbolism.geometricSymbol,
+        symbolism.sacredObject,
+        ...chakraDrivenSymbols
+      ];
 
   // Remove duplicate symbols while preserving the user's calculated hierarchy.
   const uniqueSecondarySymbols = [...new Set(rawSecondary.filter(Boolean).map(s => s.trim()))];
@@ -125,7 +135,7 @@ export function generateTattooRecipe(
   rationales.push({
     symbolName: sec1,
     symbolCategory: '2. Yardımcı Sembol (Akış & Denge)',
-    esotericConnection: `Hakim ${astrology.dominantElement} elementinin (${symbolism.elementMeaning}) ve Ay ${astrology.moonSign} sezgisinin koruyucu aurasını taşır. Eksik çakraların (${numerology.missingNumbers.length > 0 ? numerology.missingNumbers.join(', ') : 'Tam çakra dengesi'}) enerjetik boşluğunu dengeler.`,
+    esotericConnection: `Hakim ${astrology.dominantElement} elementinin (${symbolism.elementMeaning}) ve Ay ${astrology.moonSign} sezgisinin koruyucu aurasını taşır. ${symbolism.blockedChakraNumbers?.length ? `Blokajlı çakralar (${symbolism.blockedChakraNumbers.join(', ')}) için şifa mimarisini destekler.` : 'Mevcut çakra dengesini destekleyen bir tamamlayıcıdır.'} ${symbolism.primaryChakraHealingDirective || ''}`,
     visualRole: `Ana sembolü çevreleyen organik akış hatları; kas liflerine uyum sağlayan yumuşak geçiş köprüsü.`
   });
 
