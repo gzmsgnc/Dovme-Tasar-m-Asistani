@@ -26,6 +26,8 @@ function profile(overrides: Partial<SymbolismProfile> = {}): SymbolismProfile {
     colorThemeDescription: 'test',
     mainTheme: 'test',
     emotionalTheme: 'test',
+    enneagramShadowTraits: ['test gölge'],
+    enneagramShadowSymbolicMeaning: 'test anlam',
     characterTraitSymbols: [],
     subtleDetails: [],
     symbolInterconnection: 'test',
