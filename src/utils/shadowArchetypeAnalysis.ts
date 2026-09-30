@@ -249,16 +249,27 @@ export function generateShadowArchetypeAnalysis(
 
   // 4. Totem Animals Analysis (Light + Shadow)
   const primaryTotemId = (symbolism as any).totemAnimalId || symbolism.totemHierarchy?.[0]?.id;
-  const primaryTotemName = symbolism.totemAnimal || (symbolism.totemHierarchy?.[0]?.name ?? 'Ruh Totemi');
-  const shadowGuardianId = symbolism.totemHierarchy?.[1]?.id;
-  const shadowGuardianTotem = symbolism.totemHierarchy?.[1]?.name || 'Gölge Muhafız';
-  const ascensionId = symbolism.totemHierarchy?.[2]?.id;
-  const ascensionTotem = symbolism.totemHierarchy?.[2]?.name || 'Yükseliş Müttefiki';
+  const primaryTotemName = symbolism.totemAnimal || symbolism.totemHierarchy?.[0]?.name;
+  if (!primaryTotemId && !primaryTotemName) {
+    throw new Error('Birincil ruh totemi tanımlanmadan gölge arketipi üretilemez.');
+  }
 
-  // Kesin ve değişmez hayvan kimliği çözümü: SADECE o hayvana ait veri kaydı kullanılır
+  // Hiyerarşi eksikse sahte rol adı üretme. Aynı doğrulanmış birincil hayvanı
+  // güvenli fallback olarak kullan; böylece katalogdaki başka bir hayvanın verisi
+  // kesinlikle ödünç alınmaz ve "Gölge Muhafız/Yükseliş Müttefiki" gibi insanî
+  // rol etiketleri yanlışlıkla hayvan kimliği sanılmaz.
   const primaryProfile = getTotemAnimalStrict(primaryTotemId || primaryTotemName);
-  const shadowProfile = getTotemAnimalStrict(shadowGuardianId || shadowGuardianTotem);
-  const allyProfile = getTotemAnimalStrict(ascensionId || ascensionTotem);
+  const shadowGuardianId = symbolism.totemHierarchy?.[1]?.id;
+  const shadowGuardianTotem = symbolism.totemHierarchy?.[1]?.name;
+  const ascensionId = symbolism.totemHierarchy?.[2]?.id;
+  const ascensionTotem = symbolism.totemHierarchy?.[2]?.name;
+
+  const shadowProfile = shadowGuardianId || shadowGuardianTotem
+    ? getTotemAnimalStrict(shadowGuardianId || shadowGuardianTotem!)
+    : primaryProfile;
+  const allyProfile = ascensionId || ascensionTotem
+    ? getTotemAnimalStrict(ascensionId || ascensionTotem!)
+    : primaryProfile;
 
   const section4TotemAnimals = [
     {
