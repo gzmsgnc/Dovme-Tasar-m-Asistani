@@ -53,7 +53,7 @@ const parameters = {
 
 const recipe = generateTattooRecipe(person, numerology, astrology, enneagram, symbolism, parameters);
 const combined = recipe.symbolRationales.map(r => r.symbolName).join(' | ');
-assert.ok(combined.includes('Kadim Meşe Kökleri') || combined.includes('Metatron Küpü'));
-assert.ok(combined.includes('Kutsal Lotus') || combined.includes('Gül & Diken'));
+assert.ok(combined.includes('1. Kök Çakra') || combined.includes('Prithvi'));
+assert.ok(combined.includes('Lavanta'));
 
 console.log('Chakra recipe integration tests passed');
