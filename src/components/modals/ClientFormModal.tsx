@@ -103,6 +103,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       setBirthDate('');
       setBirthTime('');
       setBirthPlace('');
+      setSelectedLocation(null);
       setMotherName('');
       setNotes('');
       setZodiacSystem('Tropical');
