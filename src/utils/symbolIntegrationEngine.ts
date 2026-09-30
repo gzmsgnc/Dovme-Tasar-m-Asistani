@@ -906,7 +906,18 @@ function buildMasterIntegratedAiPrompt(opts: {
     .filter(Boolean)
     .filter(symbol => symbol.toLowerCase() !== primaryTotem.toLowerCase());
   const flora = symbols.find(s => s.symbolCategory === 'Flora')?.symbolName || 'Harmonized Botanical Form';
-  const geo = symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName || 'Sacred Geometry Matrix';
+  // User-selected secondary symbols are authoritative for the final visual prompt.
+  // Prefer an explicitly selected geometry symbol when present, then fall back to
+  // the calculated symbolism registry. This prevents a valid calculated symbol
+  // from disappearing between recipe generation and the final master prompt.
+  const selectedGeometry = requestedSupporting.find(symbol =>
+    /metatron|geometry|geometri|mandala|yaşam çiçeği|flower of life/i.test(symbol)
+  );
+  const geo = selectedGeometry
+    || symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName
+    || symbolism?.geometricSymbol
+    || symbolism?.sacredObject
+    || 'Sacred Geometry Matrix';
   const primaryVisual = requestedPrimary || flora;
   const supportingVisuals = [...new Set([...requestedSupporting, flora, geo])].join(', ');
 
