@@ -340,7 +340,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
                 }}
                 onLocationSelect={(loc) => {
                   setSelectedLocation(loc);
-                  setBirthPlace(loc.displayName || loc.name);
+                  if (loc) setBirthPlace(loc.displayName || loc.name);
                   if (errorMessage) setErrorMessage(null);
                 }}
                 selectedLocation={selectedLocation}
