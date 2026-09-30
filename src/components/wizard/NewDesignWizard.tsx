@@ -405,6 +405,13 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setProfileValidationError(null);
     setClientSaveFeedback(null);
     setIsSaved(false);
+    setSelectedStyles(['Fine Line', 'Geometric']);
+    setComposition('Dinamik Asimetrik & Kutsal Odak');
+    setOrientation('Dikey (Anatomik)');
+    setBodyPlacement('Önkol İç (Forearm)');
+    setDensity('Dengeli & Net (%60)');
+    setColorScheme('Saf Monokrom Siyah');
+    setVisualAtmosphere('Mistik & Ezoterik');
     setNumerology(null);
     setAstrology(null);
     setEnneagram(null);
