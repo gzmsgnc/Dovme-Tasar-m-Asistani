@@ -3536,8 +3536,10 @@ ${r.turkishPromptExplanation}
       {/* Enneagram Quiz Modal */}
       <EnneagramQuizModal
         isOpen={showQuizModal}
+        initialAnswers={enneagramAnswers}
         onClose={() => setShowQuizModal(false)}
-        onApplyResult={(type, wing) => {
+        onApplyResult={(type, wing, answers) => {
+          setEnneagramAnswers(answers);
           setSelectedEnneaType(type);
           setSelectedWing(wing);
           if (enneagram) {
