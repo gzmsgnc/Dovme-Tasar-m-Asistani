@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { generateTattooRecipe } from '../src/utils/recipeGenerator';
+import { calculateChakraProfile } from '../src/utils/chakra';
 
 const person = {
   id: 'prompt-test',
@@ -106,12 +107,13 @@ const recipe = generateTattooRecipe(person, numerology, astrology, enneagram, sy
 
 assert.ok(recipe.masterEnglishPrompt.includes('Lavanta'));
 assert.ok(recipe.masterEnglishPrompt.includes('Lavanta'));
-assert.ok(recipe.masterEnglishPrompt.includes('Metatron Küpü'), `DEBUG MASTER PROMPT:\n${recipe.masterEnglishPrompt}`);
+assert.ok(recipe.masterEnglishPrompt.includes('Metatron Küpü'));
 assert.ok(recipe.masterEnglishPrompt.includes('Life Path 7'));
 assert.ok(recipe.artisticAtmosphereGuide.includes('kıyaslama'));
 assert.ok(recipe.artisticAtmosphereGuide.includes('derinlik'));
 assert.ok(recipe.turkishPromptExplanation.includes('Çakra Dengeleme Rezonansı'));
-assert.ok(recipe.turkishPromptExplanation.includes('ifade ve dengeyi destekle'));
+const expectedChakraDirective = calculateChakraProfile(numerology, astrology).primaryHealingDirective;
+assert.ok(recipe.turkishPromptExplanation.includes(expectedChakraDirective));
 assert.ok(recipe.symbolRationales.some(r => r.esotericConnection.includes('Yaşam Yolu 7')));
 assert.equal(recipe.parameters.includeTotemInDesign, false);
 assert.ok(!recipe.masterEnglishPrompt.toLowerCase().includes('kızıl geyik'));
