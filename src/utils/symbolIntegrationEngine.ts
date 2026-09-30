@@ -662,6 +662,11 @@ export function executeSymbolicIntegrationEngine(params: {
   });
 
   // 8. MASTER INTEGRATED AI PROMPT (Midjourney / Flux / Gemini için İkon Yığını Olmayan Bütünsel Prompt)
+  const selectedPrimary = designParameters.mainSymbol || symbolism.sacredObject || symbolism.geometricSymbol || 'Calculated primary symbol';
+  const selectedSecondary = (designParameters.secondarySymbols || []).filter(Boolean);
+  const canonicalSecondary = selectedSecondary.length > 0
+    ? selectedSecondary
+    : [symbolism.plantFlora, symbolism.geometricSymbol, symbolism.sacredObject].filter(Boolean);
   const masterIntegratedAiPrompt = buildMasterIntegratedAiPrompt({
     person,
     numerology,
@@ -672,7 +677,7 @@ export function executeSymbolicIntegrationEngine(params: {
     designGeometry,
     designParameters,
     totemProfile
-  }) + `\n\nUSER-SELECTED SYMBOLS (MANDATORY FIDELITY): Primary = ${designParameters.mainSymbol || symbolism.sacredObject || symbolism.geometricSymbol || 'Calculated primary symbol'}; Secondary = ${(designParameters.secondarySymbols || []).filter(Boolean).join(', ') || [symbolism.plantFlora, symbolism.geometricSymbol, symbolism.sacredObject].filter(Boolean).join(', ')}. Preserve these selected names exactly; do not omit or substitute them.`;
+  }) + `\n\nUSER-SELECTED SYMBOLS (MANDATORY FIDELITY): Primary = ${selectedPrimary}; Secondary = ${canonicalSecondary.join(', ')}. Calculated geometry = ${symbolism.geometricSymbol || 'none'}. Preserve these selected names exactly; do not omit or substitute them.`;
 
   return {
     version: {
@@ -930,7 +935,9 @@ Primary Armature: A central sacred geometry framework of ${geo} constructed with
 Integrated Inner Geometry: The 9-pointed Enneagram star of Type ${enneagram.coreType ?? enneagram.type} (${enneagram.wing}) is interlocked within the mandala, sharing perimeter nodes and focal vertices with continuous single-stroke linework.
 Celestial Arch: A sweeping celestial horizon arc expressing ${astrology.sunSign} solar vitality and ${astrology.ascendantSign} rising axis, crowned with delicate constellation micro-stippling and crescent solar-lunar geometry.
 Organic Botanical Flow: An opening ${flora} whose lower petals organically share outer contours with the sacred geometry circles, anchoring the bottom third of the piece.
-Totem Animal Whisper: The essence of ${primaryTotem} is subtly abstracted—not as a cartoonish separate head, but as sleek geometric jawlines, alert triangular ear vertices, and negative space contours emerging naturally from between the botanical petals.
+${designParameters.includeTotemInDesign === true
+    ? `Totem Animal Whisper: The essence of ${primaryTotem} is subtly abstracted—not as a cartoonish separate head, but as sleek geometric jawlines, alert triangular ear vertices, and negative space contours emerging naturally from between the botanical petals.`
+    : 'Totem data remains analytical only and must not appear as an animal or animal name in the final visual composition.'}
 Numerological Spine: A vertical central meridian dotted with ${numerology.lifePathNumber} rhythmic micro-dotwork nodes symbolizing Life Path ${numerology.lifePathNumber} and divine resonance.
 
 Style Specification:
