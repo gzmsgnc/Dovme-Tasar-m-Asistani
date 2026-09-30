@@ -900,13 +900,22 @@ function buildMasterIntegratedAiPrompt(opts: {
   const styleNames = designParameters.selectedStyles?.join(', ') || 'Fine Line, Micro Dotwork, Sacred Geometry';
   const placement = designParameters.bodyPlacement || 'Forearm Inner';
   const primaryTotem = totemProfile.animalName;
+  const requestedPrimary = designParameters.mainSymbol?.trim() || '';
+  const requestedSupporting = (designParameters.secondarySymbols || [])
+    .map(symbol => symbol.trim())
+    .filter(Boolean)
+    .filter(symbol => symbol.toLowerCase() !== primaryTotem.toLowerCase());
   const flora = symbols.find(s => s.symbolCategory === 'Flora')?.symbolName || 'Harmonized Botanical Form';
   const geo = symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName || 'Sacred Geometry Matrix';
+  const primaryVisual = requestedPrimary || flora;
+  const supportingVisuals = [...new Set([...requestedSupporting, flora, geo])].join(', ');
 
   return `
 A single unified, monolithic master esoteric tattoo flash plate artwork designed specifically for ${person.name}. 
 STRICT COMPOSITION RULE: DO NOT create a collage, separate icons, or floating stickers. The design must read as ONE single interlocked organic-geometric logo-emblem composition where shared strokes and negative space seamlessly weave multiple symbolic dimensions together.
 
+Primary Visual Focus: ${primaryVisual}, treated as the dominant focal subject while remaining structurally fused with the rest of the composition.
+Integrated Supporting Symbols: ${supportingVisuals} are woven into the primary silhouette through shared contours, geometric transitions, and controlled negative space; never rendered as separate floating icons.
 Primary Armature: A central sacred geometry framework of ${geo} constructed with razor-sharp 03RL fine linework, where concentric golden-ratio rings form the structural cradle.
 Integrated Inner Geometry: The 9-pointed Enneagram star of Type ${enneagram.coreType ?? enneagram.type} (${enneagram.wing}) is interlocked within the mandala, sharing perimeter nodes and focal vertices with continuous single-stroke linework.
 Celestial Arch: A sweeping celestial horizon arc expressing ${astrology.sunSign} solar vitality and ${astrology.ascendantSign} rising axis, crowned with delicate constellation micro-stippling and crescent solar-lunar geometry.
