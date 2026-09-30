@@ -28,6 +28,7 @@ const astrology = {
 
 const enneagram = {
   type: 4,
+  typeName: 'Bireyselci',
   wing: '4w5',
   growthPoint: 'Tip 1',
   shadowTraits: ['kıyaslama', 'içe çekilme']
@@ -37,7 +38,11 @@ const symbolism = {
   totemAnimal: 'Kızıl Geyik',
   totemAnimalId: 'kizil_geyik',
   totemAnimalMeaning: 'test',
-  totemHierarchy: [],
+  totemHierarchy: [
+    { id: 'kizil_geyik', role: 'Birincil Ruh Totemi', name: 'Kızıl Geyik', origin: 'test', meaning: 'test', archetypalPower: 'test', visualRoleInTattoo: 'test' },
+    { id: 'bal_porsugu', role: 'Gölge & Muhafız Totemi', name: 'Bal Porsuğu', origin: 'test', meaning: 'gölge uyumu', archetypalPower: 'koruma', visualRoleInTattoo: 'alt taban' },
+    { id: 'su_samuru', role: 'Yükseliş & Ruhsal Müttefik', name: 'Su Samuru', origin: 'test', meaning: 'duygusal uyum', archetypalPower: 'koruyucu esneklik', visualRoleInTattoo: 'akış' }
+  ],
   secondaryAnimals: ['Su Samuru'],
   neededSymbols: [],
   plantFlora: 'Lavanta',
