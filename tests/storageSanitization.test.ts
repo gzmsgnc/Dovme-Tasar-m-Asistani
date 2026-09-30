@@ -52,8 +52,14 @@ assert.equal(source.getStoredClients().find(c => c.id === 'client_B')?.personalS
 
 // A silindiğinde yalnızca A'nın reçetesi silinmeli.
 const recipeA: any = { id: 'recipe_A', clientId: 'client_A', clientName: 'Danışan A', title: 'A Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
+const recipeA2: any = { id: 'recipe_A2', clientId: 'client_A', clientName: 'Danışan A', title: 'A İkinci Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
 const recipeB: any = { id: 'recipe_B', clientId: 'client_B', clientName: 'Danışan B', title: 'B Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
-saveRecipe(recipeA); saveRecipe(recipeB);
+// Aynı danışan birden fazla bağımsız reçete oluşturabilmeli; ikinci kayıt ilkini ezmemeli.
+saveRecipe(recipeA); saveRecipe(recipeA2); saveRecipe(recipeB);
+assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B', 'recipe_A2', 'recipe_A']);
+assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 2);
+assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_B').length, 1);
+
 deleteClient('client_A');
 assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
