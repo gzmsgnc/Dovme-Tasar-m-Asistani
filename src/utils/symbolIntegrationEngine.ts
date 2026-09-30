@@ -917,7 +917,7 @@ function buildMasterIntegratedAiPrompt(opts: {
     || symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName
     || 'Sacred Geometry Matrix';
   const primaryVisual = requestedPrimary || flora;
-  const supportingVisuals = [...new Set([...requestedSupporting, flora, geo, symbolism?.geometricSymbol || ''])].filter(Boolean).join(', ');
+  const supportingVisuals = [...new Set([...requestedSupporting, flora, geo])].filter(Boolean).join(', ');
 
   return `
 A single unified, monolithic master esoteric tattoo flash plate artwork designed specifically for ${person.name}. 
