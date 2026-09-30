@@ -8,7 +8,7 @@ assert.equal(
 );
 
 assert.equal(
-  getTimezoneOffsetHoursForDate('1991-11-24', '03:15', 'Europe/Istanbul', 3),
+  getTimezoneOffsetHoursForDate('1991-11-24', '03:15', 'Europe/Istanbul', 2),
   2
 );
 
