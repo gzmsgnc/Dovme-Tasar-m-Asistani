@@ -5,7 +5,7 @@ import { ResolvedLocation, searchLocalLocations, COMMON_WORLD_COUNTRIES } from '
 interface LocationAutocompleteInputProps {
   value: string;
   onChange: (val: string) => void;
-  onLocationSelect?: (loc: ResolvedLocation) => void;
+  onLocationSelect?: (loc: ResolvedLocation | null) => void;
   selectedLocation?: ResolvedLocation | null;
   error?: string;
   placeholder?: string;
@@ -150,7 +150,7 @@ export const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps>
       const selectedText = (selectedLocation.displayName || selectedLocation.name || '').trim();
       if (nextValue.trim() !== selectedText) {
         setAmbiguousCandidates([]);
-        if (onLocationSelect) onLocationSelect(null as any);
+        if (onLocationSelect) onLocationSelect(null);
       }
     }
   };
