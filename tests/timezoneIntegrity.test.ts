@@ -7,23 +7,26 @@ assert.equal(
   3
 );
 
+// Historical Istanbul: the explicit fallback must not overwrite the IANA timezone result.
 assert.equal(
   getTimezoneOffsetHoursForDate('1991-11-24', '03:15', 'Europe/Istanbul', 2),
   2
 );
 
+// Pass the known fallback for each timezone explicitly; production normally supplies
+// the resolved location's defaultTz rather than relying on the generic default of 3.
 assert.equal(
-  getTimezoneOffsetHoursForDate('2026-07-15', '12:00', 'Europe/Berlin'),
+  getTimezoneOffsetHoursForDate('2026-07-15', '12:00', 'Europe/Berlin', 1),
   2
 );
 
 assert.equal(
-  getTimezoneOffsetHoursForDate('2026-01-15', '12:00', 'Europe/Berlin'),
+  getTimezoneOffsetHoursForDate('2026-01-15', '12:00', 'Europe/Berlin', 1),
   1
 );
 
 assert.equal(
-  getTimezoneOffsetHoursForDate('2026-01-15', '12:00', 'Asia/Kolkata'),
+  getTimezoneOffsetHoursForDate('2026-01-15', '12:00', 'Asia/Kolkata', 5.5),
   5.5
 );
 
