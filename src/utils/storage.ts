@@ -4,6 +4,7 @@ const CLIENTS_STORAGE_KEY = 'tattoo_assistant_clients_v2';
 const RECIPES_STORAGE_KEY = 'tattoo_assistant_recipes_v2';
 const LEGACY_CLIENTS_KEY = 'tattoo_assistant_clients_v1';
 const LEGACY_RECIPES_KEY = 'tattoo_assistant_recipes_v1';
+const DELETED_CLIENTS_STORAGE_KEY = 'tattoo_assistant_deleted_clients_v1';
 
 // Known hardcoded demo accounts to purge from real user lists
 const DEMO_ACCOUNT_IDS = new Set([
@@ -154,12 +155,13 @@ export async function postClientIntakeToServer(payload: any): Promise<{ success:
 export async function syncClientsWithServer(): Promise<PersonData[]> {
   try {
     const localClients = getStoredClients();
+    const deletedClientIds = getDeletedClientIds();
     const res = await fetch('/api/clients/sync', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ localClients })
+      body: JSON.stringify({ localClients, deletedClientIds })
     });
 
     if (!res.ok) {
@@ -168,7 +170,7 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
       if (getRes.ok) {
         const getData = await getRes.json();
         if (getData.clients && Array.isArray(getData.clients)) {
-          const merged = mergeClientLists(localClients, getData.clients);
+          const merged = mergeClientLists(localClients, getData.clients, deletedClientIds);
           localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(merged));
           return merged;
         }
@@ -180,6 +182,7 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
     if (data.success && Array.isArray(data.clients)) {
       const sanitized = data.clients.filter((c: any) => c && c.id && c.name && !isDemoClient(c));
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
+      clearDeletedClientIds(deletedClientIds);
       return sanitized;
     }
     return localClients;
@@ -189,13 +192,28 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
   }
 }
 
-function mergeClientLists(listA: PersonData[], listB: PersonData[]): PersonData[] {
+function getDeletedClientIds(): string[] {
+  try {
+    const raw = localStorage.getItem(DELETED_CLIENTS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string' && id.trim().length > 0) : [];
+  } catch {
+    return [];
+  }
+}
+
+function clearDeletedClientIds(ids: string[]): void {
+  if (ids.length > 0) localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY);
+}
+
+function mergeClientLists(listA: PersonData[], listB: PersonData[], deletedIds: string[] = []): PersonData[] {
+  const deleted = new Set(deletedIds);
   const map = new Map<string, PersonData>();
   listA.forEach(c => {
-    if (c && c.id && !isDemoClient(c)) map.set(c.id, c);
+    if (c && c.id && !isDemoClient(c) && !deleted.has(c.id)) map.set(c.id, c);
   });
   listB.forEach(c => {
-    if (c && c.id && !isDemoClient(c)) {
+    if (c && c.id && !isDemoClient(c) && !deleted.has(c.id)) {
       if (!map.has(c.id)) {
         map.set(c.id, c);
       } else {
@@ -218,6 +236,9 @@ function mergeClientLists(listA: PersonData[], listB: PersonData[]): PersonData[
  */
 export function deleteClient(id: string): PersonData[] {
   const clients = getStoredClients().filter(c => c.id !== id);
+  const deletedIds = getDeletedClientIds();
+  if (!deletedIds.includes(id)) deletedIds.push(id);
+  localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(deletedIds));
   localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
   
   // Background delete on server
@@ -344,4 +365,5 @@ export function clearAllData(): void {
   localStorage.removeItem(RECIPES_STORAGE_KEY);
   localStorage.removeItem(LEGACY_CLIENTS_KEY);
   localStorage.removeItem(LEGACY_RECIPES_KEY);
+  localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY);
 }
