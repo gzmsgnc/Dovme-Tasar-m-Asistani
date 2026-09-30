@@ -7,7 +7,7 @@ import {
   LocationValidationError
 } from '../src/utils/locationResolver';
 
-const cases = [
+const cases: Array<[string, string, number, number]> = [
   ['İstanbul, Türkiye', 'TR', 41.0082, 28.9784],
   ['Istanbul Turkey', 'TR', 41.0082, 28.9784],
   ['São Paulo, Brazil', 'BR', -23.5505, -46.6333],
@@ -20,8 +20,8 @@ const cases = [
 for (const [input, country, lat, lon] of cases) {
   const result = resolveLocationSync(input);
   assert.equal(result.countryCode, country);
-  assert.ok(Math.abs(result.lat - Number(lat)) < 0.2);
-  assert.ok(Math.abs(result.lon - Number(lon)) < 0.2);
+  assert.ok(Math.abs(result.lat - lat) < 0.2);
+  assert.ok(Math.abs(result.lon - lon) < 0.2);
   assert.ok(result.timezone);
 }
 
@@ -40,9 +40,11 @@ assert.throws(
   (error: unknown) => error instanceof LocationValidationError
 );
 
+// Springfield is intentionally ambiguous. The resolver must not silently choose
+// an arbitrary city when there is no country/region disambiguator.
 assert.throws(
   () => resolveLocationSync('Springfield'),
-  (error: unknown) => error instanceof LocationValidationError || true
+  (error: unknown) => error instanceof LocationValidationError
 );
 
 console.log('Location resolver tests passed');
