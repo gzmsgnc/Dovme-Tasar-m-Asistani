@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ENNEAGRAM_MINI_TEST_QUESTIONS, calculateEnneagramFromAnswers, ENNEAGRAM_TYPES } from '../../utils/enneagram';
 import { HelpCircle, Check, X, ArrowRight, RotateCcw } from 'lucide-react';
 
 interface EnneagramQuizModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApplyResult: (type: number, wing: string) => void;
+  onApplyResult: (type: number, wing: string, answers: Record<number, number>) => void;
+  initialAnswers?: Record<number, number>;
 }
 
 export const EnneagramQuizModal: React.FC<EnneagramQuizModalProps> = ({
   isOpen,
   onClose,
-  onApplyResult
+  onApplyResult,
+  initialAnswers = {}
 }) => {
-  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answers, setAnswers] = useState<Record<number, number>>(initialAnswers);
+
+  useEffect(() => {
+    if (isOpen) {
+      setAnswers(initialAnswers);
+      if (Object.keys(initialAnswers).length === ENNEAGRAM_MINI_TEST_QUESTIONS.length) {
+        setResult(calculateEnneagramFromAnswers(initialAnswers));
+      } else {
+        setResult(null);
+      }
+    }
+  }, [isOpen, initialAnswers]);
   const [result, setResult] = useState<{ type: number; wing: string } | null>(null);
 
   if (!isOpen) return null;
@@ -39,7 +52,7 @@ export const EnneagramQuizModal: React.FC<EnneagramQuizModalProps> = ({
 
   const handleConfirm = () => {
     if (result) {
-      onApplyResult(result.type, result.wing);
+      onApplyResult(result.type, result.wing, answers);
       onClose();
     }
   };
