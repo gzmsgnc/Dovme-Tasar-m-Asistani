@@ -495,7 +495,23 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     artisticAtmosphereGuide,
     feasibility,
     summaryRationale,
-    masterEnglishPrompt: symbolicIntegration.masterIntegratedAiPrompt || masterEnglishPrompt,
+    masterEnglishPrompt: (() => {
+      const basePrompt = symbolicIntegration.masterIntegratedAiPrompt || masterEnglishPrompt;
+      const selectedSymbols = [
+        ...(parameters.mainSymbol ? [parameters.mainSymbol] : []),
+        ...(parameters.secondarySymbols || [])
+      ].filter(Boolean);
+      const calculatedSymbols = [
+        symbolism.geometricSymbol,
+        symbolism.plantFlora,
+        symbolism.sacredObject
+      ].filter(Boolean);
+      const fidelitySymbols = [...new Set([...selectedSymbols, ...calculatedSymbols])];
+      const fidelityBlock = fidelitySymbols.length > 0
+        ? `\\n\\nSYMBOL FIDELITY — MANDATORY: Preserve these exact symbol names in the visual design instructions: ${fidelitySymbols.join(', ')}. Do not omit, rename, replace, or silently substitute them.\\n`
+        : '';
+      return basePrompt + fidelityBlock;
+    })(),
     masterOutlinePrompt,
     masterShadedPrompt,
     midjourneyPrompt: shadowAnalysis.section12Prompts.midjourneyMasterPrompt || midjourneyPrompt,
