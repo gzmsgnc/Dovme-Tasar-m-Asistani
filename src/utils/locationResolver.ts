@@ -102,11 +102,14 @@ export const COMMON_WORLD_COUNTRIES: CountryDefinition[] = [
 export function normalizeLocationText(text: string): string {
   if (!text) return '';
   return text
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/İ/g, 'i')
+    .replace(/ı/g, 'i')
     .toLowerCase()
     .replace(/ğ/g, 'g')
     .replace(/ü/g, 'u')
     .replace(/ş/g, 's')
-    .replace(/ı/g, 'i')
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c')
     .replace(/[éèêë]/g, 'e')
@@ -156,7 +159,7 @@ export function getTimezoneOffsetHoursForDate(
   const minutes = isNaN(parseInt(minStr, 10)) ? 0 : parseInt(minStr, 10);
 
   // Türkiye özel tarihi kuralı kontrolü
-  if (timeZone === 'Europe/Istanbul' || timeZone === 'Turkey' || defaultTz === 3) {
+  if (timeZone === 'Europe/Istanbul' || timeZone === 'Turkey') {
     if (year > 2016 || (year === 2016 && (month > 9 || (month === 9 && day >= 8)))) {
       return 3;
     }
