@@ -106,7 +106,7 @@ const recipe = generateTattooRecipe(person, numerology, astrology, enneagram, sy
 
 assert.ok(recipe.masterEnglishPrompt.includes('Lavanta'));
 assert.ok(recipe.masterEnglishPrompt.includes('Lavanta'));
-assert.ok(recipe.masterEnglishPrompt.includes('Metatron Küpü'));
+assert.ok(recipe.masterEnglishPrompt.includes('Metatron Küpü'), `DEBUG MASTER PROMPT:\n${recipe.masterEnglishPrompt}`);
 assert.ok(recipe.masterEnglishPrompt.includes('Life Path 7'));
 assert.ok(recipe.artisticAtmosphereGuide.includes('kıyaslama'));
 assert.ok(recipe.artisticAtmosphereGuide.includes('derinlik'));
