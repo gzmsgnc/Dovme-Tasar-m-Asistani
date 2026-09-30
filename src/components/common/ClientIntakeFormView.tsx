@@ -780,7 +780,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                   }}
                   onLocationSelect={(loc) => {
                     setSelectedLocation(loc);
-                    setBirthPlace(loc.displayName || loc.name);
+                    if (loc) setBirthPlace(loc.displayName || loc.name);
                     if (errors.birthPlace) setErrors(prev => ({ ...prev, birthPlace: '' }));
                   }}
                   selectedLocation={selectedLocation}
