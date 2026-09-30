@@ -18,7 +18,7 @@ const chakra = calculateChakraProfile(numerology, astrology);
 assert.deepEqual(chakra.blockedChakras.map(c => c.number), [1, 4]);
 
 const symbolism = {
-  totemAnimal: 'Kızıl Geyik', totemAnimalId: 'kizil_geyik',
+  totemAnimal: 'Kızıl Geyik', totemAnimalId: 'kizil_geyik', totemAnimalMeaning: 'Test birincil anlamı',
   totemTestResult: { primaryTotem: { id: 'kizil_geyik', name: 'Kızıl Geyik' } },
   totemHierarchy: [
     { id: 'kizil_geyik', role: 'Birincil Ruh Totemi', name: 'Kızıl Geyik', origin: 'test', meaning: 'Test birincil anlamı', archetypalPower: 'test', visualRoleInTattoo: 'test' },
