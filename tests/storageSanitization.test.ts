@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 const source = await import('../src/utils/storage');
-const { saveClient, deleteClient, saveRecipe, deleteRecipe } = source;
+const { saveClient, deleteClient, saveRecipe, deleteRecipe, syncClientsWithServer } = source;
 
 const original = globalThis.localStorage;
 class MemoryStorage {
@@ -57,6 +57,22 @@ saveRecipe(recipeA); saveRecipe(recipeB);
 deleteClient('client_A');
 assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
+
+// Silinen danışan sunucuda kalsa bile sonraki senkronizasyonda geri dirilmemeli.
+const originalFetch = globalThis.fetch;
+(globalThis as any).fetch = async () => ({
+  ok: true,
+  json: async () => ({
+    success: true,
+    clients: [
+      clientA,
+      clientB
+    ]
+  })
+});
+await syncClientsWithServer();
+assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
+(globalThis as any).fetch = originalFetch;
 
 // Tekil reçete silme diğer danışanın reçetesine dokunmamalı.
 saveRecipe(recipeA); deleteRecipe('recipe_A');
