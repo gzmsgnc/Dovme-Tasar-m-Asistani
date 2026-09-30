@@ -1,0 +1,33 @@
+name: Fix location normalization
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix Unicode normalization and timezone fallback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/utils/locationResolver.ts')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("""  return text\n    .toLowerCase()\n    .replace(/ğ/g, 'g')\n    .replace(/ü/g, 'u')\n    .replace(/ş/g, 's')\n    .replace(/ı/g, 'i')\n    .replace(/ö/g, 'o')\n    .replace(/ç/g, 'c')""", """  return text\n    .normalize('NFKD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/İ/g, 'i')\n    .replace(/ı/g, 'i')\n    .toLowerCase()\n    .replace(/ğ/g, 'g')\n    .replace(/ü/g, 'u')\n    .replace(/ş/g, 's')\n    .replace(/ö/g, 'o')\n    .replace(/ç/g, 'c')""")
+          s = s.replace("if (timeZone === 'Europe/Istanbul' || timeZone === 'Turkey' || defaultTz === 3) {", "if (timeZone === 'Europe/Istanbul' || timeZone === 'Turkey') {")
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit fixes
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/utils/locationResolver.ts
+          git commit -m 'fix: harden global location normalization and timezone fallback'
+          git push
