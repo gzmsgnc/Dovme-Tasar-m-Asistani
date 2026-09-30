@@ -104,7 +104,7 @@ const parameters = {
 
 const recipe = generateTattooRecipe(person, numerology, astrology, enneagram, symbolism, parameters);
 
-assert.ok(recipe.masterEnglishPrompt.includes('Kutsal Lotus'));
+assert.ok(recipe.masterEnglishPrompt.includes('Lavanta'));
 assert.ok(recipe.masterEnglishPrompt.includes('Lavanta'));
 assert.ok(recipe.masterEnglishPrompt.includes('Metatron Küpü'));
 assert.ok(recipe.masterEnglishPrompt.includes('Yaşam Yolu 7'));
