@@ -36,7 +36,7 @@ const symbolism = {
 } as unknown as SymbolismProfile;
 
 const enneagram = {
-  type: 4, wing: '4w5', shadowTraits: ['test'], growthPoint: 'test'
+  type: 4, wing: '4w5', typeName: 'Bireyselci', shadowTraits: ['test'], growthPoint: 'test'
 } as unknown as EnneagramProfile;
 
 const person = { name: 'Test', birthDate: '1991-11-24' } as unknown as PersonData;
