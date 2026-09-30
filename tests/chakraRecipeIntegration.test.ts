@@ -43,9 +43,8 @@ const person = { name: 'Test', birthDate: '1991-11-24' } as unknown as PersonDat
 const parameters = {
   selectedStyles: ['Fine Line'], includeTotemInDesign: false, mainSymbol: '',
   secondarySymbols: [], subtleDetails: [], useMorseCodeForNumbers: false,
-  selectedStyles: ['Fine Line'], density: 'Dengeli', colorScheme: 'Black & Grey',
-  bodyPlacement: 'Sırt', orientation: 'Dikey', composition: 'Asimetrik',
-  visualAtmosphere: 'Mistik'
+  density: 'Dengeli', colorScheme: 'Black & Grey', bodyPlacement: 'Sırt',
+  orientation: 'Dikey', composition: 'Asimetrik', visualAtmosphere: 'Mistik'
 } as unknown as TattooDesignParameters;
 
 const recipe = generateTattooRecipe(person, numerology, astrology, enneagram, symbolism, parameters);
