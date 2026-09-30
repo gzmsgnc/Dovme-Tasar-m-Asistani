@@ -915,8 +915,6 @@ function buildMasterIntegratedAiPrompt(opts: {
   );
   const geo = selectedGeometry
     || symbols.find(s => s.symbolCategory === 'Kutsal Geometri')?.symbolName
-    || symbolism?.geometricSymbol
-    || symbolism?.sacredObject
     || 'Sacred Geometry Matrix';
   const primaryVisual = requestedPrimary || flora;
   const supportingVisuals = [...new Set([...requestedSupporting, flora, geo])].join(', ');
