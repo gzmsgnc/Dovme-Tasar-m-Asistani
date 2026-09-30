@@ -358,6 +358,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
     setBirthDate('');
     setBirthTime('');
     setBirthPlace('');
+    setSelectedLocation(null);
     setPersonalStory('');
     setEnneagramAnswers({});
     setTotemAnswers({});
