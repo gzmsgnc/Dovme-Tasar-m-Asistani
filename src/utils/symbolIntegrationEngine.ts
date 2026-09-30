@@ -925,6 +925,7 @@ STRICT COMPOSITION RULE: DO NOT create a collage, separate icons, or floating st
 
 Primary Visual Focus: ${primaryVisual}, treated as the dominant focal subject while remaining structurally fused with the rest of the composition.
 Integrated Supporting Symbols: ${supportingVisuals} are woven into the primary silhouette through shared contours, geometric transitions, and controlled negative space; never rendered as separate floating icons.
+Selected Symbol Fidelity: Preserve every user-selected secondary symbol exactly as named in the design recipe, including ${requestedSupporting.join(', ') || 'none'}; do not silently replace, rename, or omit selected symbols.
 Primary Armature: A central sacred geometry framework of ${geo} constructed with razor-sharp 03RL fine linework, where concentric golden-ratio rings form the structural cradle.
 Integrated Inner Geometry: The 9-pointed Enneagram star of Type ${enneagram.coreType ?? enneagram.type} (${enneagram.wing}) is interlocked within the mandala, sharing perimeter nodes and focal vertices with continuous single-stroke linework.
 Celestial Arch: A sweeping celestial horizon arc expressing ${astrology.sunSign} solar vitality and ${astrology.ascendantSign} rising axis, crowned with delicate constellation micro-stippling and crescent solar-lunar geometry.
