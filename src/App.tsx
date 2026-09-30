@@ -69,6 +69,8 @@ export function App() {
   };
   const handleAddNewClientClick = () => {
     setSelectedPersonForDesign(null);
+    setPreselectedSymbol(null);
+    setPreselectedStyle(null);
     setWizardSessionId(Date.now());
     setActiveTab('new_design');
   };
