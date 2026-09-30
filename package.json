@@ -10,7 +10,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "tsx tests/totemEngine.test.ts && tsx tests/recipeIntegrity.test.ts && tsx tests/profileRecalculation.test.ts && tsx tests/locationResolver.test.ts && tsx tests/timezoneIntegrity.test.ts && tsx tests/astrologyMath.test.ts && tsx tests/enneagramEngine.test.ts && tsx tests/chakraRecipeIntegration.test.ts && tsx tests/finalPromptPersonalization.test.ts && tsx tests/storageSanitization.test.ts",
-    "check": "npm run lint && npm test && npm build"
+    "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
