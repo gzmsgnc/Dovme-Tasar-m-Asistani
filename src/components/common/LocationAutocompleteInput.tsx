@@ -174,7 +174,7 @@ export const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps>
     setAmbiguousCandidates([]);
     setIsOpen(false);
     if (onLocationSelect) {
-      onLocationSelect(null as any);
+      onLocationSelect(null);
     }
   };
 
