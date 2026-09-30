@@ -27,9 +27,6 @@ localStorage.setItem('tattoo_assistant_recipes_v2', JSON.stringify([
 ]));
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_real']);
 
-(globalThis as any).localStorage = original;
-
-
 // A/B danışan izolasyonu: ikinci danışan ilk danışanın verilerini devralmamalı.
 source.clearAllData();
 const clientA: any = {
@@ -76,5 +73,8 @@ assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
 saveRecipe(recipeA);
 deleteRecipe('recipe_A');
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
+
+// Test bittikten sonra gerçek ortamı geri yükle.
+(globalThis as any).localStorage = original;
 
 console.log('Storage sanitization tests passed');
