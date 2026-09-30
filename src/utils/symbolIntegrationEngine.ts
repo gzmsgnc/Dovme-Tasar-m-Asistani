@@ -672,7 +672,7 @@ export function executeSymbolicIntegrationEngine(params: {
     designGeometry,
     designParameters,
     totemProfile
-  });
+  }) + `\n\nUSER-SELECTED SYMBOLS (MANDATORY FIDELITY): Primary = ${designParameters.mainSymbol || symbolism.sacredObject || symbolism.geometricSymbol || 'Calculated primary symbol'}; Secondary = ${(designParameters.secondarySymbols || []).filter(Boolean).join(', ') || [symbolism.plantFlora, symbolism.geometricSymbol, symbolism.sacredObject].filter(Boolean).join(', ')}. Preserve these selected names exactly; do not omit or substitute them.`;
 
   return {
     version: {
