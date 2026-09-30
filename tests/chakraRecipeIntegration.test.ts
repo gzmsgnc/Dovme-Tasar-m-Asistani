@@ -20,7 +20,11 @@ assert.deepEqual(chakra.blockedChakras.map(c => c.number), [1, 4]);
 const symbolism = {
   totemAnimal: 'Kızıl Geyik', totemAnimalId: 'kizil_geyik',
   totemTestResult: { primaryTotem: { id: 'kizil_geyik', name: 'Kızıl Geyik' } },
-  totemHierarchy: [], secondaryAnimals: [],
+  totemHierarchy: [
+    { id: 'kizil_geyik', role: 'Birincil Ruh Totemi', name: 'Kızıl Geyik', origin: 'test', meaning: 'Test birincil anlamı', archetypalPower: 'test', visualRoleInTattoo: 'test' },
+    { id: 'bal_porsugu', role: 'Gölge & Muhafız Totemi', name: 'Bal Porsuğu', origin: 'test', meaning: 'Test gölge anlamı', archetypalPower: 'test', visualRoleInTattoo: 'test' },
+    { id: 'su_samuru', role: 'Yükseliş & Ruhsal Müttefik', name: 'Su Samuru', origin: 'test', meaning: 'Test yükseliş anlamı', archetypalPower: 'test', visualRoleInTattoo: 'test' }
+  ], secondaryAnimals: [],
   plantFlora: 'Lavanta', geometricSymbol: 'Yaşam Çiçeği', sacredObject: 'Lotus',
   plantFloraMeaning: '', element: 'Toprak', elementMeaning: '', crystalStone: 'Kuvars',
   crystalStoneMeaning: '', mythologicalFigure: 'Artemis', mythologicalFigureMeaning: '',
