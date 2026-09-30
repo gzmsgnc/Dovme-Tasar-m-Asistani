@@ -142,6 +142,19 @@ export const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps>
     };
   }, [value, selectedCountry]);
 
+  const handleInputChange = (nextValue: string) => {
+    onChange(nextValue);
+    // Kullanıcı doğrulanmış konum metnini elle değiştirirse eski koordinat/timezone
+    // kesinlikle taşınmamalı; yeni konum yeniden seçilmelidir.
+    if (selectedLocation) {
+      const selectedText = (selectedLocation.displayName || selectedLocation.name || '').trim();
+      if (nextValue.trim() !== selectedText) {
+        setAmbiguousCandidates([]);
+        if (onLocationSelect) onLocationSelect(null as any);
+      }
+    }
+  };
+
   const handleSelect = (loc: ResolvedLocation) => {
     onChange(loc.displayName || loc.name);
     setIsOpen(false);
@@ -199,6 +212,8 @@ export const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps>
                 const newC = e.target.value;
                 setSelectedCountry(newC);
                 setIsOpen(false);
+                // Ülke filtresi değiştiğinde önceki konum doğrulamasını geçersiz kıl.
+                if (selectedLocation && onLocationSelect) onLocationSelect(null as any);
               }}
               className="w-full text-xs font-mono bg-[#161616] text-white border border-[#2e2e2e] rounded-md px-3 py-2 pr-8 focus:outline-none focus:border-[#c4a47c] appearance-none cursor-pointer hover:border-[#3e3e3e] transition-colors"
             >
@@ -234,7 +249,7 @@ export const LocationAutocompleteInput: React.FC<LocationAutocompleteInputProps>
           <input
             type="text"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             onFocus={() => {
               if (suggestions.length > 0) setIsOpen(true);
             }}
