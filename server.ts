@@ -366,20 +366,33 @@ async function startServer() {
   // Danışan senkronizasyonu (Stüdyo ile sunucu arası iki yönlü birleştirme)
   app.post('/api/clients/sync', (req: Request, res: Response) => {
     try {
-      const { localClients = [] } = req.body || {};
+      const { localClients = [], deletedClientIds = [] } = req.body || {};
+      const deletedIds = new Set<string>(
+        Array.isArray(deletedClientIds)
+          ? deletedClientIds.filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+          : []
+      );
+
+      // Tombstone ile gelen silmeler önce sunucudan kaldırılır; böylece sonraki
+      // senkronizasyonlarda silinen danışan yeniden dirilemez.
+      if (deletedIds.size > 0) {
+        const currentClients = getPersistedClients();
+        savePersistedClients(currentClients.filter(c => !deletedIds.has(c.id)));
+      }
+
       const serverClients = getPersistedClients();
       
       const mergedMap = new Map<string, PersonData>();
       // First insert server clients
       serverClients.forEach(c => {
-        if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) {
+        if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id) && !deletedIds.has(c.id)) {
           mergedMap.set(c.id, c);
         }
       });
       // Merge local clients
       if (Array.isArray(localClients)) {
         localClients.forEach((c: PersonData) => {
-          if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id)) {
+          if (c && c.id && !DEMO_ACCOUNT_IDS.has(c.id) && !deletedIds.has(c.id)) {
             if (!mergedMap.has(c.id)) {
               mergedMap.set(c.id, c);
             } else {
