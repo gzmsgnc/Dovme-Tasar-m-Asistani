@@ -26,9 +26,11 @@ for (const [input, country, lat, lon] of cases) {
 
 assert.equal(normalizeLocationText('istanbul'), 'istanbul');
 assert.equal(normalizeLocationText('São Paulo'), 'sao paulo');
-// Current resolver behavior is intentionally documented here until the core
-// normalization function is safely migrated to Unicode-aware Turkish casing.
-assert.equal(normalizeLocationText('İSTANBUL'), 'i stanbul');
+// Unicode-aware normalization must treat Turkish dotted/dotless I consistently.
+// The normalized form is ASCII-safe so local matching and remote geocoding agree.
+assert.equal(normalizeLocationText('İSTANBUL'), 'istanbul');
+assert.equal(normalizeLocationText('IĞDIR'), 'igdir');
+assert.equal(normalizeLocationText('ŞANLIURFA'), 'sanliurfa');
 
 const tokyoMatches = searchLocalLocations('Tokyo Japan');
 assert.ok(tokyoMatches.length >= 1);
