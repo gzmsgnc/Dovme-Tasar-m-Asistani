@@ -6,7 +6,6 @@ const LEGACY_CLIENTS_KEY = 'tattoo_assistant_clients_v1';
 const LEGACY_RECIPES_KEY = 'tattoo_assistant_recipes_v1';
 const DELETED_CLIENTS_STORAGE_KEY = 'tattoo_assistant_deleted_clients_v1';
 
-// Known hardcoded demo accounts to purge from real user lists
 const DEMO_ACCOUNT_IDS = new Set([
   'client_selin_kaya',
   'client_emir_arslan',
@@ -16,62 +15,25 @@ const DEMO_ACCOUNT_IDS = new Set([
 function isDemoClient(client: any): boolean {
   if (!client || typeof client !== 'object') return true;
   if (client.id && DEMO_ACCOUNT_IDS.has(client.id)) return true;
-
   const name = String(client.name || '').trim().toLocaleLowerCase('tr-TR');
   const email = String(client.email || '').trim().toLocaleLowerCase('tr-TR');
   const source = String(client.source || '').trim().toLocaleLowerCase('tr-TR');
   const status = String(client.status || '').trim().toLocaleLowerCase('tr-TR');
-
-  const demoNamePatterns = [
-    'selin kaya',
-    'emir arslan',
-    'derya yılmaz',
-    'demo',
-    'test danışan',
-    'test musteri',
-    'test müşteri'
-  ];
-
-  return demoNamePatterns.some(pattern => name === pattern || name.includes(pattern))
-    || email.includes('demo@')
-    || email.includes('test@')
-    || source === 'demo'
-    || source === 'test'
-    || status === 'demo';
+  const demoNamePatterns = ['selin kaya', 'emir arslan', 'derya yılmaz', 'demo', 'test danışan', 'test musteri', 'test müşteri'];
+  return demoNamePatterns.some(pattern => name === pattern || name.includes(pattern)) || email.includes('demo@') || email.includes('test@') || source === 'demo' || source === 'test' || status === 'demo';
 }
 
 function isValidImportedClient(client: any): client is PersonData {
-  return Boolean(
-    client &&
-    typeof client === 'object' &&
-    typeof client.id === 'string' &&
-    client.id.trim().length > 0 &&
-    typeof client.name === 'string' &&
-    client.name.trim().length > 0 &&
-    !isDemoClient(client)
-  );
+  return Boolean(client && typeof client === 'object' && typeof client.id === 'string' && client.id.trim().length > 0 && typeof client.name === 'string' && client.name.trim().length > 0 && !isDemoClient(client));
 }
 
 function isValidImportedRecipe(recipe: any, validClientIds: Set<string>): recipe is TattooRecipe {
-  return Boolean(
-    recipe &&
-    typeof recipe === 'object' &&
-    typeof recipe.id === 'string' &&
-    recipe.id.trim().length > 0 &&
-    typeof recipe.clientId === 'string' &&
-    recipe.clientId.trim().length > 0 &&
-    validClientIds.has(recipe.clientId) &&
-    typeof recipe.title === 'string' &&
-    recipe.title.trim().length > 0 &&
-    !DEMO_ACCOUNT_IDS.has(recipe.clientId) &&
-    !isDemoClient({ id: recipe.clientId, name: recipe.clientName })
-  );
+  return Boolean(recipe && typeof recipe === 'object' && typeof recipe.id === 'string' && recipe.id.trim().length > 0 && typeof recipe.clientId === 'string' && recipe.clientId.trim().length > 0 && validClientIds.has(recipe.clientId) && typeof recipe.title === 'string' && recipe.title.trim().length > 0 && !DEMO_ACCOUNT_IDS.has(recipe.clientId) && !isDemoClient({ id: recipe.clientId, name: recipe.clientName }));
 }
 
 export function getStoredClients(): PersonData[] {
   try {
     let raw = localStorage.getItem(CLIENTS_STORAGE_KEY);
-
     if (!raw) {
       const legacyRaw = localStorage.getItem(LEGACY_CLIENTS_KEY);
       if (legacyRaw) {
@@ -82,72 +44,42 @@ export function getStoredClients(): PersonData[] {
             localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(realOnly));
             return realOnly;
           }
-        } catch {
-          // ignore error
-        }
+        } catch {}
       }
       return [];
     }
-
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-
     const realClients = parsed.filter(c => c && c.id && !isDemoClient(c));
-    if (realClients.length !== parsed.length) {
-      localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(realClients));
-    }
+    if (realClients.length !== parsed.length) localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(realClients));
     return realClients;
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 export function saveClient(client: PersonData): PersonData[] {
   const clients = getStoredClients();
   const existingIndex = clients.findIndex(c => c.id === client.id);
-
   let updated: PersonData[];
   if (existingIndex >= 0) {
     updated = [...clients];
-    updated[existingIndex] = {
-      ...client,
-      updatedAt: new Date().toISOString()
-    };
+    updated[existingIndex] = { ...client, updatedAt: new Date().toISOString() };
   } else {
-    const newClient: PersonData = {
-      ...client,
-      id: client.id || `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      createdAt: client.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const newClient: PersonData = { ...client, id: client.id || `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, createdAt: client.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
     updated = [newClient, ...clients];
   }
-
   localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }
 
 export async function postClientIntakeToServer(payload: any): Promise<{ success: boolean; client?: PersonData; error?: string }> {
   try {
-    const res = await fetch('/api/client-intake', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
+    const res = await fetch('/api/client-intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await res.json();
-    if (!res.ok || !data.success) {
-      return { success: false, error: data.error || 'Sunucu form kaydını kabul etmedi.' };
-    }
-
+    if (!res.ok || !data.success) return { success: false, error: data.error || 'Sunucu form kaydını kabul etmedi.' };
     if (data.client) saveClient(data.client);
-
     return { success: true, client: data.client };
   } catch (err: unknown) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Sunucu bağlantı hatası oluştu.'
-    };
+    return { success: false, error: err instanceof Error ? err.message : 'Sunucu bağlantı hatası oluştu.' };
   }
 }
 
@@ -156,12 +88,7 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
     const localClients = getStoredClients();
     const deletedClientIds = getDeletedClientIds();
     const deleted = new Set(deletedClientIds);
-    const res = await fetch('/api/clients/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ localClients, deletedClientIds })
-    });
-
+    const res = await fetch('/api/clients/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ localClients, deletedClientIds }) });
     if (!res.ok) {
       const getRes = await fetch('/api/clients');
       if (getRes.ok) {
@@ -174,28 +101,14 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
       }
       return localClients;
     }
-
     const data = await res.json();
     if (data.success && Array.isArray(data.clients)) {
-      const returnedIds = new Set(
-        data.clients
-          .filter((c: any) => c && typeof c.id === 'string')
-          .map((c: any) => c.id)
-      );
-
-      // Tombstones remain authoritative even if the server returns stale data.
-      const sanitized = data.clients.filter((c: any) =>
-        c && c.id && c.name && !isDemoClient(c) && !deleted.has(c.id)
-      );
+      const returnedIds = new Set(data.clients.filter((c: any) => c && typeof c.id === 'string').map((c: any) => c.id));
+      const sanitized = data.clients.filter((c: any) => c && c.id && c.name && !isDemoClient(c) && !deleted.has(c.id));
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
-
-      // Only remove a tombstone after the server response confirms that the ID is absent.
       const unresolvedDeletedIds = deletedClientIds.filter(id => returnedIds.has(id));
-      if (unresolvedDeletedIds.length === 0) {
-        clearDeletedClientIds(deletedClientIds);
-      } else {
-        localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(unresolvedDeletedIds));
-      }
+      if (unresolvedDeletedIds.length === 0) clearDeletedClientIds(deletedClientIds);
+      else localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(unresolvedDeletedIds));
       return sanitized;
     }
     return localClients;
@@ -209,29 +122,20 @@ function getDeletedClientIds(): string[] {
   try {
     const raw = localStorage.getItem(DELETED_CLIENTS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed)
-      ? parsed.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
-      : [];
-  } catch {
-    return [];
-  }
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string' && id.trim().length > 0) : [];
+  } catch { return []; }
 }
 
-function clearDeletedClientIds(ids: string[]): void {
-  if (ids.length > 0) localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY);
-}
+function clearDeletedClientIds(ids: string[]): void { if (ids.length > 0) localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY); }
 
 function mergeClientLists(listA: PersonData[], listB: PersonData[], deletedIds: string[] = []): PersonData[] {
   const deleted = new Set(deletedIds);
   const map = new Map<string, PersonData>();
-  listA.forEach(c => {
-    if (c && c.id && !isDemoClient(c) && !deleted.has(c.id)) map.set(c.id, c);
-  });
+  listA.forEach(c => { if (c && c.id && !isDemoClient(c) && !deleted.has(c.id)) map.set(c.id, c); });
   listB.forEach(c => {
     if (c && c.id && !isDemoClient(c) && !deleted.has(c.id)) {
-      if (!map.has(c.id)) {
-        map.set(c.id, c);
-      } else {
+      if (!map.has(c.id)) map.set(c.id, c);
+      else {
         const existing = map.get(c.id)!;
         const timeExisting = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
         const timeNew = new Date(c.updatedAt || c.createdAt || 0).getTime();
@@ -239,11 +143,7 @@ function mergeClientLists(listA: PersonData[], listB: PersonData[], deletedIds: 
       }
     }
   });
-  return Array.from(map.values()).sort((a, b) => {
-    const timeA = new Date(a.createdAt || 0).getTime();
-    const timeB = new Date(b.createdAt || 0).getTime();
-    return timeB - timeA;
-  });
+  return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
 export function deleteClient(id: string): PersonData[] {
@@ -252,20 +152,8 @@ export function deleteClient(id: string): PersonData[] {
   if (!deletedIds.includes(id)) deletedIds.push(id);
   localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(deletedIds));
   localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
-
-  try {
-    fetch(`/api/clients/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
-  } catch {
-    // ignore
-  }
-
-  try {
-    const recipes = getStoredRecipes().filter(r => r.clientId !== id);
-    localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipes));
-  } catch {
-    // ignore
-  }
-
+  try { fetch(`/api/clients/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {}); } catch {}
+  try { localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(getStoredRecipes().filter(r => r.clientId !== id))); } catch {}
   return clients;
 }
 
@@ -282,38 +170,23 @@ export function getStoredRecipes(): TattooRecipe[] {
             localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realOnly));
             return realOnly;
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
       return [];
     }
-
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-
     const realRecipes = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
-    if (realRecipes.length !== parsed.length) {
-      localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realRecipes));
-    }
+    if (realRecipes.length !== parsed.length) localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realRecipes));
     return realRecipes;
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 export function saveRecipe(recipe: TattooRecipe): TattooRecipe[] {
   const recipes = getStoredRecipes();
   const existingIndex = recipes.findIndex(r => r.id === recipe.id);
-
-  let updated: TattooRecipe[];
-  if (existingIndex >= 0) {
-    updated = [...recipes];
-    updated[existingIndex] = recipe;
-  } else {
-    updated = [recipe, ...recipes];
-  }
-
+  const updated = existingIndex >= 0 ? [...recipes] : [recipe, ...recipes];
+  if (existingIndex >= 0) updated[existingIndex] = recipe;
   localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }
@@ -325,57 +198,28 @@ export function deleteRecipe(id: string): TattooRecipe[] {
 }
 
 export function exportAllDataAsJSON(): string {
-  const payload = {
-    clients: getStoredClients(),
-    recipes: getStoredRecipes(),
-    exportDate: new Date().toISOString(),
-    version: '2.0'
-  };
-  return JSON.stringify(payload, null, 2);
+  return JSON.stringify({ clients: getStoredClients(), recipes: getStoredRecipes(), exportDate: new Date().toISOString(), version: '2.0' }, null, 2);
 }
 
 export function importDataFromJSON(jsonString: string): { success: boolean; message: string } {
   try {
     const parsed = JSON.parse(jsonString);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { success: false, message: 'Geçersiz yedek dosyası: kök veri bir nesne olmalı.' };
-    }
-
-    if (!Array.isArray(parsed.clients) || !Array.isArray(parsed.recipes)) {
-      return { success: false, message: 'Geçersiz yedek dosyası: clients ve recipes dizileri gerekli.' };
-    }
-
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { success: false, message: 'Geçersiz yedek dosyası: kök veri bir nesne olmalı.' };
+    if (!Array.isArray(parsed.clients) || !Array.isArray(parsed.recipes)) return { success: false, message: 'Geçersiz yedek dosyası: clients ve recipes dizileri gerekli.' };
     const clients = parsed.clients.filter(isValidImportedClient);
-    const clientIds = new Set(clients.map(client => client.id));
+    const clientIds = new Set<string>(clients.map((client: PersonData) => client.id));
     const recipes = parsed.recipes.filter((recipe: any) => isValidImportedRecipe(recipe, clientIds));
-
-    if (parsed.clients.length > 0 && clients.length === 0) {
-      return { success: false, message: 'İçe aktarılacak geçerli danışan bulunamadı.' };
-    }
-
+    if (parsed.clients.length > 0 && clients.length === 0) return { success: false, message: 'İçe aktarılacak geçerli danışan bulunamadı.' };
     const duplicateClientIds = clients.map(c => c.id).filter((id, index, ids) => ids.indexOf(id) !== index);
     const duplicateRecipeIds = recipes.map(r => r.id).filter((id, index, ids) => ids.indexOf(id) !== index);
-    if (duplicateClientIds.length > 0 || duplicateRecipeIds.length > 0) {
-      return { success: false, message: 'Yedek dosyasında yinelenen kayıt kimlikleri bulundu.' };
-    }
-
+    if (duplicateClientIds.length > 0 || duplicateRecipeIds.length > 0) return { success: false, message: 'Yedek dosyasında yinelenen kayıt kimlikleri bulundu.' };
     localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
     localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipes));
-
-    // An intentional restore must also remove restored client IDs from the local
-    // tombstone list; otherwise the next server sync would immediately hide them.
-    const restoredIds = new Set(clients.map(client => client.id));
+    const restoredIds = new Set<string>(clients.map((client: PersonData) => client.id));
     const remainingDeletedIds = getDeletedClientIds().filter(id => !restoredIds.has(id));
-    if (remainingDeletedIds.length > 0) {
-      localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(remainingDeletedIds));
-    } else {
-      localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY);
-    }
-
-    return {
-      success: true,
-      message: `${clients.length} danışan ve ${recipes.length} reçete başarıyla içe aktarıldı.`
-    };
+    if (remainingDeletedIds.length > 0) localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(remainingDeletedIds));
+    else localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY);
+    return { success: true, message: `${clients.length} danışan ve ${recipes.length} reçete başarıyla içe aktarıldı.` };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Geçersiz JSON formatı';
     return { success: false, message: `İçe aktarma hatası: ${msg}` };
