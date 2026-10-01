@@ -156,6 +156,7 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
   try {
     const localClients = getStoredClients();
     const deletedClientIds = getDeletedClientIds();
+    const deleted = new Set(deletedClientIds);
     const res = await fetch('/api/clients/sync', {
       method: 'POST',
       headers: {
@@ -165,7 +166,7 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
     });
 
     if (!res.ok) {
-      // Fallback to GET /api/clients
+      // Fallback to GET /api/clients. Deleted tombstones remain authoritative here too.
       const getRes = await fetch('/api/clients');
       if (getRes.ok) {
         const getData = await getRes.json();
@@ -180,9 +181,21 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
 
     const data = await res.json();
     if (data.success && Array.isArray(data.clients)) {
-      const sanitized = data.clients.filter((c: any) => c && c.id && c.name && !isDemoClient(c));
+      // A deletion tombstone is authoritative on the client until the server response
+      // proves that the deleted ID is absent. This prevents a stale/incorrect server
+      // response from resurrecting a deleted client.
+      const sanitized = data.clients.filter((c: any) =>
+        c && c.id && c.name && !isDemoClient(c) && !deleted.has(c.id)
+      );
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
-      clearDeletedClientIds(deletedClientIds);
+
+      const returnedIds = new Set(sanitized.map(c => c.id));
+      const unresolvedDeletedIds = deletedClientIds.filter(id => returnedIds.has(id));
+      if (unresolvedDeletedIds.length === 0) {
+        clearDeletedClientIds(deletedClientIds);
+      } else {
+        localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(unresolvedDeletedIds));
+      }
       return sanitized;
     }
     return localClients;
