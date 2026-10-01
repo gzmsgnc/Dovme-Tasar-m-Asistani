@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 const source = await import('../src/utils/storage');
-const { saveClient, deleteClient, saveRecipe, deleteRecipe, syncClientsWithServer } = source;
+const { saveClient, deleteClient, saveRecipe, deleteRecipe, syncClientsWithServer, exportAllDataAsJSON, importDataFromJSON } = source;
 
 const original = globalThis.localStorage;
 class MemoryStorage {
@@ -28,16 +28,9 @@ localStorage.setItem('tattoo_assistant_recipes_v2', JSON.stringify([
 ]));
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_real']);
 
-// A/B danışan izolasyonu: ikinci danışan ilk danışanın verilerini devralmamalı.
 testStorage.clear();
-const clientA: any = {
-  id: 'client_A', name: 'Danışan A', birthDate: '1990-01-01', birthPlace: 'Istanbul',
-  personalStory: 'A hikayesi', existingSymbols: 'A sembolü', updatedAt: '2026-09-30T10:00:00.000Z'
-};
-const clientB: any = {
-  id: 'client_B', name: 'Danışan B', birthDate: '1995-05-05', birthPlace: 'London',
-  personalStory: 'B hikayesi', existingSymbols: 'B sembolü', updatedAt: '2026-09-30T10:01:00.000Z'
-};
+const clientA: any = { id: 'client_A', name: 'Danışan A', birthDate: '1990-01-01', birthPlace: 'Istanbul', personalStory: 'A hikayesi', existingSymbols: 'A sembolü', updatedAt: '2026-09-30T10:00:00.000Z' };
+const clientB: any = { id: 'client_B', name: 'Danışan B', birthDate: '1995-05-05', birthPlace: 'London', personalStory: 'B hikayesi', existingSymbols: 'B sembolü', updatedAt: '2026-09-30T10:01:00.000Z' };
 saveClient(clientA); saveClient(clientB);
 const isolatedClients = source.getStoredClients();
 assert.equal(isolatedClients.length, 2);
@@ -45,16 +38,13 @@ assert.equal(isolatedClients.find(c => c.id === 'client_A')?.personalStory, 'A h
 assert.equal(isolatedClients.find(c => c.id === 'client_B')?.personalStory, 'B hikayesi');
 assert.notEqual(isolatedClients.find(c => c.id === 'client_A')?.id, isolatedClients.find(c => c.id === 'client_B')?.id);
 
-// A güncellenirken B değişmemeli.
 saveClient({ ...clientA, personalStory: 'A yeni hikayesi', existingSymbols: 'A yeni sembolü' });
 assert.equal(source.getStoredClients().find(c => c.id === 'client_A')?.personalStory, 'A yeni hikayesi');
 assert.equal(source.getStoredClients().find(c => c.id === 'client_B')?.personalStory, 'B hikayesi');
 
-// A silindiğinde yalnızca A'nın reçetesi silinmeli.
 const recipeA: any = { id: 'recipe_A', clientId: 'client_A', clientName: 'Danışan A', title: 'A Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
 const recipeA2: any = { id: 'recipe_A2', clientId: 'client_A', clientName: 'Danışan A', title: 'A İkinci Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
 const recipeB: any = { id: 'recipe_B', clientId: 'client_B', clientName: 'Danışan B', title: 'B Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
-// Aynı danışan birden fazla bağımsız reçete oluşturabilmeli; ikinci kayıt ilkini ezmemeli.
 saveRecipe(recipeA); saveRecipe(recipeA2); saveRecipe(recipeB);
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B', 'recipe_A2', 'recipe_A']);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 2);
@@ -64,25 +54,38 @@ deleteClient('client_A');
 assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
 
-// Silinen danışan sunucuda kalsa bile sonraki senkronizasyonda geri dirilmemeli.
 const originalFetch = globalThis.fetch;
-(globalThis as any).fetch = async () => ({
-  ok: true,
-  json: async () => ({
-    success: true,
-    clients: [
-      clientA,
-      clientB
-    ]
-  })
-});
+(globalThis as any).fetch = async () => ({ ok: true, json: async () => ({ success: true, clients: [clientA, clientB] }) });
 await syncClientsWithServer();
 assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
 (globalThis as any).fetch = originalFetch;
 
-// Tekil reçete silme diğer danışanın reçetesine dokunmamalı.
 saveRecipe(recipeA); deleteRecipe('recipe_A');
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
+
+// Restoring a valid backup must also clear the restored client's tombstone.
+testStorage.clear();
+saveClient(clientA);
+saveRecipe(recipeA);
+deleteClient('client_A');
+const backup = JSON.stringify({ clients: [clientA], recipes: [recipeA], version: '2.0' });
+const restoreResult = importDataFromJSON(backup);
+assert.equal(restoreResult.success, true);
+assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_A']);
+assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_A']);
+(globalThis as any).fetch = async () => ({ ok: true, json: async () => ({ success: true, clients: [clientA] }) });
+await syncClientsWithServer();
+assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_A']);
+(globalThis as any).fetch = originalFetch;
+
+// Invalid backup must not destroy existing data.
+testStorage.clear();
+saveClient(clientB);
+const beforeInvalidImport = exportAllDataAsJSON();
+assert.equal(importDataFromJSON(JSON.stringify({ clients: [{ name: 'ID yok' }], recipes: [] })).success, false);
+assert.equal(exportAllDataAsJSON(), beforeInvalidImport);
+assert.equal(importDataFromJSON(JSON.stringify({ clients: [clientB], recipes: [{ id: 'orphan', clientId: 'missing', title: 'Yetim Reçete' }] })).success, true);
+assert.deepEqual(source.getStoredRecipes(), []);
 
 (globalThis as any).localStorage = original;
 console.log('Storage sanitization tests passed');
