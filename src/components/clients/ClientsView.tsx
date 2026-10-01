@@ -238,7 +238,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
             try {
               num = calculateNumerology(client.name, client.birthDate);
-              astro = calculateAstrology(\n                client.birthDate,\n                client.birthTime,\n                client.birthPlace,\n                client.zodiacSystem || 'Tropical',\n                {\n                  name: client.birthPlace,\n                  city: client.birthCity,\n                  region: client.birthRegion,\n                  country: client.birthCountry,\n                  countryCode: client.birthCountryCode,\n                  lat: client.birthLatitude,\n                  lon: client.birthLongitude,\n                  timezone: client.birthTimezone,\n                  defaultTz: client.birthTimezoneOffset\n                }\n              );
+              astro = calculateAstrology(client.birthDate, client.birthTime, client.birthPlace);
               totem = calculateTotemAnimal({
                 name: client.name,
                 birthDate: client.birthDate,
@@ -472,7 +472,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
               try {
                 num = calculateNumerology(selectedClientDetail.name, selectedClientDetail.birthDate);
-                astro = calculateAstrology(\n                  selectedClientDetail.birthDate,\n                  selectedClientDetail.birthTime,\n                  selectedClientDetail.birthPlace,\n                  selectedClientDetail.zodiacSystem || 'Tropical',\n                  {\n                    name: selectedClientDetail.birthPlace,\n                    city: selectedClientDetail.birthCity,\n                    region: selectedClientDetail.birthRegion,\n                    country: selectedClientDetail.birthCountry,\n                    countryCode: selectedClientDetail.birthCountryCode,\n                    lat: selectedClientDetail.birthLatitude,\n                    lon: selectedClientDetail.birthLongitude,\n                    timezone: selectedClientDetail.birthTimezone,\n                    defaultTz: selectedClientDetail.birthTimezoneOffset\n                  }\n                );
+                astro = calculateAstrology(selectedClientDetail.birthDate, selectedClientDetail.birthTime, selectedClientDetail.birthPlace);
               } catch (err: unknown) {
                 calcError = err instanceof Error ? err.message : String(err);
               }
