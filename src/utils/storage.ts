@@ -40,6 +40,34 @@ function isDemoClient(client: any): boolean {
     || status === 'demo';
 }
 
+function isValidImportedClient(client: any): client is PersonData {
+  return Boolean(
+    client &&
+    typeof client === 'object' &&
+    typeof client.id === 'string' &&
+    client.id.trim().length > 0 &&
+    typeof client.name === 'string' &&
+    client.name.trim().length > 0 &&
+    !isDemoClient(client)
+  );
+}
+
+function isValidImportedRecipe(recipe: any, validClientIds: Set<string>): recipe is TattooRecipe {
+  return Boolean(
+    recipe &&
+    typeof recipe === 'object' &&
+    typeof recipe.id === 'string' &&
+    recipe.id.trim().length > 0 &&
+    typeof recipe.clientId === 'string' &&
+    recipe.clientId.trim().length > 0 &&
+    validClientIds.has(recipe.clientId) &&
+    typeof recipe.title === 'string' &&
+    recipe.title.trim().length > 0 &&
+    !DEMO_ACCOUNT_IDS.has(recipe.clientId) &&
+    !isDemoClient({ id: recipe.clientId, name: recipe.clientName })
+  );
+}
+
 export function getStoredClients(): PersonData[] {
   try {
     let raw = localStorage.getItem(CLIENTS_STORAGE_KEY);
@@ -309,15 +337,45 @@ export function exportAllDataAsJSON(): string {
 export function importDataFromJSON(jsonString: string): { success: boolean; message: string } {
   try {
     const parsed = JSON.parse(jsonString);
-    if (parsed.clients && Array.isArray(parsed.clients)) {
-      const sanitized = parsed.clients.filter((c: any) => c && c.name && !isDemoClient(c));
-      localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return { success: false, message: 'Geçersiz yedek dosyası: kök veri bir nesne olmalı.' };
     }
-    if (parsed.recipes && Array.isArray(parsed.recipes)) {
-      const sanitized = parsed.recipes.filter((r: any) => r && r.title && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
-      localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(sanitized));
+
+    if (!Array.isArray(parsed.clients) || !Array.isArray(parsed.recipes)) {
+      return { success: false, message: 'Geçersiz yedek dosyası: clients ve recipes dizileri gerekli.' };
     }
-    return { success: true, message: 'Veriler başarıyla içe aktarıldı!' };
+
+    const clients = parsed.clients.filter(isValidImportedClient);
+    const clientIds = new Set(clients.map(client => client.id));
+    const recipes = parsed.recipes.filter((recipe: any) => isValidImportedRecipe(recipe, clientIds));
+
+    if (parsed.clients.length > 0 && clients.length === 0) {
+      return { success: false, message: 'İçe aktarılacak geçerli danışan bulunamadı.' };
+    }
+
+    const duplicateClientIds = clients.map(c => c.id).filter((id, index, ids) => ids.indexOf(id) !== index);
+    const duplicateRecipeIds = recipes.map(r => r.id).filter((id, index, ids) => ids.indexOf(id) !== index);
+    if (duplicateClientIds.length > 0 || duplicateRecipeIds.length > 0) {
+      return { success: false, message: 'Yedek dosyasında yinelenen kayıt kimlikleri bulundu.' };
+    }
+
+    localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
+    localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipes));
+
+    // An intentional restore must also remove restored client IDs from the local
+    // tombstone list; otherwise the next server sync would immediately hide them.
+    const restoredIds = new Set(clients.map(client => client.id));
+    const remainingDeletedIds = getDeletedClientIds().filter(id => !restoredIds.has(id));
+    if (remainingDeletedIds.length > 0) {
+      localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(remainingDeletedIds));
+    } else {
+      localStorage.removeItem(DELETED_CLIENTS_STORAGE_KEY);
+    }
+
+    return {
+      success: true,
+      message: `${clients.length} danışan ve ${recipes.length} reçete başarıyla içe aktarıldı.`
+    };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Geçersiz JSON formatı';
     return { success: false, message: `İçe aktarma hatası: ${msg}` };
