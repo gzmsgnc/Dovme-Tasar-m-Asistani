@@ -17,7 +17,6 @@ function isDemoClient(client: any): boolean {
   if (!client || typeof client !== 'object') return true;
   if (client.id && DEMO_ACCOUNT_IDS.has(client.id)) return true;
 
-  // Eski test/demo kayıtları farklı ID ile kaydedilmişse de kullanıcı listesine sızmasın.
   const name = String(client.name || '').trim().toLocaleLowerCase('tr-TR');
   const email = String(client.email || '').trim().toLocaleLowerCase('tr-TR');
   const source = String(client.source || '').trim().toLocaleLowerCase('tr-TR');
@@ -41,17 +40,10 @@ function isDemoClient(client: any): boolean {
     || status === 'demo';
 }
 
-/**
- * Retrieves all stored real clients.
- * Guarantees zero demo or fake accounts in user view.
- * If empty, returns an empty array [].
- */
 export function getStoredClients(): PersonData[] {
   try {
-    // Check v2 first
     let raw = localStorage.getItem(CLIENTS_STORAGE_KEY);
-    
-    // If not found in v2, check legacy v1 and migrate only REAL non-demo clients
+
     if (!raw) {
       const legacyRaw = localStorage.getItem(LEGACY_CLIENTS_KEY);
       if (legacyRaw) {
@@ -72,7 +64,6 @@ export function getStoredClients(): PersonData[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    // Filter out any demo accounts that might have been saved
     const realClients = parsed.filter(c => c && c.id && !isDemoClient(c));
     if (realClients.length !== parsed.length) {
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(realClients));
@@ -83,19 +74,16 @@ export function getStoredClients(): PersonData[] {
   }
 }
 
-/**
- * Saves or updates a client record with strict data isolation and timestamps.
- */
 export function saveClient(client: PersonData): PersonData[] {
   const clients = getStoredClients();
   const existingIndex = clients.findIndex(c => c.id === client.id);
-  
+
   let updated: PersonData[];
   if (existingIndex >= 0) {
     updated = [...clients];
-    updated[existingIndex] = { 
-      ...client, 
-      updatedAt: new Date().toISOString() 
+    updated[existingIndex] = {
+      ...client,
+      updatedAt: new Date().toISOString()
     };
   } else {
     const newClient: PersonData = {
@@ -106,41 +94,27 @@ export function saveClient(client: PersonData): PersonData[] {
     };
     updated = [newClient, ...clients];
   }
-  
+
   localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }
 
-/**
- * Sends a client intake submission directly to the Express server (/api/client-intake).
- * Persists the result both on the server and in local storage.
- */
 export async function postClientIntakeToServer(payload: any): Promise<{ success: boolean; client?: PersonData; error?: string }> {
   try {
     const res = await fetch('/api/client-intake', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     const data = await res.json();
     if (!res.ok || !data.success) {
-      return {
-        success: false,
-        error: data.error || 'Sunucu form kaydını kabul etmedi.'
-      };
+      return { success: false, error: data.error || 'Sunucu form kaydını kabul etmedi.' };
     }
 
-    if (data.client) {
-      saveClient(data.client);
-    }
+    if (data.client) saveClient(data.client);
 
-    return {
-      success: true,
-      client: data.client
-    };
+    return { success: true, client: data.client };
   } catch (err: unknown) {
     return {
       success: false,
@@ -149,9 +123,6 @@ export async function postClientIntakeToServer(payload: any): Promise<{ success:
   }
 }
 
-/**
- * Fetches clients from the Express server and synchronizes them with localStorage.
- */
 export async function syncClientsWithServer(): Promise<PersonData[]> {
   try {
     const localClients = getStoredClients();
@@ -159,14 +130,11 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
     const deleted = new Set(deletedClientIds);
     const res = await fetch('/api/clients/sync', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ localClients, deletedClientIds })
     });
 
     if (!res.ok) {
-      // Fallback to GET /api/clients. Deleted tombstones remain authoritative here too.
       const getRes = await fetch('/api/clients');
       if (getRes.ok) {
         const getData = await getRes.json();
@@ -181,15 +149,19 @@ export async function syncClientsWithServer(): Promise<PersonData[]> {
 
     const data = await res.json();
     if (data.success && Array.isArray(data.clients)) {
-      // A deletion tombstone is authoritative on the client until the server response
-      // proves that the deleted ID is absent. This prevents a stale/incorrect server
-      // response from resurrecting a deleted client.
+      const returnedIds = new Set(
+        data.clients
+          .filter((c: any) => c && typeof c.id === 'string')
+          .map((c: any) => c.id)
+      );
+
+      // Tombstones remain authoritative even if the server returns stale data.
       const sanitized = data.clients.filter((c: any) =>
         c && c.id && c.name && !isDemoClient(c) && !deleted.has(c.id)
       );
       localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(sanitized));
 
-      const returnedIds = new Set(sanitized.map(c => c.id));
+      // Only remove a tombstone after the server response confirms that the ID is absent.
       const unresolvedDeletedIds = deletedClientIds.filter(id => returnedIds.has(id));
       if (unresolvedDeletedIds.length === 0) {
         clearDeletedClientIds(deletedClientIds);
@@ -209,7 +181,9 @@ function getDeletedClientIds(): string[] {
   try {
     const raw = localStorage.getItem(DELETED_CLIENTS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string' && id.trim().length > 0) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+      : [];
   } catch {
     return [];
   }
@@ -244,24 +218,19 @@ function mergeClientLists(listA: PersonData[], listB: PersonData[], deletedIds: 
   });
 }
 
-/**
- * Deletes a client and removes any associated orphaned recipes.
- */
 export function deleteClient(id: string): PersonData[] {
   const clients = getStoredClients().filter(c => c.id !== id);
   const deletedIds = getDeletedClientIds();
   if (!deletedIds.includes(id)) deletedIds.push(id);
   localStorage.setItem(DELETED_CLIENTS_STORAGE_KEY, JSON.stringify(deletedIds));
   localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
-  
-  // Background delete on server
+
   try {
     fetch(`/api/clients/${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
   } catch {
     // ignore
   }
 
-  // Clean up associated recipes
   try {
     const recipes = getStoredRecipes().filter(r => r.clientId !== id);
     localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipes));
@@ -272,9 +241,6 @@ export function deleteClient(id: string): PersonData[] {
   return clients;
 }
 
-/**
- * Retrieves stored recipes for real clients.
- */
 export function getStoredRecipes(): TattooRecipe[] {
   try {
     let raw = localStorage.getItem(RECIPES_STORAGE_KEY);
@@ -308,13 +274,10 @@ export function getStoredRecipes(): TattooRecipe[] {
   }
 }
 
-/**
- * Saves a recipe.
- */
 export function saveRecipe(recipe: TattooRecipe): TattooRecipe[] {
   const recipes = getStoredRecipes();
   const existingIndex = recipes.findIndex(r => r.id === recipe.id);
-  
+
   let updated: TattooRecipe[];
   if (existingIndex >= 0) {
     updated = [...recipes];
@@ -322,23 +285,17 @@ export function saveRecipe(recipe: TattooRecipe): TattooRecipe[] {
   } else {
     updated = [recipe, ...recipes];
   }
-  
+
   localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }
 
-/**
- * Deletes a recipe by ID.
- */
 export function deleteRecipe(id: string): TattooRecipe[] {
   const recipes = getStoredRecipes().filter(r => r.id !== id);
   localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipes));
   return recipes;
 }
 
-/**
- * Exports all real clients and recipes to JSON.
- */
 export function exportAllDataAsJSON(): string {
   const payload = {
     clients: getStoredClients(),
@@ -349,9 +306,6 @@ export function exportAllDataAsJSON(): string {
   return JSON.stringify(payload, null, 2);
 }
 
-/**
- * Imports client & recipe data from JSON with safety checks.
- */
 export function importDataFromJSON(jsonString: string): { success: boolean; message: string } {
   try {
     const parsed = JSON.parse(jsonString);
@@ -370,9 +324,6 @@ export function importDataFromJSON(jsonString: string): { success: boolean; mess
   }
 }
 
-/**
- * Permanently clears all client and recipe data (including test/demo records) from storage.
- */
 export function clearAllData(): void {
   localStorage.removeItem(CLIENTS_STORAGE_KEY);
   localStorage.removeItem(RECIPES_STORAGE_KEY);
