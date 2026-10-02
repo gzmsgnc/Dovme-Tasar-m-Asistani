@@ -11,6 +11,7 @@ import { isValidCalendarDate, resolveCityLocation, CityLocation } from './src/ut
 import { searchGlobalLocationsApi, resolveLocationSync, resolveLocationAsync, LocationValidationError } from './src/utils/locationResolver';
 import { calculateEnneagramFromAnswers } from './src/utils/enneagram';
 import { calculateBehavioralTotemResult, TOTEM_BEHAVIORAL_QUESTIONS } from './src/utils/behavioralTotemEngine';
+import { getTotemAnimalStrict } from './src/utils/totemCatalogData';
 import { normalizePhoneNumber, isValidEmail } from './src/utils/clientValidation';
 import { PersonData } from './src/types';
 
@@ -164,6 +165,15 @@ function savePersistedClients(clients: PersonData[]): void {
 }
 
 let genAIClient: GoogleGenAI | null = null;
+function isAnalysisOnlyTotemSymbol(value: unknown): boolean {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  try {
+    return Boolean(getTotemAnimalStrict(value.trim()));
+  } catch {
+    return false;
+  }
+}
+
 function getGenAI(): GoogleGenAI | null {
   if (!process.env.GEMINI_API_KEY) {
     return null;
@@ -584,6 +594,15 @@ async function startServer() {
       // Totems are analysis-only. Never use a personal totem as a fallback visual symbol.
       const mainSymbol = parameters.mainSymbol;
 
+       if (isAnalysisOnlyTotemSymbol(mainSymbol)) {
+         return res.status(400).json({
+           success: false,
+           error: 'Totemler yalnızca analiz katmanında kullanılabilir.',
+           message: 'Hayvan figürü veya totem adı final görsel sembolü olarak kullanılamaz. Lütfen geometrik, botanik veya kutsal bir sembol seçin.'
+         });
+       }
+
+
       // 1. ANA KURAL: VERİ UYDURMA YOK - Eksik kişisel veri kontrolü
       if (!clientName || !birthDate || !lifePath || !sunSign || !enneaType || !mainSymbol) {
         return res.status(400).json({
@@ -742,6 +761,15 @@ Lütfen JSON formatında yanıt ver:
 
     // Extract rich metadata for high-precision vector stencil & prompt building
     const mainSymbol = recipe?.parameters?.mainSymbol;
+
+    if (isAnalysisOnlyTotemSymbol(mainSymbol)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Totemler yalnızca analiz katmanında kullanılabilir.',
+        message: 'Hayvan figürü veya totem adı final görsel sembolü olarak kullanılamaz.'
+      });
+    }
+
     const lifePathNumber = recipe?.numerology?.lifePathNumber;
     const sunSign = recipe?.astrology?.sunSign;
     const clientName = recipe?.clientName || recipe?.personData?.name;
