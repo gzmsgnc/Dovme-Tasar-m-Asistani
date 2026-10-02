@@ -666,8 +666,10 @@ ${r.turkishPromptExplanation}
   // Save Recipe & Client
   const handleSaveAll = () => {
     if (!generatedRecipe) return;
-    onSaveRecipe(generatedRecipe);
+    // Client first: recipe storage is client-scoped and must never be persisted
+    // before its owner record exists.
     onSaveClient(generatedRecipe.personData);
+    onSaveRecipe(generatedRecipe);
     if (onSelectClient) {
       onSelectClient(generatedRecipe.personData);
     }

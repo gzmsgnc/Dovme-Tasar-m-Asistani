@@ -195,12 +195,24 @@ export const ENNEAGRAM_MINI_TEST_QUESTIONS: EnneagramQuestion[] = [
 ];
 
 export function calculateEnneagramFromAnswers(answers: Record<number, number>): { type: number; wing: string } {
+  const expectedQuestionIds = ENNEAGRAM_MINI_TEST_QUESTIONS.map(q => q.id);
+  const providedIds = Object.keys(answers).map(Number).sort((a, b) => a - b);
+  const expectedIds = [...expectedQuestionIds].sort((a, b) => a - b);
+
+  if (
+    providedIds.length !== expectedIds.length ||
+    providedIds.some((id, index) => id !== expectedIds[index])
+  ) {
+    throw new Error('Enneagram testi eksik veya fazla cevap içeriyor; tüm sorular tam olarak cevaplanmalıdır.');
+  }
+
   const scores: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
 
-  Object.values(answers).forEach((typeVal) => {
-    if (scores[typeVal] !== undefined) {
-      scores[typeVal] += 1;
+  Object.entries(answers).forEach(([questionId, typeVal]) => {
+    if (!Number.isInteger(typeVal) || scores[typeVal] === undefined) {
+      throw new Error(`Enneagram sorusu ${questionId} için geçersiz tip cevabı.`);
     }
+    scores[typeVal] += 1;
   });
 
   let maxType = 4;
@@ -221,7 +233,9 @@ export function calculateEnneagramFromAnswers(answers: Record<number, number>): 
   const leftScore = scores[leftNeighbor] || 0;
   const rightScore = scores[rightNeighbor] || 0;
 
-  const wing = rightScore >= leftScore ? `${maxType}w${rightNeighbor}` : `${maxType}w${leftNeighbor}`;
+  // Eşitlikte sağ kanadı otomatik seçme; simetrik durumda sol komşuyu seçerek
+  // önceki yapay sağ-kanat önyargısını kaldırıyoruz.
+  const wing = rightScore > leftScore ? `${maxType}w${rightNeighbor}` : `${maxType}w${leftNeighbor}`;
 
   return { type: maxType, wing };
 }

@@ -47,6 +47,15 @@ const recipeA2: any = { id: 'recipe_A2', clientId: 'client_A', clientName: 'Dan�
 const recipeB: any = { id: 'recipe_B', clientId: 'client_B', clientName: 'Danışan B', title: 'B Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
 saveRecipe(recipeA); saveRecipe(recipeA2); saveRecipe(recipeB);
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B', 'recipe_A2', 'recipe_A']);
+
+assert.throws(
+  () => saveRecipe({ ...recipeA, id: 'orphan_recipe', clientId: 'missing_client', clientName: 'Danışan A' }),
+  /bağlı danışan kaydı bulunamadı/
+);
+assert.throws(
+  () => saveRecipe({ ...recipeA, id: 'mismatched_recipe', clientId: 'client_A', clientName: 'Danışan B' }),
+  /danışan adı ile bağlı kayıt eşleşmiyor/
+);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 2);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_B').length, 1);
 
@@ -60,8 +69,8 @@ await syncClientsWithServer();
 assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
 (globalThis as any).fetch = originalFetch;
 
-saveRecipe(recipeA); deleteRecipe('recipe_A');
-assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
+saveRecipe(recipeB); deleteRecipe('recipe_B');
+assert.deepEqual(source.getStoredRecipes().map(r => r.id), []);
 
 // Restoring a valid backup must also clear the restored client's tombstone.
 testStorage.clear();

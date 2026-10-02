@@ -3,6 +3,7 @@ import { calculateNumerology } from '../src/utils/numerology';
 import { calculateAstrology } from '../src/utils/astrology';
 import { calculateChakraProfile } from '../src/utils/chakra';
 import { getEnneagramProfile } from '../src/utils/enneagram';
+import { calculateTotemAnimal } from '../src/utils/totemCalculator';
 
 const istanbul = {
   name: 'Fatih',
@@ -37,5 +38,19 @@ assert.notDeepEqual(chakraA, chakraB, 'Çakra profili yeni numeroloji/astroloji 
 const enneaA = getEnneagramProfile(4, '4w5');
 const enneaB = getEnneagramProfile(8, '8w9');
 assert.notDeepEqual(enneaA, enneaB, 'Enneagram seçimi değişince profil değişmeli');
+
+const completeTotemAnswers: Record<number, string> = Object.fromEntries(
+  Array.from({ length: 15 }, (_, index) => [index + 1, `${index + 1}a`])
+);
+const totemProfile = calculateTotemAnimal({
+  name: 'Totem Test', birthDate: '1991-11-24', birthTime: '03:15', birthPlace: 'Fatih, İstanbul, Türkiye',
+  totemAnswers: completeTotemAnswers, enneagramType: 4, lifePathNumber: 7, dominantElement: 'Hava', sunSign: 'Yay'
+});
+assert.equal(totemProfile.isBehavioralTestBased, true);
+assert.ok(totemProfile.primaryTotem.id);
+assert.throws(
+  () => calculateTotemAnimal({ name: 'Eksik Test', birthDate: '1991-11-24', birthPlace: 'Fatih, İstanbul, Türkiye', totemAnswers: { 1: '1a' } }),
+  /Davranışsal Totem Testi tamamlanmadan/
+);
 
 console.log('Profile recalculation tests passed');

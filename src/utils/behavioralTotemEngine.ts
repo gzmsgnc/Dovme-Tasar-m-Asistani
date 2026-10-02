@@ -564,13 +564,12 @@ export function calculateVectorSimilarity(
   const avgZDiff = absDevDiffSum / N;
   const zDistanceScore = Math.max(0, 1 - (avgZDiff / 2.5)); // 0.0 to 1.0
 
-  // Birleşik benzerlik: %65 profil formu korelasyonu + %35 Z-mesafe uyumu
-  let composite = (normalizedPearson * 0.65) + (zDistanceScore * 0.35) + personalBonus;
-  composite = Math.min(0.99, Math.max(0.40, composite));
-
-  // Yüzdeye çevir (örn: %45 - %98.8 arası)
-  const percentage = (composite * 55) + 43.5;
-  return Math.round(Math.min(99.0, Math.max(48.0, percentage)) * 10) / 10;
+  // Birleşik benzerlik: %65 profil formu korelasyonu + %35 Z-mesafe uyumu.
+  // Skor yapay taban/tavan ile sıkıştırılmaz; 0-100 aralığında gerçek bileşik
+  // benzerliği temsil eder. Böylece confidenceScore kalibre edilmemiş bir
+  // "minimum güven" değil, doğrudan match score olur.
+  const composite = Math.min(1, Math.max(0, (normalizedPearson * 0.65) + (zDistanceScore * 0.35) + personalBonus));
+  return Math.round(composite * 1000) / 10;
 }
 
 /**
@@ -596,7 +595,7 @@ export function findShadowGuardianTotem(
 
   for (const animal of candidates) {
     const score = calculateVectorSimilarity(invertedVector, animal.behavioralVector);
-    if (score > highestScore) {
+    if (score > highestScore || (score === highestScore && animal.id.localeCompare(bestShadow.id) < 0)) {
       highestScore = score;
       bestShadow = animal;
     }
@@ -635,15 +634,6 @@ export function generateCrossEnneagramTotemInsight(
  * Ana Davranışsal Totem Hesaplama Fonksiyonu
  * Kullanıcı test yanıtları + isteğe bağlı kişisel astrolojik / numerolojik eğilimler
  */
-function hashAnimalId(id: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < id.length; i++) {
-    hash ^= id.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return Math.abs(hash);
-}
-
 export function calculateBehavioralTotemResult(
   answers: Record<number, string>,
   enneagramType: number = 4,
@@ -663,23 +653,12 @@ export function calculateBehavioralTotemResult(
       personalBonus += 0.025;
     }
 
-    // Aynı skor bandındaki hayvanlarda deterministik mikro-ayrıştırıcı:
-    // cevapların kimliği korunur; rastgelelik eklenmez. Böylece yakın eşleşmeler
-    // arasında sonuç, gerçekten verilen cevap deseninden türetilir.
-    const answerSignature = Object.keys(answers)
-      .sort((a, b) => Number(a) - Number(b))
-      .map(qId => `${qId}:${answers[Number(qId)] || ''}`)
-      .join('|');
-    let answerHash = 2166136261;
-    for (let i = 0; i < answerSignature.length; i++) {
-      answerHash ^= answerSignature.charCodeAt(i);
-      answerHash = Math.imul(answerHash, 16777619);
-    }
-    const deterministicTieBreaker = (Math.abs(answerHash ^ hashAnimalId(animal.id)) % 1000) / 100000;
+    // Eşleşme yalnızca davranışsal vektör + açıkça tanımlı astrolojik element
+    // rezonansından hesaplanır. Yapay/hash tabanlı puan eklenmez.
     const similarityScore = calculateVectorSimilarity(
       userVector,
       animal.behavioralVector,
-      personalBonus + deterministicTieBreaker
+      personalBonus
     );
     return {
       animal,
@@ -688,7 +667,10 @@ export function calculateBehavioralTotemResult(
   });
 
   // Sıralama (En yüksek uyumdan düşüğe)
-  scoredMatches.sort((a, b) => b.similarityScore - a.similarityScore);
+  scoredMatches.sort((a, b) => {
+    const scoreDiff = b.similarityScore - a.similarityScore;
+    return scoreDiff !== 0 ? scoreDiff : a.animal.id.localeCompare(b.animal.id);
+  });
 
   const primaryTotem = scoredMatches[0]?.animal || TOTEM_ANIMALS_52[0];
   
@@ -705,7 +687,8 @@ export function calculateBehavioralTotemResult(
   const isProximityClose = proximityDiff <= 3.8;
 
   const shadowTotem = findShadowGuardianTotem(userVector, primaryTotem.id, secondaryTotem.id);
-  const confidenceScore = Math.max(76, Math.min(99, Math.round(primaryScore)));
+  // Yapay minimum yok: skor gerçek eşleşmeyi yansıtır.
+  const confidenceScore = Math.round(primaryScore * 10) / 10;
 
   const crossInsight = generateCrossEnneagramTotemInsight(enneagramType, primaryTotem, userVector);
 

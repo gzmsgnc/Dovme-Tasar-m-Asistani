@@ -460,6 +460,8 @@ export function buildResolvedItem(seed: RawCitySeed): ResolvedLocation {
 
 // In-Memory Search & Resolution Cache
 const RESOLUTION_CACHE = new Map<string, ResolvedLocation[]>();
+const MAX_RESOLUTION_CACHE_ENTRIES = 500;
+const LOCATION_FETCH_TIMEOUT_MS = 7000;
 
 /**
  * Yerel zengin veri tabanından akıllı çoklu token ve takma ad araması yapar
@@ -502,7 +504,7 @@ export async function searchGlobalLocationsApi(
   countryCode?: string
 ): Promise<ResolvedLocation[]> {
   const trimmed = (query || '').trim();
-  if (!trimmed || trimmed.length < 2) return [];
+  if (!trimmed || trimmed.length < 2 || trimmed.length > 120) return [];
 
   const cacheKey = `${trimmed.toLowerCase()}_${(countryCode || '').toUpperCase()}`;
   if (RESOLUTION_CACHE.has(cacheKey)) {
@@ -527,8 +529,9 @@ export async function searchGlobalLocationsApi(
 
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'TattooStudioAstrologyApp/1.0 (https://ais-build)'
-      }
+        'User-Agent': 'TattooStudioAstrologyApp/1.0'
+      },
+      signal: AbortSignal.timeout(LOCATION_FETCH_TIMEOUT_MS)
     });
 
     if (res.ok) {
@@ -590,8 +593,9 @@ export async function searchGlobalLocationsApi(
 
       const res = await fetch(nomUrl, {
         headers: {
-          'User-Agent': 'TattooStudioAstrologyApp/1.0 (contact@ais-build.internal)'
-        }
+          'User-Agent': 'TattooStudioAstrologyApp/1.0'
+        },
+        signal: AbortSignal.timeout(LOCATION_FETCH_TIMEOUT_MS)
       });
 
       if (res.ok) {
@@ -649,6 +653,10 @@ export async function searchGlobalLocationsApi(
   }
 
   const finalResults = combined.slice(0, 10);
+  if (RESOLUTION_CACHE.size >= MAX_RESOLUTION_CACHE_ENTRIES) {
+    const oldestKey = RESOLUTION_CACHE.keys().next().value;
+    if (oldestKey) RESOLUTION_CACHE.delete(oldestKey);
+  }
   RESOLUTION_CACHE.set(cacheKey, finalResults);
   return finalResults;
 }

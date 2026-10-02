@@ -35,6 +35,12 @@ export function App() {
     }
     return false;
   });
+  const [adminAuthenticated, setAdminAuthenticated] = useState<boolean | null>(null);
+  const [adminConfigured, setAdminConfigured] = useState<boolean>(true);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
+  const [adminLoginBusy, setAdminLoginBusy] = useState(false);
+
   const [clientQuizName, setClientQuizName] = useState<string>(() => {
     if (typeof window !== 'undefined') return new URLSearchParams(window.location.search).get('client') || 'Değerli Danışanımız';
     return 'Değerli Danışanımız';
@@ -45,6 +51,45 @@ export function App() {
     setRecipes(getStoredRecipes());
   };
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (isClientQuizMode || isClientFormMode) return;
+    fetch('/api/auth/session')
+      .then(async res => {
+        const data = await res.json();
+        setAdminAuthenticated(Boolean(data.authenticated));
+        setAdminConfigured(Boolean(data.configured));
+      })
+      .catch(() => {
+        setAdminAuthenticated(false);
+        setAdminConfigured(false);
+      });
+  }, [isClientQuizMode, isClientFormMode]);
+
+  const handleAdminLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAdminLoginBusy(true);
+    setAdminLoginError('');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPassword })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setAdminLoginError(data.error || 'Yönetici girişi başarısız.');
+        return;
+      }
+      setAdminPassword('');
+      setAdminAuthenticated(true);
+      loadData();
+    } catch {
+      setAdminLoginError('Sunucuya bağlanılamadı.');
+    } finally {
+      setAdminLoginBusy(false);
+    }
+  };
 
   const handleSaveClient = (client: PersonData) => {
     setClients(saveClient(client));
@@ -87,6 +132,41 @@ export function App() {
       loadData();
       if (typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
     }} onFormSubmitted={loadData} />;
+  }
+
+
+  if (adminAuthenticated === null) {
+    return <div className="min-h-screen bg-[#050505] text-[#e0e0e0] flex items-center justify-center">Oturum kontrol ediliyor…</div>;
+  }
+
+  if (!adminAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-[#e0e0e0] flex items-center justify-center p-6">
+        <form onSubmit={handleAdminLogin} className="w-full max-w-md rounded-2xl border border-[#2a2a2a] bg-[#0b0b0b] p-8 shadow-2xl">
+          <h1 className="text-2xl font-semibold text-[#c4a47c]">Stüdyo Yönetici Girişi</h1>
+          <p className="mt-2 text-sm text-[#999]">Danışan kayıtları ve tasarım arşivi yalnızca yetkili stüdyo oturumunda kullanılabilir.</p>
+          {!adminConfigured && <p className="mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-3 text-sm text-red-300">Sunucuda STUDIO_ADMIN_PASSWORD yapılandırılmamış. Güvenli yönetici erişimi açılmadan stüdyo ekranı kullanılamaz.</p>}
+          {adminConfigured && (
+            <>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+                placeholder="Yönetici şifresi"
+                className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
+                minLength={12}
+                required
+              />
+              {adminLoginError && <p className="mt-3 text-sm text-red-300">{adminLoginError}</p>}
+              <button type="submit" disabled={adminLoginBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
+                {adminLoginBusy ? 'Giriş yapılıyor…' : 'Stüdyoya Gir'}
+              </button>
+            </>
+          )}
+        </form>
+      </div>
+    );
   }
 
   const lazyFallback = <div className="min-h-[40vh] flex items-center justify-center text-[#c4a47c]">Yükleniyor…</div>;

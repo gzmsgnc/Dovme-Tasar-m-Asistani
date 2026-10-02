@@ -16,6 +16,8 @@ const astrology = {
 
 const chakra = calculateChakraProfile(numerology, astrology);
 assert.deepEqual(chakra.blockedChakras.map(c => c.number), [1, 4]);
+assert.ok(!chakra.primaryHealingDirective.includes('19 İlahi'), 'Unverified 19 claim must not enter chakra directive');
+assert.ok(!chakra.chakras[8].healingSymbols.some(s => /19 İlahi/i.test(s)), 'Unverified 19 symbol must not enter chakra 9');
 
 const symbolism = {
   totemAnimal: 'Kızıl Geyik', totemAnimalId: 'kizil_geyik', totemAnimalMeaning: 'Test birincil anlamı',
@@ -41,7 +43,7 @@ const enneagram = {
   type: 4, wing: '4w5', typeName: 'Bireyselci', shadowTraits: ['test'], growthPoint: 'test'
 } as unknown as EnneagramProfile;
 
-const person = { name: 'Test', birthDate: '1991-11-24' } as unknown as PersonData;
+const person = { name: 'Test', motherName: 'Anne', birthDate: '1991-11-24' } as unknown as PersonData;
 const parameters = {
   selectedStyles: ['Fine Line'], includeTotemInDesign: false, mainSymbol: '',
   secondarySymbols: [], subtleDetails: [], useMorseCodeForNumbers: false,

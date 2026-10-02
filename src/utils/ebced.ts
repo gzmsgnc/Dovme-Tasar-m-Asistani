@@ -63,8 +63,22 @@ export function calculateSingleEbced(nameStr: string): number {
 }
 
 export function calculateEbcedAndYildizname(personName: string, motherName?: string): EbcedYildiznameResult {
-  const pEbced = calculateSingleEbced(personName) || 108;
-  const mEbced = motherName ? calculateSingleEbced(motherName) : Math.round(pEbced * 0.618);
+  if (!personName?.trim()) {
+    throw new Error('Ebced/Yıldızname hesabı için danışan adı zorunludur. Varsayılan Ebced değeri kullanılamaz.');
+  }
+  if (!motherName?.trim()) {
+    throw new Error('Ebced/Yıldızname hesabı için anne adı zorunludur. Tahmini anne Ebced değeri kullanılamaz.');
+  }
+
+  const pEbced = calculateSingleEbced(personName);
+  const mEbced = calculateSingleEbced(motherName);
+
+  if (pEbced <= 0) {
+    throw new Error('Danışan adında Ebced tablosunda karşılığı bulunan en az bir harf bulunmalıdır.');
+  }
+  if (mEbced <= 0) {
+    throw new Error('Anne adında Ebced tablosunda karşılığı bulunan en az bir harf bulunmalıdır.');
+  }
   const total = pEbced + mEbced;
 
   // Yıldızname hesabı: Toplam Ebced % 12 (Kalan 0 ise 12 Balık)

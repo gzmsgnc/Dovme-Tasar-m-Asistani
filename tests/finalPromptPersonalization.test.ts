@@ -78,7 +78,7 @@ const symbolism = {
   symbolInterconnection: 'test',
   totemTestResult: {
     primaryTotem: { id: 'kizil_geyik', name: 'Kızıl Geyik' },
-    secondaryTotem: { id: 'su_samuru', name: 'Su Samuru' },
+    secondaryTotem: { id: 'bal_porsugu', name: 'Bal Porsuğu' },
     shadowTotem: { id: 'su_samuru', name: 'Su Samuru' },
     topMatches: [],
     confidenceScore: 90,
@@ -117,5 +117,13 @@ assert.ok(recipe.turkishPromptExplanation.includes(expectedChakraDirective));
 assert.ok(recipe.symbolRationales.some(r => r.esotericConnection.includes('Yaşam Yolu 7')));
 assert.equal(recipe.parameters.includeTotemInDesign, false);
 assert.ok(!recipe.masterEnglishPrompt.toLowerCase().includes('kızıl geyik'));
+assert.ok(!recipe.masterEnglishPrompt.includes('19 İlahi'));
+assert.ok(!recipe.masterEnglishPrompt.includes('19-dot matrix'));
+const integrationJson = JSON.stringify((recipe as any).symbolicIntegration ?? (recipe as any).symbolIntegrationResult ?? '');
+assert.ok(!integrationJson.includes('sym_totem'));
+assert.ok(!integrationJson.includes('Totem Kulak & Çene'));
+assert.ok(!/sym_totem|totem siluet|totem silhouette|totem figür/i.test(integrationJson), 'Analysis-only totem data must not enter visual integration metadata when disabled.');
+assert.ok(recipe.shadowAnalysis?.section4TotemAnimals?.[1]?.name?.startsWith('Su Samuru'));
+assert.ok(recipe.shadowAnalysis?.section4TotemAnimals?.[2]?.name?.startsWith('Bal Porsuğu'));
 
 console.log('Final prompt personalization tests passed');

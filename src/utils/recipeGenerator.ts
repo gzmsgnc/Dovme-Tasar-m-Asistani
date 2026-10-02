@@ -38,7 +38,8 @@ export function generateTattooRecipe(
   parameters: TattooDesignParameters
 ): TattooRecipe {
   const stylesStr = parameters.selectedStyles.join(' + ') || 'Fine Line & Geometric';
-  const includeTotem = parameters.includeTotemInDesign === true;
+  // Ürün kuralı: totemler analiz katmanındadır; final dövmede hayvan figürü/soyutlaması yoktur.
+  const includeTotem = false;
 
   // Guard against stale/mismatched symbolism entering a recipe.
   validateRecipeSymbolism(symbolism);
@@ -103,9 +104,19 @@ export function generateTattooRecipe(
     ? uniqueSecondarySymbols
     : uniqueSecondarySymbols.filter(s => !isTotemAnimalName(s));
 
-  const subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
+  const hasVerified19 = numerology.divineHelp19?.has19 === true;
+  let subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
     ? parameters.subtleDetails
     : symbolism.subtleDetails)];
+
+  // 19 yalnızca doğrulanmış numeroloji verisinden gelebilir.
+  if (!hasVerified19) {
+    subtleDetails = subtleDetails.filter(detail =>
+      !(/\b19\b|sacred\s*19|ilahi\s*yardım\s*19|19\s*(nokta|düğüm|mühür)/i.test(detail))
+    );
+  } else if (!subtleDetails.some(detail => /\b19\b|sacred\s*19|ilahi\s*yardım\s*19/i.test(detail))) {
+    subtleDetails.push('verified 19-point numerological detail');
+  }
 
   // Mors Alfabesi ile Rakam Şifreleme
   let morseCodePattern: { rawText: string; morseDisplay: string; morseStandard: string; tattooSpecification: string } | undefined = undefined;
@@ -188,9 +199,9 @@ export function generateTattooRecipe(
   }
 
   const detailDensity = densityStr.includes('Yoğun') ? 'Yüksek (Büyük ölçekli yerleşim önerilir)' : 'Dengeli ve Okunabilir';
-  const agingBlowoutRisk = isFineLine 
-    ? 'Düşük-Orta Risk: Çizgiler arasında minimum 1.5 - 2 mm güvenlik mesafesi bırakılmalı, 5-10 yıl içinde pigment yayılması hesaplanmalıdır.'
-    : 'Düşük / Güvenli: Konturlar ve negatif alan dengesi uzun vadeli yaşlanmaya karşı dirençlidir.';
+  const agingBlowoutRisk = isFineLine
+    ? 'Düşük-Orta Tasarım Riski: Çizgiler arasında yaklaşık 1.5–2 mm veya daha fazla boşluk tasarım kılavuzu olarak değerlendirilebilir; uzun dönem pigment davranışı cilt, bölge, uygulama ve bakıma göre değişir.'
+    : 'Görece Daha Düşük Tasarım Riski: Kontur ve negatif alan dengesi uzun dönem okunabilirliği desteklemek üzere tasarlanır; sonuç garanti edilmez.';
 
   const shadingTechnique = parameters.colorScheme.includes('Tekil Vurgu')
     ? 'Whip shading geçişleri, 3 kademeli Grey Wash (%30, %60, %90) ve seçili kırmızı/altın pigment doygunluğu'
@@ -344,7 +355,7 @@ Tasarım, kişinin hem gölge yönlerini (${enneagram.shadowTraits.slice(0, 2).j
 
   const subtleDetailsStr = subtleDetails.length > 0
     ? subtleDetails.join(', ')
-    : `Sacred 19 seal, subtle constellation nodes of ${astrology.sunSign}, micro-sigils`;
+    : `${hasVerified19 ? 'verified 19-point numerological detail, ' : ''}subtle constellation nodes of ${astrology.sunSign}, micro-sigils`;
 
   const colorStylePrompt = parameters.colorScheme === 'Saf Monokrom Siyah'
     ? 'pure stark monochrome black carbon ink'
@@ -364,7 +375,7 @@ ORGANIC SUPPORTING ELEMENTS (20-30% visual weight): ${sec1} and ${sec2}, organic
 HIDDEN ESOTERIC DETAILS (5-10% visual weight): Delicate ${subtleDetailsStr}, sacred geometry grid, fine micro-dotwork sigils, numerological resonance (Life Path ${numerology.lifePathNumber}).
 SELECTED TATTOO STYLES: ${englishStyleDescriptions}.
 COMPOSITION & PLACEMENT: ${parameters.composition} composition with ${parameters.orientation} flow designed for ${parameters.bodyPlacement} anatomical curvature.
-FEASIBILITY & TECHNIQUE: ${colorStylePrompt}, ${lineWeight}, ${shadingTechnique}, ${negativeSpaceRatio} open negative space, minimum 2mm line clearance preventing ink blowout for 10-year aging clarity.
+FEASIBILITY & TECHNIQUE: ${colorStylePrompt}, ${lineWeight}, ${shadingTechnique}, ${negativeSpaceRatio} open negative space, minimum 2mm line-clearance design guideline intended to reduce crowding and support long-term readability; healing, pigment spread, and blowout outcomes vary by skin, placement, technique, and aftercare.
 CANVAS & ISOLATION: Flat 2D tattoo flash sheet artwork, isolated on clean solid background, pristine tattoo flash plate presentation, no human body, no skin, no arm mockup, no photo, no 3D render.
   `.trim().replace(/\s+/g, ' ');
 

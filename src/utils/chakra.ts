@@ -95,7 +95,7 @@ export function calculateChakraProfile(
       color: '#6366f1', // Çivit Mavisi / Gece Laciverti
       yantraGeometry: 'İki Taç Yapraklı Lotus & Kozmik Göz',
       healingSymbols: ['Her Şeyi Gören Göz (Eye of Providence)', 'Gece Baykuşu', 'Labradorit', 'Kutsal Geometri Ayna Sigili'],
-      baseTattooAdvice: 'Ana totem figürünün alnına, tepe noktasına veya geometrik eksenin tepe odağına entegre edilmelidir.'
+      baseTattooAdvice: 'Kompozisyonun tepe noktasına veya geometrik eksenin üst odağına entegre edilebilir.'
     },
     {
       number: 7,
@@ -126,8 +126,8 @@ export function calculateChakraProfile(
       location: 'Ruh Yıldızı & Göksel Kapı',
       element: 'Evrensel Sevgi & İlahi Bütünlük',
       color: '#f8fafc', // Kristal Beyaz / Altın
-      yantraGeometry: 'Dokuz Köşeli Yıldız (Enneagram) & 19 İlahi Mührü',
-      healingSymbols: ['19 İlahi Yardım Mührü', 'Anka Kuşu (Küllerinden Doğuş)', 'Kozmik Spiral', 'Yaşam Çiçeği (Flower of Life)'],
+      yantraGeometry: 'Dokuz Köşeli Yıldız (Enneagram) & koşullu 19 İlahi Mührü',
+      healingSymbols: ['Doğrulanmış 19 İlahi Yardım Mührü', 'Anka Kuşu (Küllerinden Doğuş)', 'Kozmik Spiral', 'Yaşam Çiçeği (Flower of Life)'],
       baseTattooAdvice: 'Tasarımın en gizli mikro-detay katmanına (gizli constellation veya dotwork sigil) kodlanmalıdır.'
     }
   ];
@@ -139,13 +139,13 @@ export function calculateChakraProfile(
 
     if (count === 0) {
       status = 'Blokajlı / Eksik';
-      statusExplanation = `İsimde ${def.number} frekansında hiçbir harf bulunmamaktadır. Bu çakra kişinin karmik eksikliği olup dövmedeki sembollerle mutlaka dengelenmelidir.`;
+      statusExplanation = `İsimde ${def.number} frekansında hiçbir harf bulunmamaktadır. Bu, numerolojik sembol matrisinde eksik frekans olarak işaretlenir; tasarımda destekleyici geometriyle sembolik olarak ele alınabilir.`;
     } else if (count === 1) {
       status = 'Pasif / Düşük';
       statusExplanation = `Tekil titreşim mevcut. Potansiyel var ancak dış etkenlerle çabuk yorulabilir; destekleyici geometri ile aktive edilmelidir.`;
     } else if (count >= 2 && count <= 4) {
       status = 'Dengeli';
-      statusExplanation = `Mükemmel doğal akış. Kişinin bu çakra frekansı dengeli çalışmakta, kompozisyonun taşıyıcı sütununu oluşturmaktadır.`;
+      statusExplanation = `Bu frekans aralıkta güçlü temsil edilir ve kompozisyonda destekleyici bir eksen olarak ele alınabilir.`;
     } else {
       status = 'Aşırı Yoğun';
       statusExplanation = `${count} adet harf ile yüksek enerji yüklemesi. Fazla enerji gölge nitelikler yaratabilir; yumuşatıcı akış sembolleriyle dengelenmelidir.`;
@@ -167,6 +167,17 @@ export function calculateChakraProfile(
     };
   });
 
+  // 19 yalnızca numeroloji motoru tarafından açıkça doğrulandıysa çakra katmanına girebilir.
+  if (numerology.divineHelp19?.has19 !== true) {
+    const chakra9 = chakras.find(c => c.number === 9);
+    if (chakra9) {
+      chakra9.healingSymbols = chakra9.healingSymbols.filter(s => !/\\b19\\b|19\\s*İlahi/i.test(s));
+      chakra9.yantraGeometry = chakra9.yantraGeometry
+        .replace(/\\s*&\\s*koşullu 19 İlahi Mührü/i, '')
+        .replace(/\\s*&\\s*19 İlahi Mührü/i, '');
+    }
+  }
+
   const dominantChakras = chakras.filter((c) => c.status === 'Aşırı Yoğun' || c.status === 'Dengeli');
   const blockedChakras = chakras.filter((c) => c.status === 'Blokajlı / Eksik');
 
@@ -182,8 +193,10 @@ export function calculateChakraProfile(
     primaryHealingDirective = `Kişinin numerolojik haritasında tespit edilen en kritik çakra blokajları: ${names}. Dövme tasarımında bu çakraların kutsal geometrileri (${blockedChakras.map((b) => b.yantraGeometry).slice(0, 2).join(' + ')}) ve şifa sembolleri temel mimariye mutlaka entegre edilmelidir.`;
     primaryChakraAffirmation = `Bedenimdeki ve ruhumdaki tüm blokajları sevgiyle serbest bırakıyorum; ${blockedChakras[0].turkishName} frekansım dengeleniyor ve evrensel yaşam enerjisi içimden engelsizce akıyor.`;
   } else {
-    primaryHealingDirective = `Kişinin tüm temel çakralarında harf frekansı mevcuttur. Dövme tasarımı mevcut harmoniyi taçlandıracak ve 19 İlahi Mührü ile auranın biyo-manyetik kalkanını güçlendirecek şekilde kurgulanacaktır.`;
-    primaryChakraAffirmation = `Bütünsel enerjim tam bir uyum ve huzur içinde; köklerim sağlam, kalbim açık ve sezgilerim berrak.`;
+    primaryHealingDirective = numerology.divineHelp19?.has19 === true
+      ? `Kişinin tüm temel çakralarında harf frekansı mevcuttur. Dövme tasarımı mevcut harmoniyi taçlandıracak ve doğrulanmış 19 İlahi Mührü ile auranın biyo-manyetik kalkanını güçlendirecek şekilde kurgulanacaktır.`
+      : `Kişinin tüm temel çakralarında harf frekansı mevcuttur. Dövme tasarımı mevcut harmoniyi taçlandıracak ve auranın biyo-manyetik kalkanını güçlendirecek şekilde kurgulanacaktır.`;
+    primaryChakraAffirmation = `Sembolik enerji haritam bütünlük, köklenme ve berraklık temalarıyla ifade edilebilir.`;
   }
 
   return {
