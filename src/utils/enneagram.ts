@@ -221,7 +221,9 @@ export function calculateEnneagramFromAnswers(answers: Record<number, number>): 
   const leftScore = scores[leftNeighbor] || 0;
   const rightScore = scores[rightNeighbor] || 0;
 
-  const wing = rightScore >= leftScore ? `${maxType}w${rightNeighbor}` : `${maxType}w${leftNeighbor}`;
+  // Eşitlikte sağ kanadı otomatik seçme; simetrik durumda sol komşuyu seçerek
+  // önceki yapay sağ-kanat önyargısını kaldırıyoruz.
+  const wing = rightScore > leftScore ? `${maxType}w${rightNeighbor}` : `${maxType}w${leftNeighbor}`;
 
   return { type: maxType, wing };
 }
