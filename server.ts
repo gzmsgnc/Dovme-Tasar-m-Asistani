@@ -40,6 +40,26 @@ function isRateLimited(store: Map<string, { count: number; resetAt: number }>, k
   current.count += 1;
   return false;
 }
+
+function isLoginRateLimited(key: string, limit: number): boolean {
+  const now = Date.now();
+  const current = loginFailures.get(key);
+  if (!current || current.resetAt <= now) {
+    loginFailures.delete(key);
+    return false;
+  }
+  return current.count >= limit;
+}
+
+function recordLoginFailure(key: string): void {
+  const now = Date.now();
+  const current = loginFailures.get(key);
+  if (!current || current.resetAt <= now) {
+    loginFailures.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return;
+  }
+  current.count += 1;
+}
 function getAdminPassword(): string | null {
   const password = process.env.STUDIO_ADMIN_PASSWORD;
   return typeof password === 'string' && password.length >= 12 ? password : null;
@@ -217,14 +237,17 @@ async function startServer() {
     const password = getAdminPassword();
     if (!password) return res.status(503).json({ success: false, error: 'Stüdyo yönetici şifresi sunucu ortamında yapılandırılmamış.' });
     const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
-    if (isRateLimited(loginFailures, clientKey, 10)) {
+    if (isLoginRateLimited(clientKey, 10)) {
       return res.status(429).json({ success: false, error: 'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.' });
     }
     const supplied = typeof req.body?.password === 'string' ? req.body.password : '';
     const suppliedBuffer = Buffer.from(supplied);
     const expectedBuffer = Buffer.from(password);
     const valid = suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
-    if (!valid) return res.status(401).json({ success: false, error: 'Yönetici şifresi hatalı.' });
+    if (!valid) {
+      recordLoginFailure(clientKey);
+      return res.status(401).json({ success: false, error: 'Yönetici şifresi hatalı.' });
+    }
     loginFailures.delete(clientKey);
     const session = createAdminSession();
     const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
@@ -898,22 +921,3 @@ Lütfen JSON formatında yanıt ver:
 
   // Serve Frontend
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req: Request, res: Response) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Dövme Tasarım Asistanı server running on http://0.0.0.0:${PORT}`);
-  });
-}
-
-startServer();
