@@ -93,7 +93,7 @@ export interface CanonicalClientAnalysis {
     allyTotem: string;
     allyTotemMeaning: string;
     includeAnimalInTattoo: boolean;
-    totemHandlingMode: 'Figüratif Odak' | 'Soyut Sembolik Akış';
+    totemHandlingMode: 'Figüratif Odak' | 'Analiz Yalnızca';
     totemHandlingExplanation: string;
   };
   chakra: {
@@ -242,7 +242,7 @@ export function extractCanonicalClientAnalysis(params: {
   const includeAnimalInTattoo = false; // Final ürün kuralı: totemler analiz-only.
   const totemHandlingMode: 'Figüratif Odak' | 'Analiz Yalnızca' = includeAnimalInTattoo 
     ? 'Figüratif Odak' 
-    : 'Soyut Sembolik Akış';
+    : 'Analiz Yalnızca';
 
   const totemHandlingExplanation = includeAnimalInTattoo
     ? `Danışan tercihi doğrultusunda ${primaryTotem} figürü dövmede ana görsel odak olarak yer alır.`
