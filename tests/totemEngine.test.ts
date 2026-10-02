@@ -29,7 +29,7 @@ for (const animal of TOTEM_ANIMALS_52) {
   assert.ok(animal.element, `Animal ${animal.id} must define an element`);
   assert.ok(getTotemAnimalStrict(animal.id)?.id === animal.id, `Strict lookup must resolve canonical ID ${animal.id}`);
 }
-assert.equal(getTotemAnimalStrict('Kurt'), undefined, 'Strict lookup must not guess by display-name text');
+assert.equal(getTotemAnimalStrict('kur'), undefined, 'Strict lookup must not match partial animal names');
 assert.equal(getTotemAnimalStrict('totally-unrelated-kurt-fragment'), undefined, 'Strict lookup must not use loose substring matching');
 
 // 3) The same answers must always produce the same behavioral vector and result.
