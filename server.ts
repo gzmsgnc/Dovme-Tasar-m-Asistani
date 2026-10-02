@@ -235,7 +235,6 @@ async function startServer() {
       const personalStory = (body.personalStory || '').trim();
       const enneagramAnswers = body.enneagramAnswers || {};
       const totemAnswers = body.totemAnswers || {};
-      const submissionId = body.submissionId || body.id;
 
       // 1. Ad & Soyad Doğrulaması
       if (!combinedName || combinedName.length < 2) {
@@ -351,7 +350,9 @@ async function startServer() {
       const enneaResult = calculateEnneagramFromAnswers(enneagramAnswers);
       const totemResult = calculateBehavioralTotemResult(totemAnswers, enneaResult.type);
 
-      const clientId = submissionId || `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      // Public intake must never be able to choose an existing client ID or forge timestamps.
+      // This prevents an unauthenticated submission from overwriting another client's record.
+      const clientId = `client_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
       const nowIso = new Date().toISOString();
 
       const newClient: PersonData = {
@@ -384,7 +385,7 @@ async function startServer() {
         notes: personalStory ? `Danışan Formu Notu: ${personalStory}` : undefined,
         status: 'new',
         source: 'client_form',
-        createdAt: body.createdAt || nowIso,
+        createdAt: nowIso,
         updatedAt: nowIso
       };
 
