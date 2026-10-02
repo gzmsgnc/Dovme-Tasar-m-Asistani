@@ -193,7 +193,9 @@ export function calculateChakraProfile(
     primaryHealingDirective = `Kişinin numerolojik haritasında tespit edilen en kritik çakra blokajları: ${names}. Dövme tasarımında bu çakraların kutsal geometrileri (${blockedChakras.map((b) => b.yantraGeometry).slice(0, 2).join(' + ')}) ve şifa sembolleri temel mimariye mutlaka entegre edilmelidir.`;
     primaryChakraAffirmation = `Bedenimdeki ve ruhumdaki tüm blokajları sevgiyle serbest bırakıyorum; ${blockedChakras[0].turkishName} frekansım dengeleniyor ve evrensel yaşam enerjisi içimden engelsizce akıyor.`;
   } else {
-    primaryHealingDirective = `Kişinin tüm temel çakralarında harf frekansı mevcuttur. Dövme tasarımı mevcut harmoniyi taçlandıracak ve 19 İlahi Mührü ile auranın biyo-manyetik kalkanını güçlendirecek şekilde kurgulanacaktır.`;
+    primaryHealingDirective = numerology.divineHelp19?.has19 === true
+      ? `Kişinin tüm temel çakralarında harf frekansı mevcuttur. Dövme tasarımı mevcut harmoniyi taçlandıracak ve doğrulanmış 19 İlahi Mührü ile auranın biyo-manyetik kalkanını güçlendirecek şekilde kurgulanacaktır.`
+      : `Kişinin tüm temel çakralarında harf frekansı mevcuttur. Dövme tasarımı mevcut harmoniyi taçlandıracak ve auranın biyo-manyetik kalkanını güçlendirecek şekilde kurgulanacaktır.`;
     primaryChakraAffirmation = `Sembolik enerji haritam bütünlük, köklenme ve berraklık temalarıyla ifade edilebilir.`;
   }
 
