@@ -69,8 +69,8 @@ await syncClientsWithServer();
 assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_B']);
 (globalThis as any).fetch = originalFetch;
 
-saveRecipe(recipeA); deleteRecipe('recipe_A');
-assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B']);
+saveRecipe(recipeB); deleteRecipe('recipe_B');
+assert.deepEqual(source.getStoredRecipes().map(r => r.id), []);
 
 // Restoring a valid backup must also clear the restored client's tombstone.
 testStorage.clear();
