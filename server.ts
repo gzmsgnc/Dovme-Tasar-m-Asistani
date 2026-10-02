@@ -9,7 +9,7 @@ import { generateEsotericTattooStencilSvg } from './src/utils/stencilGenerator';
 import { isValidCalendarDate, resolveCityLocation, CityLocation } from './src/utils/astrology';
 import { searchGlobalLocationsApi, resolveLocationSync, resolveLocationAsync, LocationValidationError } from './src/utils/locationResolver';
 import { calculateEnneagramFromAnswers } from './src/utils/enneagram';
-import { calculateBehavioralTotemResult } from './src/utils/behavioralTotemEngine';
+import { calculateBehavioralTotemResult, TOTEM_BEHAVIORAL_QUESTIONS } from './src/utils/behavioralTotemEngine';
 import { normalizePhoneNumber, isValidEmail } from './src/utils/clientValidation';
 import { PersonData } from './src/types';
 
@@ -274,10 +274,14 @@ async function startServer() {
 
       // 9. Totem Hayvanı Ham Cevapları (15 sorunun tamamı)
       const totemKeys = Object.keys(totemAnswers);
-      if (totemKeys.length < 15) {
+      const validTotemAnswers = TOTEM_BEHAVIORAL_QUESTIONS.every(question => {
+        const answer = totemAnswers?.[question.id];
+        return typeof answer === 'string' && question.options.some(option => option.id === answer);
+      });
+      if (totemKeys.length !== TOTEM_BEHAVIORAL_QUESTIONS.length || !validTotemAnswers) {
         return res.status(400).json({
           success: false,
-          error: `Totem testi eksik (${totemKeys.length}/15). Lütfen 15 sorunun tamamını yanıtlayınız.`
+          error: `Totem testi eksik veya geçersiz (${totemKeys.length}/${TOTEM_BEHAVIORAL_QUESTIONS.length}). Lütfen tüm soruları geçerli seçeneklerle yanıtlayınız.`
         });
       }
 
