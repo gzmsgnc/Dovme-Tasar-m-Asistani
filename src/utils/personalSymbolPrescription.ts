@@ -239,14 +239,14 @@ export function extractCanonicalClientAnalysis(params: {
     throw new Error('Totem hiyerarşisi tamamlanmadan kişisel sembol reçetesi üretilemez.');
   }
 
-  const includeAnimalInTattoo = designParameters.includeTotemInDesign === true;
-  const totemHandlingMode: 'Figüratif Odak' | 'Soyut Sembolik Akış' = includeAnimalInTattoo 
+  const includeAnimalInTattoo = false; // Final ürün kuralı: totemler analiz-only.
+  const totemHandlingMode: 'Figüratif Odak' | 'Analiz Yalnızca' = includeAnimalInTattoo 
     ? 'Figüratif Odak' 
     : 'Soyut Sembolik Akış';
 
   const totemHandlingExplanation = includeAnimalInTattoo
     ? `Danışan tercihi doğrultusunda ${primaryTotem} figürü dövmede ana görsel odak olarak yer alır.`
-    : `Danışan tercihi doğrultusunda hayvan figürü dövmede doğrudan kullanılmamış; ${primaryTotem} ve ${shadowTotem}'ın sembolik nitelikleri soyut çizgisel akış, kanat/dalga kıvrımları ve ritmik geometri olarak kompozisyona aktarılmıştır.`;
+    : `Danışan tercihi doğrultusunda ${primaryTotem}, ${shadowTotem} ve diğer totem verileri yalnızca analiz/yorum katmanında tutulmuş; hiçbir hayvan figürü veya hayvan temelli soyutlama final dövme kompozisyonuna aktarılmamıştır.`;
 
   // 7. Canonical Chakra Result (Single Source of Truth: numerology.missingNumbers & chakra.chakras)
   const canonicalBlockedNumbers = [...(numerology.missingNumbers || [])].sort((a, b) => a - b);
