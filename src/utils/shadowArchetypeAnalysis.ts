@@ -407,7 +407,7 @@ export function generateShadowArchetypeAnalysis(
   const strongestTransformationMotif = `Zırhın arasından göğe doğru açılan altın oran filizi ve serbest kalan kanat hareketi.`;
   
   // 7. Symbolic Visual Dictionary & Design Inclusion Decisions
-  const includeTotem = parameters?.includeTotemInDesign === true;
+  const includeTotem = false; // Final ürün kuralı: totemler analiz-only.
   const hasVerified19 = numerology.divineHelp19?.has19 === true;
   let actualMainSymbol = parameters?.mainSymbol;
   const isTotemName = actualMainSymbol === primaryTotemName || 
