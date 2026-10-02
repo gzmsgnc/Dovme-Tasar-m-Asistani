@@ -667,7 +667,10 @@ export function calculateBehavioralTotemResult(
   });
 
   // Sıralama (En yüksek uyumdan düşüğe)
-  scoredMatches.sort((a, b) => b.similarityScore - a.similarityScore);
+  scoredMatches.sort((a, b) => {
+    const scoreDiff = b.similarityScore - a.similarityScore;
+    return scoreDiff !== 0 ? scoreDiff : a.animal.id.localeCompare(b.animal.id);
+  });
 
   const primaryTotem = scoredMatches[0]?.animal || TOTEM_ANIMALS_52[0];
   
