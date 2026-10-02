@@ -412,7 +412,9 @@ export function executeSymbolicIntegrationEngine(params: {
       sharedLinesDescription: `${floraName} taç yapraklarının alt kıvrımı, Enneagramın 4-5-6 nolu taban yaylarıyla tek bir ortak konturu paylaşır.`,
       overlappingRegions: 'Alt-Orta Geçiş Kavşağı',
       nestedSymbols: [],
-      negativeSpaceRole: 'Yaprakların birbirinden ayrıldığı V-kesiği, totem siluetine zemin hazırlar.',
+      negativeSpaceRole: includeTotemInDesign
+      ? 'Yaprakların birbirinden ayrıldığı V-kesiği, totem siluetine zemin hazırlar.'
+      : 'Yaprakların birbirinden ayrıldığı V-kesiği, kontrollü negatif alan ve kompozisyonun nefes boşluğunu oluşturur.',
       continuousPathDetails: 'Geometrik açılı çizgi, yaprağın kavisli organik yayına kesintisiz olarak akar.',
       primarySymbolId: 'sym_enneagram',
       secondarySymbolIds: ['sym_flora'],
