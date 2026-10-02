@@ -307,7 +307,7 @@ export function deriveSymbolismProfile(
     subtleDetails.push(`Pisagor Altın Oran Kılavuz Çizgisi: Kompozisyonun omurgasını oluşturan kesikli kılavuz nokta dizisi`);
   }
 
-  const symbolInterconnection = `Merkezi odak olan ${primaryTotemName} figürü (${primaryTotemMeaning.slice(0, 40)}...), arka plandaki ${geometricSymbol} ile yapısal bir derinlik kazanır. ${plantFlora} organik kıvrımlarla sert geometrik sınırları yumuşatarak dövmenin vücut anatomisine akmasını sağlar. ${sacredObject} figürün merkez ekseninde tutulurken, gölge muhafız ${shadowTotemName} ve ihtiyaç duyulan ${neededSymbols[0]?.symbolName || 'Dengeleyici Yantra'} tasarımı enerjetik olarak eksiksiz bir koruma kalkanına dönüştürür.`;
+  const symbolInterconnection = `Kişisel totem analizi (${primaryTotemName} / ${shadowTotemName}) yalnızca yorum katmanında tutulur. Final görsel kompozisyon; ${geometricSymbol}, ${plantFlora}, ${sacredObject} ve ihtiyaç duyulan ${neededSymbols[0]?.symbolName || 'Dengeleyici Yantra'} üzerinden yapılandırılır; hiçbir hayvan figürü veya hayvan temelli soyutlama kullanılmaz.`;
 
   return {
     totemAnimal: primaryTotemName,
