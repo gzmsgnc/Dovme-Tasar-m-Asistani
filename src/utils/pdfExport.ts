@@ -446,7 +446,7 @@ export async function exportRecipeToPDF(
           <div style="background: #15151b; border: 1px solid #23232d; border-radius: 8px; padding: 10px 12px; font-size: 11px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
               <span style="color: #71717a;">Ana Sembolik Odak:</span>
-              <strong style="color: #c4a47c;">${params.mainSymbol || symb.totemAnimal}</strong>
+              <strong style="color: #c4a47c;">${params.mainSymbol || symb.sacredObject || symb.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği'}</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #71717a;">İkincil / Tamamlayıcı Semboller:</span>
