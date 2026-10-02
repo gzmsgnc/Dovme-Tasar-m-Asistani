@@ -550,7 +550,7 @@ export async function exportRecipeToPDF(
           </div>
         </div>
       </div>
-    ;
+    `;
 
     // Danışan formu verileri HTML şablonuna girdiği için, rapor oluşturulmadan önce
     // olası script/event-handler enjeksiyonlarını DOM katmanında temizle.
