@@ -88,23 +88,21 @@ export interface TotemCalculationResult {
  *       tamamen deterministik ve dengeli olarak hesaplar.
  */
 export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCalculationResult {
-  const { 
-    name, 
-    birthDate, 
-    birthTime, 
-    birthPlace, 
-    motherName, 
-    totemAnswers, 
+  const {
+    name,
+    birthDate,
+    birthTime,
+    birthPlace,
+    motherName,
+    totemAnswers,
     enneagramType,
     lifePathNumber,
     dominantElement,
     sunSign
   } = personalData;
 
-  // 1. Gerçek Takvim Tarihi Doğrulaması
   const { year, month, day } = validateCalendarDate(birthDate);
 
-  // Yaşam Yolu hesaplaması (eğer parametrede geçilmediyse doğrudan doğum tarihinden hesaplanır)
   let actualLifePath = lifePathNumber;
   if (!actualLifePath) {
     const digits = `${day}${month}${year}`.split('').map(Number);
@@ -115,55 +113,54 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
     actualLifePath = sum;
   }
 
-  if (!birthPlace || !birthPlace.trim()) {
+  if (!birthPlace?.trim()) {
     throw new Error('Totem hayvanı hesaplaması için doğum yeri zorunludur. Eksik konumla varsayımsal şehir veya bölge kullanılamaz.');
   }
-  // 1. Eğer davranışsal test yanıtları mevcutsa (15 soruluk testten gelen cevaplar):
-  if (totemAnswers && Object.keys(totemAnswers).length > 0) {
-    const behavioralReport = calculateBehavioralTotemResult(totemAnswers, enneagramType, {
-      dominantElement,
-      lifePathNumber: actualLifePath,
-      sunSign
-    });
 
-    return {
-      primaryTotem: behavioralReport.primaryTotem,
-      shadowTotem: behavioralReport.shadowTotem,
-      allyTotem: behavioralReport.secondaryTotem,
-      isBehavioralTestBased: true,
-      behavioralReport,
-      calculationBreakdown: {
-        birthDateSignature: dateSignature,
-        timeQuadrantSignature: timeSignature,
-        placeSignature,
-        nameMatrixSignature: nameSignature + motherSignature,
-        totalDeterministicHash,
-        circadianQuadrant,
-        planetaryDayRuler,
-        elementalDominance: behavioralReport.primaryTotem.element,
-        rationale: `15 Soruluk Davranışsal Totem Testi sonuçlarına dayanmaktadır (Eşleşme Gücü: %${behavioralReport.confidenceScore}).`
-      }
-    };
-  }
-
-  // Kayıtlı totem kimlikleri geçmiş sonuç referansıdır; yeni hesaplamayı override edemez.
-  // Böylece önceki danışanın totemi yeni danışana sızmaz.
-  // Not: primaryTotemId/secondaryTotemId/shadowTotemId bilinçli olarak hesaplama girdisi değildir.
-  // Davranışsal totem artık doğum/isim/hash fallback'iyle üretilemez: test tamamlanmadan
-  // kişiye bir hayvan atamak, sonucu cevaplardan koparır ve müşteri kabulünde yanlış pozitif üretir.
-  const answeredQuestionIds = new Set(Object.keys(totemAnswers ?? {}).map(Number));
   const requiredQuestionIds = new Set(TOTEM_BEHAVIORAL_QUESTIONS.map(q => q.id));
-  const hasCompleteBehavioralTest = answeredQuestionIds.size === requiredQuestionIds.size &&
+  const answeredQuestionIds = new Set(Object.keys(totemAnswers ?? {}).map(Number));
+  const hasCompleteBehavioralTest =
+    answeredQuestionIds.size === requiredQuestionIds.size &&
     TOTEM_BEHAVIORAL_QUESTIONS.every(question => {
       const answer = totemAnswers?.[question.id];
       return typeof answer === 'string' && question.options.some(option => option.id === answer);
     });
+
   if (!hasCompleteBehavioralTest) {
-    throw new Error(`Davranışsal Totem Testi tamamlanmadan totem hesaplanamaz. ${requiredQuestionIds.size} sorunun tamamı yanıtlanmalıdır.`);
+    throw new Error(`Davranışsal Totem Testi tamamlanmadan totem hesaplanamaz. ${requiredQuestionIds.size} sorunun tamamı geçerli biçimde yanıtlanmalıdır.`);
   }
 
-  // Bu noktaya yalnızca tamamlanmış davranışsal test ile gelinir.
-  // Legacy doğum/isim/hash fallback'i bilinçli olarak devre dışıdır.
-  return (() => { throw new Error('Beklenmeyen totem hesaplama durumu.'); })();
+  const behavioralReport = calculateBehavioralTotemResult(totemAnswers!, enneagramType, {
+    dominantElement,
+    lifePathNumber: actualLifePath,
+    sunSign
+  });
 
+  const birthTimeMinutes = (() => {
+    if (!birthTime?.includes(':')) return 0;
+    const [hourRaw, minuteRaw] = birthTime.split(':');
+    const hour = Number(hourRaw);
+    const minute = Number(minuteRaw);
+    if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return 0;
+    return hour * 60 + minute;
+  })();
+
+  return {
+    primaryTotem: behavioralReport.primaryTotem,
+    shadowTotem: behavioralReport.shadowTotem,
+    allyTotem: behavioralReport.secondaryTotem,
+    isBehavioralTestBased: true,
+    behavioralReport,
+    calculationBreakdown: {
+      birthDateSignature: year * 10000 + month * 100 + day,
+      timeQuadrantSignature: birthTimeMinutes,
+      placeSignature: birthPlace.trim().length,
+      nameMatrixSignature: (name?.trim().length || 0) + (motherName?.trim().length || 0),
+      totalDeterministicHash: 0,
+      circadianQuadrant: 'Davranışsal Test',
+      planetaryDayRuler: 'Davranışsal Test',
+      elementalDominance: behavioralReport.primaryTotem.element,
+      rationale: `15 Soruluk Davranışsal Totem Testi sonuçlarına dayanmaktadır (Eşleşme Gücü: %${behavioralReport.confidenceScore}). Doğum tarihi, saat, yer ve isim metadatası totem sıralamasını değiştirmez.`
+    }
+  };
 }
