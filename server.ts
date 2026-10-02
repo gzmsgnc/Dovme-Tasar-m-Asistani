@@ -436,7 +436,7 @@ async function startServer() {
       console.error('Client intake error:', err);
       return res.status(500).json({
         success: false,
-        error: 'Form işlenirken sunucuda bir hata oluştu: ' + (err instanceof Error ? err.message : String(err))
+        error: 'Form işlenirken sunucuda bir hata oluştu. Lütfen daha sonra tekrar deneyin.'
       });
     }
   });
