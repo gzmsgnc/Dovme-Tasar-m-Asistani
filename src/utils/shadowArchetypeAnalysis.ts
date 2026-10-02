@@ -838,7 +838,7 @@ Bu bölüm, dövme sanatçınızın tasarımı cildinize aktarırken kullanacağ
    • Çizim Dili: Yumuşak whip shading geçişleri, organik eğriler.
 
 3. PARÇA C — EZOTERİK MİKRO PARÇALAR (%5–10 Görsel Ağırlık):
-   • Figürler: 19 İlahi Yardım Düğümleri, Fibonacci Altın Sarmalı, Takımyıldız Düğümleri${parameters.useMorseCodeForNumbers ? ', Mors Alfabesi Mikro Çizgileri' : ''}
+   • Figürler: ${numerology.divineHelp19?.has19 ? '19 İlahi Yardım Düğümleri, ' : ''}Fibonacci Altın Sarmalı, Takımyıldız Düğümleri${parameters.useMorseCodeForNumbers ? ', Mors Alfabesi Mikro Çizgileri' : ''}
    • Konum: Dış geometri çemberi ve figürün kuyruk/omurga hattı.
    • Çizim Dili: 03RL tek iğne mikro-dotwork stippling (0.25mm).
 
@@ -992,7 +992,7 @@ TASARIM BAŞLIĞI: ${includeTotem ? `${primaryTotemName} & ${section4TotemAnimal
 • **Yıldızname Bulguları:** Burç: ${ebcedData.yildiznameBurcName} | Unsur: ${ebcedData.yildiznameElement} | Gezegen Rehberi: ${ebcedData.planetGuide} (${ebcedData.esotericQuality})
 • **Mevcut Totem Hayvanları:** ${person.existingTotems || (includeTotem ? primaryTotemName + ', ' + (section4TotemAnimals[1]?.name || shadowGuardianTotem) : 'Tasarıma dahil edilmedi (Danışan tercihi: Yalnızca ruhani analiz)')}
 • **Mevcut Semboller:** ${person.existingSymbols || symbolism.plantFlora + ', ' + section5ChakraBlockages[0].geometricEquivalent}
-• **Kişisel Olarak Önemli Sayılar:** ${person.personalNumbers || lifePath + ', ' + numerology.destinyNumber + ', 19'}
+• **Kişisel Olarak Önemli Sayılar:** ${person.personalNumbers || `${lifePath}, ${numerology.destinyNumber}${numerology.divineHelp19?.has19 ? ', 19' : ''}`}
 • **Kişisel Hikâye / Temalar:** ${person.personalStory || 'Ruhsal uyanış, sınırlarını koruma ve gölge yönleri ışığa dönüştürme arayışı.'}
 
 ---
@@ -1187,7 +1187,7 @@ ${fullClientLetterText}
       yildiznameSummary: `${ebcedData.yildiznameBurcName} - ${ebcedData.yildiznameElement} (${ebcedData.planetGuide})`,
       existingTotems: person.existingTotems || (includeTotem ? primaryTotemName : 'Yalnızca ruhani analizde (Tasarıma dahil edilmedi)'),
       existingSymbols: person.existingSymbols || symbolism.plantFlora,
-      personalNumbers: person.personalNumbers || `${lifePath}, 19`,
+      personalNumbers: person.personalNumbers || `${lifePath}, ${numerology.destinyNumber}${numerology.divineHelp19?.has19 ? ', 19' : ''}`,
       personalStory: person.personalStory || 'Gölge dönüşümü ve ruhani güç arayışı'
     },
     section2PsychoSymbolic: {
