@@ -171,10 +171,10 @@ export function calculateChakraProfile(
   if (numerology.divineHelp19?.has19 !== true) {
     const chakra9 = chakras.find(c => c.number === 9);
     if (chakra9) {
-      chakra9.healingSymbols = chakra9.healingSymbols.filter(s => !/\\b19\\b|19\\s*İlahi/i.test(s));
+      chakra9.healingSymbols = chakra9.healingSymbols.filter(s => !/\b19\b|19\s*İlahi/i.test(s));
       chakra9.yantraGeometry = chakra9.yantraGeometry
-        .replace(/\\s*&\\s*koşullu 19 İlahi Mührü/i, '')
-        .replace(/\\s*&\\s*19 İlahi Mührü/i, '');
+        .replace(/\s*&\s*koşullu 19 İlahi Mührü/i, '')
+        .replace(/\s*&\s*19 İlahi Mührü/i, '');
     }
   }
 
