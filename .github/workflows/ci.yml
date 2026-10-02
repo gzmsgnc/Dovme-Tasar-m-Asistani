@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, audit-hardening-2026-10-02]
+    branches: [main, audit-hardening-2026-10-02, ci-final-verification-2-2026-10-02]
   pull_request:
     branches: [main]
 
