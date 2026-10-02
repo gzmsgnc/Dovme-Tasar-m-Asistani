@@ -127,7 +127,7 @@ export function deriveSymbolismProfile(
       category: 'Çakra Şifası',
       targetDeficiency: 'Eksik 7. Çakra (Mistik / Derin Sezgi ve Analiz Boşluğu)',
       esotericRationale: '7 frekansı eksikliği yüzeyde kalma veya şüphecilik getirebilir. Mistik göz ve heptagram sezgisel derinliği açar.',
-      compositionPlacement: 'Totemin alnına veya kompozisyonun tepe eksenine ışık saçan bir odak olarak konur.'
+      compositionPlacement: 'Kompozisyonun tepe eksenine, merkez sembolden bağımsız ışık saçan geometrik bir odak olarak konur.'
     });
   }
 
