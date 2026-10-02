@@ -238,7 +238,26 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
             try {
               num = calculateNumerology(client.name, client.birthDate);
-              astro = calculateAstrology(client.birthDate, client.birthTime, client.birthPlace);
+              astro = calculateAstrology(
+                client.birthDate,
+                client.birthTime,
+                client.birthPlace,
+                client.zodiacSystem || 'Tropical',
+                typeof client.birthLatitude === 'number' && typeof client.birthLongitude === 'number'
+                  ? {
+                      name: client.birthPlace || 'Kayıtlı Konum',
+                      displayName: client.birthPlace || 'Kayıtlı Konum',
+                      city: client.birthCity,
+                      region: client.birthRegion,
+                      country: client.birthCountry,
+                      countryCode: client.birthCountryCode,
+                      lat: client.birthLatitude,
+                      lon: client.birthLongitude,
+                      timezone: client.birthTimezone,
+                      defaultTz: client.birthTimezoneOffset
+                    }
+                  : undefined
+              );
               totem = calculateTotemAnimal({
                 name: client.name,
                 birthDate: client.birthDate,
@@ -472,7 +491,26 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
               try {
                 num = calculateNumerology(selectedClientDetail.name, selectedClientDetail.birthDate);
-                astro = calculateAstrology(selectedClientDetail.birthDate, selectedClientDetail.birthTime, selectedClientDetail.birthPlace);
+                astro = calculateAstrology(
+                  selectedClientDetail.birthDate,
+                  selectedClientDetail.birthTime,
+                  selectedClientDetail.birthPlace,
+                  selectedClientDetail.zodiacSystem || 'Tropical',
+                  typeof selectedClientDetail.birthLatitude === 'number' && typeof selectedClientDetail.birthLongitude === 'number'
+                    ? {
+                        name: selectedClientDetail.birthPlace || 'Kayıtlı Konum',
+                        displayName: selectedClientDetail.birthPlace || 'Kayıtlı Konum',
+                        city: selectedClientDetail.birthCity,
+                        region: selectedClientDetail.birthRegion,
+                        country: selectedClientDetail.birthCountry,
+                        countryCode: selectedClientDetail.birthCountryCode,
+                        lat: selectedClientDetail.birthLatitude,
+                        lon: selectedClientDetail.birthLongitude,
+                        timezone: selectedClientDetail.birthTimezone,
+                        defaultTz: selectedClientDetail.birthTimezoneOffset
+                      }
+                    : undefined
+                );
               } catch (err: unknown) {
                 calcError = err instanceof Error ? err.message : String(err);
               }
