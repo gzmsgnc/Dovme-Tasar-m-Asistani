@@ -205,7 +205,8 @@ export function executeSymbolicIntegrationEngine(params: {
     throw new Error('Sembol entegrasyonu için kişisel totem hayvanı verisi zorunludur. Sabit veya tahmini hayvan atanamaz.');
   }
   const totemProfile = getTotemVisualProfile(primaryTotemName);
-  const includeTotemInDesign = designParameters.includeTotemInDesign === true;
+  // Ürün kuralı: totemler yalnızca analiz verisidir; final görselde hayvan figürü/soyutlaması yoktur.
+  const includeTotemInDesign = false;
 
   if (includeTotemInDesign) {
     symbols.push({
@@ -281,7 +282,7 @@ export function executeSymbolicIntegrationEngine(params: {
     abstractionLevel: 'stylized',
     visualDescription: 'Taç yapraklar katı botanik yerine kutsal geometri halkalarından fışkıran kavisli hatlar olarak açılır.',
     sharedStrokePotential: 'Dış yaprak konturları, kutsal geometrinin torus çemberiyle aynı yarıçapı paylaşır.',
-    negativeSpacePotential: 'Açılan yaprakların arasındaki boşluk gölge toteminin siluetini oluşturur.'
+    negativeSpacePotential: 'Açılan yaprakların arasındaki boşluk kompozisyonun organik nefes alanını ve iç ritmini oluşturur.'
   });
 
   traceability.push({
