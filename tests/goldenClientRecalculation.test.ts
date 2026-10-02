@@ -36,7 +36,7 @@ assert.deepEqual(calculateUserBehavioralVector(elifAnswers), {
   independence:97,socialConnection:95,protectiveness:85,observation:93,courageRisk:83,patience:91,adaptability:91,curiosity:95,intuition:85,leadership:90,stealth:90,resilience:88,freedomNeed:98,territorialBoundary:85,cooperation:98,competitiveness:68,threatReflex:80,solitudeNeed:85,socialEnergy:62,crisisBehavior:87
 });
 assert.deepEqual(calculateUserBehavioralVector(mertAnswers), {
-  independence:90,socialConnection:88,protectiveness:94,observation:92,courageRisk:86,patience:77,adaptability:88,curiosity:90,intuition:92,leadership:81,stealth:55,resilience:94,freedomNeed:94,territorialBoundary:95,cooperation:92,competitiveness:95,threatReflex:88,solitudeNeed:90,socialEnergy:78,crisisBehavior:98
+  independence:90,socialConnection:88,protectiveness:94,observation:92,courageRisk:86,patience:77,adaptability:88,curiosity:90,intuition:93,leadership:81,stealth:55,resilience:94,freedomNeed:94,territorialBoundary:95,cooperation:93,competitiveness:95,threatReflex:88,solitudeNeed:90,socialEnergy:78,crisisBehavior:98
 });
 
 for (const [answers, element] of [[elifAnswers,'Hava'],[mertAnswers,'Toprak']] as const) {
