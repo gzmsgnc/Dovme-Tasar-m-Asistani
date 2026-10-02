@@ -474,7 +474,7 @@ async function startServer() {
 
       return res.status(200).json({
         success: true,
-        client: newClient,
+        clientId: newClient.id,
         message: 'Danışan kabul formu başarıyla sunucuya kaydedildi ve stüdyoya iletildi.'
       });
     } catch (err: unknown) {
