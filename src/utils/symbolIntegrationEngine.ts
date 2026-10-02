@@ -827,20 +827,6 @@ function generateIntegratedTattooSvg(opts: {
     <path d="M 400 760 C 540 700 600 610 540 540 C 505 610 470 685 400 760 Z" stroke-width="1.5" />
   </g>
 
-  <!-- KATMAN 5: Ruhani Totem Anatomik / Negatif Alan Soyutlaması (sym_totem) -->
-  <g id="layer_sym_totem" class="symbol-layer" data-symbol-id="sym_totem" stroke="${colorMap['sym_totem'] || baseStroke}" stroke-width="${isFinal ? '2.0' : '3.2'}" fill="none">
-    <!-- Totem Kulak & Çene Açısal Konturları (Lotus Yapraklarıyla Kesişen Negatif Siluet) -->
-    <path d="M 330 460 L 375 360 L 400 410 L 425 360 L 470 460" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-    <!-- Burun Köprüsü ve Göz Odağı -->
-    <path d="M 400 410 L 400 520" stroke-width="1.8" />
-    <polygon points="395,520 405,520 400,530" fill="${colorMap['sym_totem'] || baseStroke}" />
-    <!-- Çene ve Boyun Dinamik Yayları -->
-    <path d="M 370 480 Q 400 560 430 480" stroke-width="1.6" />
-    <!-- Odak Göz İrisleri (Ultra-Minimal 03RL) -->
-    <circle cx="370" cy="445" r="2.5" fill="${colorMap['sym_totem'] || baseStroke}" />
-    <circle cx="430" cy="445" r="2.5" fill="${colorMap['sym_totem'] || baseStroke}" />
-  </g>
-
   <!-- KATMAN 6: Numeroloji Yaşam Yolu Düğümleri & İlahi Mühür (sym_numerology) -->
   <g id="layer_sym_numerology" class="symbol-layer" data-symbol-id="sym_numerology" stroke="${colorMap['sym_numerology'] || baseStroke}" stroke-width="${isFinal ? '1.5' : '2.5'}" fill="none">
     <!-- Omurga Düğümleri (Nodal Stippling) -->
