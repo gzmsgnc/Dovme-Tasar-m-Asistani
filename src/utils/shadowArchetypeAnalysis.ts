@@ -404,6 +404,7 @@ export function generateShadowArchetypeAnalysis(
   
   // 7. Symbolic Visual Dictionary & Design Inclusion Decisions
   const includeTotem = parameters?.includeTotemInDesign === true;
+  const hasVerified19 = numerology.divineHelp19?.has19 === true;
   let actualMainSymbol = parameters?.mainSymbol;
   const isTotemName = actualMainSymbol === primaryTotemName || 
     actualMainSymbol === section4TotemAnimals[1]?.name ||
@@ -423,12 +424,12 @@ export function generateShadowArchetypeAnalysis(
     `${primaryTotemName} (Ana Karakter Gücü)`,
     `${section5ChakraBlockages[0].geometricEquivalent} (Çakra Şifa Matrisi)`,
     `${symbolism.plantFlora} (Organik Dönüşüm Köprüsü)`,
-    `Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü`
+    ...(hasVerified19 ? ['Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü'] : ['Fibonacci Spiral Akışı'])
   ] : [
     `${actualMainSymbol} (Ana Kutsal Geometri & Mühür Odağı)`,
     `${section5ChakraBlockages[0].geometricEquivalent} (Çakra Şifa Matrisi)`,
     `${symbolism.plantFlora} (Organik Dönüşüm Köprüsü)`,
-    `Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü`
+    ...(hasVerified19 ? ['Fibonacci Spiral Akışı & 19 İlahi Yardım Düğümü'] : ['Fibonacci Spiral Akışı'])
   ];
 
   const eliminatedRedundantSymbols = includeTotem ? [
@@ -475,9 +476,9 @@ export function generateShadowArchetypeAnalysis(
       category: 'Çiçek / Bitki'
     },
     {
-      symbol: 'Kutsal 19 & Fibonacci Düğüm Noktaları',
-      source: `Numeroloji DM ${numerology.dmNumber} & İlahi 19 Mührü`,
-      meaning: 'Kader döngüsünün kilit noktaları, ilahi koruma ve matematiksel uyum.',
+      symbol: hasVerified19 ? 'Kutsal 19 & Fibonacci Düğüm Noktaları' : 'Fibonacci Altın Sarmal Düğüm Noktaları',
+      source: hasVerified19 ? `Numeroloji DM ${numerology.dmNumber} & İlahi 19 Mührü` : 'Kutsal Geometri / Fibonacci oranı',
+      meaning: hasVerified19 ? 'Kader döngüsünün kilit noktaları, ilahi koruma ve matematiksel uyum.' : 'Kozmik oran, ritim ve matematiksel uyum.',
       shadowOrTransformation: 'Görünmez kozmik iradeye teslimiyet ve içsel güvenin tesisi.',
       visualRole: 'Ezoterik Mikro Detaylar (%3 Görsel Ağırlık). Yalnızca yakından fark edilen mikro dotwork noktaları.',
       category: 'Gizli Mühür / Mikro Sembol'
@@ -516,9 +517,9 @@ export function generateShadowArchetypeAnalysis(
       category: 'Çiçek / Bitki'
     },
     {
-      symbol: 'Kutsal 19 & Fibonacci Düğüm Noktaları',
-      source: `Numeroloji DM ${numerology.dmNumber} & İlahi 19 Mührü`,
-      meaning: 'Kader döngüsünün kilit noktaları, ilahi koruma ve matematiksel uyum.',
+      symbol: hasVerified19 ? 'Kutsal 19 & Fibonacci Düğüm Noktaları' : 'Fibonacci Altın Sarmal Düğüm Noktaları',
+      source: hasVerified19 ? `Numeroloji DM ${numerology.dmNumber} & İlahi 19 Mührü` : 'Kutsal Geometri / Fibonacci oranı',
+      meaning: hasVerified19 ? 'Kader döngüsünün kilit noktaları, ilahi koruma ve matematiksel uyum.' : 'Kozmik oran, ritim ve matematiksel uyum.',
       shadowOrTransformation: 'Görünmez kozmik iradeye teslimiyet ve içsel güvenin tesisi.',
       visualRole: 'Ezoterik Mikro Detaylar (%3 Görsel Ağırlık). Yalnızca yakından fark edilen mikro dotwork noktaları.',
       category: 'Gizli Mühür / Mikro Sembol'
@@ -535,7 +536,7 @@ export function generateShadowArchetypeAnalysis(
     totemAnimal: includeTotem ? primaryTotemName : 'Tasarıma dahil edilmedi (Danışan tercihi: Yalnızca ruhani analiz)',
     chakraSymbols: [section5ChakraBlockages[0].geometricEquivalent],
     hiddenEsotericDetails: [
-      `19 Noktalı mikro takımyıldız matrisi`,
+      ...(hasVerified19 ? ['19 Noktalı mikro takımyıldız matrisi'] : []),
       `Fibonacci sarmalına oturtulmuş gizli altın oran eğrileri`,
       `Kişinin Yaşam Yolu ${lifePath} ve Ebced ${ebcedData.totalEbced} kodunu taşıyan 3 adet mikro çentik`
     ],
@@ -584,12 +585,12 @@ export function generateShadowArchetypeAnalysis(
 
   // 10. Esoteric Micro Details
   const section10EsotericMicroDetails = [
-    {
+    ...(hasVerified19 ? [{
       type: 'Sayısal Kod & Mühür',
       name: 'İlahi 19 Koruma Düğümü',
       detail: 'Ana figürün omurga hizasında gizlenmiş 19 adet mikro nokta dizilimi.',
       rationale: `Numerolojideki 19 İlahi Yardım rezonansını cilde mühürlemek; kader döngüsünü ilahi lütuf ile tamamlamak.`
-    },
+    }] : []),
     {
       type: 'Kutsal Geometri Oranı',
       name: 'Fibonacci Altın Sarmal Kılavuzu',
@@ -635,7 +636,7 @@ YARDIMCI SEMBOLLER: ${includeTotem ? `${section4TotemAnimals[1]?.name || shadowG
 GÖLGE ARKETİP: Enneagram Tip ${enneagram.wing} Gölgesi (${shadowFigure})
 TOTEM HAYVANI DURUMU: ${includeTotem ? `${primaryTotemName} (Tasarıma Dahil Edildi)` : `Tasarıma dahil edilmedi (Danışanın tercihiyle yalnızca kişisel ruhani analizde tutuldu; dövmeye KESİNLİKLE hayvan figürü çizilmeyecektir)`}
 ÇAKRA BLOKAJLARI: ${section5ChakraBlockages.map(c => `${c.chakraNumber}. ${c.chakraName} [${c.geometricEquivalent}]`).join(', ')}
-GİZLİ EZOTERİK DETAYLAR: 19 İlahi Düğüm Noktası, Fibonacci Sarmalı, Ebced (${ebcedData.totalEbced}) Çentikleri
+GİZLİ EZOTERİK DETAYLAR: ${hasVerified19 ? '19 İlahi Düğüm Noktası, ' : ''}Fibonacci Sarmalı, Ebced (${ebcedData.totalEbced}) Çentikleri
 
 STİL: Fine Line, Micro Realism, Dotwork, Stippling
 İĞNE SEÇİMİ: 
@@ -655,9 +656,9 @@ YERLEŞİM & ANATOMİK AKIŞ: ${parameters.bodyPlacement} (${parameters.orientat
   const animalNegatives = !includeTotem ? ', animal, beast, bird, wolf, raven, eagle, predator, creature, fauna, wildlife' : '';
 
   const midjourneyMasterPrompt = includeTotem ? `
-master tattoo design, tattoo flash plate, stencil-ready, central commanding ${primaryTotemName} with 3/4 intense gaze, embodying transformed inner strength over shadow instincts (${section4TotemAnimals[0]?.shadowSide?.replace(/"/g, '') || ''}), harmonized with subtle guardian silhouette of ${section4TotemAnimals[1]?.name || shadowGuardianTotem} anchored at base, integrated with delicate sacred geometry of ${section5ChakraBlockages[0].geometricEquivalent} healing mandala, woven with organic ${symbolism.plantFlora}, esoteric micro 19-dot matrix and Fibonacci spiral lines, ${stylesMasterStr}, high contrast velvety black ink and smooth 3-stage grey wash shading, 45% open negative skin space, completely isolated on clean solid off-white neutral background, flat 2D tattoo art presentation --ar 2:3 --v 6.1 --style raw --s 250 --no skin, body, arm, hand, human model, tattoo mockup, photograph, 3d render, frame, text, watermark, logo, poster, decorative wallpaper, random symbols, floating unrelated symbols, overcrowded composition
+master tattoo design, tattoo flash plate, stencil-ready, central commanding ${primaryTotemName} with 3/4 intense gaze, embodying transformed inner strength over shadow instincts (${section4TotemAnimals[0]?.shadowSide?.replace(/"/g, '') || ''}), harmonized with subtle guardian silhouette of ${section4TotemAnimals[1]?.name || shadowGuardianTotem} anchored at base, integrated with delicate sacred geometry of ${section5ChakraBlockages[0].geometricEquivalent} healing mandala, woven with organic ${symbolism.plantFlora}, ${hasVerified19 ? 'esoteric micro 19-dot matrix and ' : ''}Fibonacci spiral lines, ${stylesMasterStr}, high contrast velvety black ink and smooth 3-stage grey wash shading, 45% open negative skin space, completely isolated on clean solid off-white neutral background, flat 2D tattoo art presentation --ar 2:3 --v 6.1 --style raw --s 250 --no skin, body, arm, hand, human model, tattoo mockup, photograph, 3d render, frame, text, watermark, logo, poster, decorative wallpaper, random symbols, floating unrelated symbols, overcrowded composition
   `.trim().replace(/\s+/g, ' ') : `
-master tattoo design, tattoo flash plate, stencil-ready, central commanding ${actualMainSymbol}, embodying transformed inner spiritual strength and sacred order, integrated with delicate sacred geometry of ${section5ChakraBlockages[0].geometricEquivalent} healing mandala, woven with organic ${symbolism.plantFlora} botanicals, esoteric micro 19-dot matrix and Fibonacci spiral lines, ${stylesMasterStr}, high contrast velvety black ink and smooth 3-stage grey wash shading, 45% open negative skin space, completely isolated on clean solid off-white neutral background, flat 2D tattoo art presentation --ar 2:3 --v 6.1 --style raw --s 250 --no skin, body, arm, hand, human model, tattoo mockup, photograph, 3d render, frame, text, watermark, logo, poster, decorative wallpaper, random symbols, floating unrelated symbols, overcrowded composition${animalNegatives}
+master tattoo design, tattoo flash plate, stencil-ready, central commanding ${actualMainSymbol}, embodying transformed inner spiritual strength and sacred order, integrated with delicate sacred geometry of ${section5ChakraBlockages[0].geometricEquivalent} healing mandala, woven with organic ${symbolism.plantFlora} botanicals, ${hasVerified19 ? 'esoteric micro 19-dot matrix and ' : ''}Fibonacci spiral lines, ${stylesMasterStr}, high contrast velvety black ink and smooth 3-stage grey wash shading, 45% open negative skin space, completely isolated on clean solid off-white neutral background, flat 2D tattoo art presentation --ar 2:3 --v 6.1 --style raw --s 250 --no skin, body, arm, hand, human model, tattoo mockup, photograph, 3d render, frame, text, watermark, logo, poster, decorative wallpaper, random symbols, floating unrelated symbols, overcrowded composition${animalNegatives}
   `.trim().replace(/\s+/g, ' ');
 
   const dalle3Prompt = includeTotem ? `
