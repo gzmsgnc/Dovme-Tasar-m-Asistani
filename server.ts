@@ -9,7 +9,7 @@ import sharp from 'sharp';
 import { generateEsotericTattooStencilSvg } from './src/utils/stencilGenerator';
 import { isValidCalendarDate, resolveCityLocation, CityLocation } from './src/utils/astrology';
 import { searchGlobalLocationsApi, resolveLocationSync, resolveLocationAsync, LocationValidationError } from './src/utils/locationResolver';
-import { calculateEnneagramFromAnswers } from './src/utils/enneagram';
+import { calculateEnneagramFromAnswers, ENNEAGRAM_MINI_TEST_QUESTIONS } from './src/utils/enneagram';
 import { calculateBehavioralTotemResult, TOTEM_BEHAVIORAL_QUESTIONS } from './src/utils/behavioralTotemEngine';
 import { getTotemAnimalStrict } from './src/utils/totemCatalogData';
 import { normalizePhoneNumber, isValidEmail } from './src/utils/clientValidation';
@@ -293,7 +293,10 @@ async function startServer() {
       return res.status(429).json({ success: false, error: 'Çok fazla form gönderimi. Lütfen daha sonra tekrar deneyin.' });
     }
     try {
-      const body = req.body || {};
+      if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+        return res.status(400).json({ success: false, error: 'Geçersiz form verisi.' });
+      }
+      const body = req.body as Record<string, any>;
       const firstName = (body.firstName || '').trim();
       const lastName = (body.lastName || '').trim();
       const combinedName = (body.name || `${firstName} ${lastName}`).trim();
@@ -307,8 +310,11 @@ async function startServer() {
       const enneagramAnswers = body.enneagramAnswers || {};
       const totemAnswers = body.totemAnswers || {};
 
+      const MAX_TEXT_LENGTH = 500;
+      const MAX_STORY_LENGTH = 5000;
+
       // 1. Ad & Soyad Doğrulaması
-      if (!combinedName || combinedName.length < 2) {
+      if (!combinedName || combinedName.length < 2 || combinedName.length > MAX_TEXT_LENGTH) {
         return res.status(400).json({
           success: false,
           error: 'Lütfen ad ve soyadınızı eksiksiz giriniz.'
@@ -325,7 +331,7 @@ async function startServer() {
       }
 
       // 3. E-posta Adresi Doğrulaması (Zorunlu, Format kontrolü)
-      if (!email || !isValidEmail(email)) {
+      if (!email || email.length > MAX_TEXT_LENGTH || !isValidEmail(email)) {
         return res.status(400).json({
           success: false,
           error: 'Geçersiz e-posta adresi. Lütfen geçerli bir e-posta adresi giriniz (Örn: isim@domain.com).'
@@ -348,7 +354,7 @@ async function startServer() {
       }
 
       // 5. Doğum Saati Doğrulaması
-      if (!birthTime) {
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(birthTime)) {
         return res.status(400).json({
           success: false,
           error: 'Doğum saati zorunludur (Yükselen burç hesaplaması için gereklidir).'
@@ -356,7 +362,7 @@ async function startServer() {
       }
 
       // 6. Doğum Yeri Doğrulaması (Kesinlikle İstanbul'a fallback yapılmaz!)
-      if (!birthPlace) {
+      if (!birthPlace || birthPlace.length > MAX_TEXT_LENGTH) {
         return res.status(400).json({
           success: false,
           error: 'Doğum yeri zorunludur.'
@@ -388,19 +394,28 @@ async function startServer() {
       }
 
       // 7. Anne Adı Doğrulaması (Ebced & Yıldızname soy kökü için zorunlu)
-      if (!motherName) {
+      if (!motherName || motherName.length > MAX_TEXT_LENGTH) {
         return res.status(400).json({
           success: false,
           error: 'Anne adı zorunludur (Ebced ve soy arketipi hesaplamaları için gereklidir).'
         });
       }
 
+      if (personalStory.length > MAX_STORY_LENGTH) {
+        return res.status(400).json({ success: false, error: `Kişisel hikâye çok uzun (maksimum ${MAX_STORY_LENGTH} karakter).` });
+      }
+
       // 8. Enneagram Ham Cevapları (5 sorunun tamamı)
       const enneaKeys = Object.keys(enneagramAnswers);
-      if (enneaKeys.length < 5) {
+      const expectedEnneaIds = ENNEAGRAM_MINI_TEST_QUESTIONS.map(question => String(question.id)).sort();
+      const providedEnneaIds = enneaKeys.slice().sort();
+      const validEnneaShape = enneaKeys.length === expectedEnneaIds.length
+        && providedEnneaIds.every((id, index) => id === expectedEnneaIds[index])
+        && enneaKeys.every(id => Number.isInteger(enneagramAnswers[id]) && enneagramAnswers[id] >= 1 && enneagramAnswers[id] <= 9);
+      if (!validEnneaShape) {
         return res.status(400).json({
           success: false,
-          error: `Enneagram testi eksik (${enneaKeys.length}/5). Lütfen tüm soruları yanıtlayınız.`
+          error: `Enneagram testi eksik veya geçersiz (${enneaKeys.length}/${expectedEnneaIds.length}). Lütfen tüm soruları geçerli seçeneklerle yanıtlayınız.`
         });
       }
 
