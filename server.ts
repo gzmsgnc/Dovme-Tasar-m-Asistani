@@ -27,10 +27,21 @@ const ADMIN_SESSION_TTL_SECONDS = 8 * 60 * 60;
 const loginFailures = new Map<string, { count: number; resetAt: number }>();
 const intakeRequests = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX_KEYS = 10_000;
 
+function pruneRateLimitStore(store: Map<string, { count: number; resetAt: number }>, now: number): void {
+  for (const [key, entry] of store) {
+    if (entry.resetAt <= now) store.delete(key);
+  }
+  if (store.size <= RATE_LIMIT_MAX_KEYS) return;
+  const entries = Array.from(store.entries()).sort((a, b) => a[1].resetAt - b[1].resetAt);
+  const removeCount = store.size - RATE_LIMIT_MAX_KEYS;
+  for (let i = 0; i < removeCount; i += 1) store.delete(entries[i][0]);
+}
 
 function isRateLimited(store: Map<string, { count: number; resetAt: number }>, key: string, limit: number): boolean {
   const now = Date.now();
+  pruneRateLimitStore(store, now);
   const current = store.get(key);
   if (!current || current.resetAt <= now) {
     store.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
@@ -43,6 +54,7 @@ function isRateLimited(store: Map<string, { count: number; resetAt: number }>, k
 
 function isLoginRateLimited(key: string, limit: number): boolean {
   const now = Date.now();
+  pruneRateLimitStore(loginFailures, now);
   const current = loginFailures.get(key);
   if (!current || current.resetAt <= now) {
     loginFailures.delete(key);
@@ -532,7 +544,8 @@ async function startServer() {
       savePersistedClients(mergedList);
       res.json({ success: true, clients: mergedList });
     } catch (err: unknown) {
-      res.status(500).json({ success: false, error: String(err) });
+      console.error('Client sync error:', err);
+      res.status(500).json({ success: false, error: 'Danışan senkronizasyonu sırasında sunucuda bir hata oluştu.' });
     }
   });
 
@@ -568,7 +581,8 @@ async function startServer() {
       const shadowTraits = Array.isArray(enneagram.shadowTraits) && enneagram.shadowTraits.length > 0
         ? enneagram.shadowTraits.join(', ')
         : (enneagram.shadowAspect || '');
-      const mainSymbol = parameters.mainSymbol || person.primaryTotem;
+      // Totems are analysis-only. Never use a personal totem as a fallback visual symbol.
+      const mainSymbol = parameters.mainSymbol;
 
       // 1. ANA KURAL: VERİ UYDURMA YOK - Eksik kişisel veri kontrolü
       if (!clientName || !birthDate || !lifePath || !sunSign || !enneaType || !mainSymbol) {
