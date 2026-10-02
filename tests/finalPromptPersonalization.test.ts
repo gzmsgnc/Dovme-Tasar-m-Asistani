@@ -122,6 +122,7 @@ assert.ok(!recipe.masterEnglishPrompt.includes('19-dot matrix'));
 const integrationJson = JSON.stringify((recipe as any).symbolicIntegration ?? (recipe as any).symbolIntegrationResult ?? '');
 assert.ok(!integrationJson.includes('sym_totem'));
 assert.ok(!integrationJson.includes('Totem Kulak & Çene'));
+assert.ok(!/sym_totem|totem siluet|totem silhouette|totem figür/i.test(integrationJson), 'Analysis-only totem data must not enter visual integration metadata when disabled.');
 assert.ok(recipe.shadowAnalysis?.section4TotemAnimals?.[1]?.name?.startsWith('Su Samuru'));
 assert.ok(recipe.shadowAnalysis?.section4TotemAnimals?.[2]?.name?.startsWith('Bal Porsuğu'));
 
