@@ -141,7 +141,9 @@ export function executeSymbolicIntegrationEngine(params: {
     abstractionLevel: 'geometric_abstraction',
     visualDescription: 'Enneagram çizgileri kutsal geometri çemberi içine kesintisiz tek hat (continuous line) olarak dokunur.',
     sharedStrokePotential: 'Enneagram iç üçgeninin taban çizgisi, astrolojik ufuk hattı (ASC) ile ortaktır.',
-    negativeSpacePotential: 'Merkezdeki iç üçgenin boşluğu çakra ve totem siluetine ev sahipliği yapar.'
+    negativeSpacePotential: includeTotemInDesign
+      ? 'Merkezdeki iç üçgenin boşluğu çakra ve totem siluetine ev sahipliği yapar.'
+      : 'Merkezdeki iç üçgenin boşluğu çakra geometrisine ve kontrollü negatif alana ev sahipliği yapar.'
   });
 
   traceability.push({
@@ -616,7 +618,9 @@ export function executeSymbolicIntegrationEngine(params: {
       name: 'Negatif Alan Etkin Kullanımı',
       passed: integrations.some(i => i.integrationType === 'NEGATIVE_SPACE'),
       level: 'INFO' as const,
-      message: `Totem ve çakra siluetleri negatif alan pencereleriyle (%45 boşluk) tene nefes aldıracak şekilde konumlandırıldı.`
+      message: includeTotemInDesign
+        ? 'Totem ve çakra siluetleri negatif alan pencereleriyle (%45 boşluk) tene nefes aldıracak şekilde konumlandırıldı.'
+        : 'Çakra geometrisi ve kontrollü negatif alan pencereleri (%45 boşluk) tene nefes aldıracak şekilde konumlandırıldı.'
     },
     {
       name: 'Dövme Zanaat & Blowout Emniyeti (03RL Fine Line)',
