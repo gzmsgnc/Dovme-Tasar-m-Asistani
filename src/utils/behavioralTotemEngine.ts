@@ -595,7 +595,7 @@ export function findShadowGuardianTotem(
 
   for (const animal of candidates) {
     const score = calculateVectorSimilarity(invertedVector, animal.behavioralVector);
-    if (score > highestScore) {
+    if (score > highestScore || (score === highestScore && animal.id.localeCompare(bestShadow.id) < 0)) {
       highestScore = score;
       bestShadow = animal;
     }
