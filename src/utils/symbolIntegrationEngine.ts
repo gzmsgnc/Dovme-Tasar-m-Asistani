@@ -418,7 +418,7 @@ export function executeSymbolicIntegrationEngine(params: {
     ...(includeTotemInDesign ? [    {
       integrationId: 'link_flora_totem',
       symbolIds: ['sym_flora', 'sym_totem'],
-      integrationType: 'NEGATIVE_SPACE',
+      integrationType: 'NEGATIVE_SPACE' as IntegrationType,
       sharedLinesDescription: `${totemProfile.animalName} karakteristik silueti, botanik yaprakların ve dairesel yayların arasındaki negatif boşluk formuyla tanımlanır.`,
       overlappingRegions: 'Merkezi Negatif Boşluk Pencereleri',
       nestedSymbols: ['sym_totem'],
