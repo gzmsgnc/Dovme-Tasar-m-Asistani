@@ -183,6 +183,14 @@ export function getStoredRecipes(): TattooRecipe[] {
 }
 
 export function saveRecipe(recipe: TattooRecipe): TattooRecipe[] {
+  const owner = getStoredClients().find(client => client.id === recipe.clientId);
+  if (!owner) {
+    throw new Error('Reçete kaydedilemedi: bağlı danışan kaydı bulunamadı.');
+  }
+  if (recipe.clientName && recipe.clientName !== owner.name) {
+    throw new Error('Reçete kaydedilemedi: danışan adı ile bağlı kayıt eşleşmiyor.');
+  }
+
   const recipes = getStoredRecipes();
   const existingIndex = recipes.findIndex(r => r.id === recipe.id);
   const updated = existingIndex >= 0 ? [...recipes] : [recipe, ...recipes];
