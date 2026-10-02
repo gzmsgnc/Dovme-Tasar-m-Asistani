@@ -57,7 +57,7 @@ export async function exportRecipeToPDF(
     container.style.zIndex = '-9999';
 
     // HTML Template
-    container.innerHTML = `
+    const templateHtml = `
       <style>
         .pdf-page-box {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -550,7 +550,22 @@ export async function exportRecipeToPDF(
           </div>
         </div>
       </div>
-    `;
+    ;
+
+    // Danışan formu verileri HTML şablonuna girdiği için, rapor oluşturulmadan önce
+    // olası script/event-handler enjeksiyonlarını DOM katmanında temizle.
+    const parsedTemplate = new DOMParser().parseFromString(templateHtml, 'text/html');
+    parsedTemplate.querySelectorAll('script, iframe, object, embed, link, meta, base').forEach(node => node.remove());
+    parsedTemplate.querySelectorAll('*').forEach(element => {
+      Array.from(element.attributes).forEach(attribute => {
+        const name = attribute.name.toLowerCase();
+        const value = attribute.value.trim().toLowerCase();
+        if (name.startsWith('on') || value.startsWith('javascript:') || value.startsWith('vbscript:')) {
+          element.removeAttribute(attribute.name);
+        }
+      });
+    });
+    container.innerHTML = parsedTemplate.body.innerHTML;
 
     document.body.appendChild(container);
 
