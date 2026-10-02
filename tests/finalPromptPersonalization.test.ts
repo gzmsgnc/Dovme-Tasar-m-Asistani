@@ -125,5 +125,22 @@ assert.ok(!integrationJson.includes('Totem Kulak & Çene'));
 assert.ok(!/sym_totem|totem siluet|totem silhouette|totem figür/i.test(integrationJson), 'Analysis-only totem data must not enter visual integration metadata when disabled.');
 assert.ok(recipe.shadowAnalysis?.section4TotemAnimals?.[1]?.name?.startsWith('Su Samuru'));
 assert.ok(recipe.shadowAnalysis?.section4TotemAnimals?.[2]?.name?.startsWith('Bal Porsuğu'));
+const visualPromptBundle = [
+  recipe.masterEnglishPrompt,
+  recipe.masterOutlinePrompt,
+  recipe.masterShadedPrompt,
+  recipe.midjourneyPrompt,
+  recipe.dalle3Prompt,
+  recipe.stencilPrompt,
+  recipe.fluxPrompt,
+  recipe.artistSpecSheet,
+  recipe.turkishPromptExplanation,
+  recipe.negativePrompt,
+].join('\n');
+assert.ok(
+  !/Kızıl Geyik|Bal Porsuğu|Su Samuru|totem silhouette|totem siluet|totem figür|Totem Kulak & Çene/i.test(visualPromptBundle),
+  'Analysis-only totems must not leak into any final visual prompt/export instruction.'
+);
+
 
 console.log('Final prompt personalization tests passed');
