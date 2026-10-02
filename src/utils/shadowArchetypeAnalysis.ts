@@ -259,10 +259,14 @@ export function generateShadowArchetypeAnalysis(
   // kesinlikle ödünç alınmaz ve "Gölge Muhafız/Yükseliş Müttefiki" gibi insanî
   // rol etiketleri yanlışlıkla hayvan kimliği sanılmaz.
   const primaryProfile = getTotemAnimalStrict(primaryTotemId || primaryTotemName);
-  const shadowGuardianId = symbolism.totemHierarchy?.[1]?.id;
-  const shadowGuardianTotem = symbolism.totemHierarchy?.[1]?.name;
-  const ascensionId = symbolism.totemHierarchy?.[2]?.id;
-  const ascensionTotem = symbolism.totemHierarchy?.[2]?.name;
+  // Primary / secondary / shadow must come from the canonical behavioral result,
+  // not from positional assumptions about totemHierarchy.
+  const canonicalShadow = symbolism.totemTestResult?.shadowTotem;
+  const canonicalSecondary = symbolism.totemTestResult?.secondaryTotem;
+  const shadowGuardianId = canonicalShadow?.id;
+  const shadowGuardianTotem = canonicalShadow?.name || symbolism.shadowTotemName;
+  const ascensionId = canonicalSecondary?.id;
+  const ascensionTotem = canonicalSecondary?.name;
 
   const shadowProfile = shadowGuardianId || shadowGuardianTotem
     ? getTotemAnimalStrict(shadowGuardianId || shadowGuardianTotem!)
