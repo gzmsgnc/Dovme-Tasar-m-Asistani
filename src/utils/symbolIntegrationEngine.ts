@@ -144,7 +144,7 @@ export function executeSymbolicIntegrationEngine(params: {
     visualDescription: 'Enneagram çizgileri kutsal geometri çemberi içine kesintisiz tek hat (continuous line) olarak dokunur.',
     sharedStrokePotential: 'Enneagram iç üçgeninin taban çizgisi, astrolojik ufuk hattı (ASC) ile ortaktır.',
     negativeSpacePotential: includeTotemInDesign
-      ? 'Merkezdeki iç üçgenin boşluğu çakra ve totem siluetine ev sahipliği yapar.'
+      ? 'Merkezdeki iç üçgenin boşluğu çakra ve geometrik odak katmanına ev sahipliği yapar.'
       : 'Merkezdeki iç üçgenin boşluğu çakra geometrisine ve kontrollü negatif alana ev sahipliği yapar.'
   });
 
@@ -240,7 +240,7 @@ export function executeSymbolicIntegrationEngine(params: {
       complexity: 'balanced',
       abstractionLevel: 'anatomical_abstraction',
       visualDescription: totemProfile.directRepresentationGuide,
-      sharedStrokePotential: 'Totemin siluet konturu botanik yaprakların dış kenarıyla birebir aynı çizgiyi paylaşır.',
+      sharedStrokePotential: 'Merkez sembolün dış konturu botanik yaprakların dış kenarıyla kontrollü bir çizgi ilişkisi paylaşır.',
       negativeSpacePotential: totemProfile.negativeSpacePotentials.join(' | ')
     });
 
@@ -413,7 +413,7 @@ export function executeSymbolicIntegrationEngine(params: {
       overlappingRegions: 'Alt-Orta Geçiş Kavşağı',
       nestedSymbols: [],
       negativeSpaceRole: includeTotemInDesign
-      ? 'Yaprakların birbirinden ayrıldığı V-kesiği, totem siluetine zemin hazırlar.'
+      ? 'Yaprakların birbirinden ayrıldığı V-kesiği, kontrollü negatif alan ve kompozisyonun nefes boşluğunu oluşturur.'
       : 'Yaprakların birbirinden ayrıldığı V-kesiği, kontrollü negatif alan ve kompozisyonun nefes boşluğunu oluşturur.',
       continuousPathDetails: 'Geometrik açılı çizgi, yaprağın kavisli organik yayına kesintisiz olarak akar.',
       primarySymbolId: 'sym_enneagram',
