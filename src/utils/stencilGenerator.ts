@@ -405,7 +405,7 @@ export function generateEsotericTattooStencilSvg(options: StencilOptions = {}): 
   }
 
   // SECONDARY ORGANIC SUPPORTING ELEMENTS (20-30% Visual Weight)
-  // Seamlessly integrated around and behind the primary totem (Botanical vines, Crescent Moon, Sacred Arch)
+  // Integrated around and behind the primary composition (Botanical vines, Crescent Moon, Sacred Arch)
   const sec1 = secondarySymbols[0] || 'Kutsal Lotus';
   const sec2 = secondarySymbols[1] || 'Kozmik Hilal';
 
