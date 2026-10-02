@@ -208,9 +208,21 @@ export function calculateTotemAnimal(personalData: PersonalTotemInput): TotemCal
   // Kayıtlı totem kimlikleri geçmiş sonuç referansıdır; yeni hesaplamayı override edemez.
   // Böylece önceki danışanın totemi yeni danışana sızmaz.
   // Not: primaryTotemId/secondaryTotemId/shadowTotemId bilinçli olarak hesaplama girdisi değildir.
-  
+  // Davranışsal totem artık doğum/isim/hash fallback'iyle üretilemez: test tamamlanmadan
+  // kişiye bir hayvan atamak, sonucu cevaplardan koparır ve müşteri kabulünde yanlış pozitif üretir.
+  const answeredQuestionIds = new Set(Object.keys(totemAnswers ?? {}).map(Number));
+  const requiredQuestionIds = new Set(TOTEM_BEHAVIORAL_QUESTIONS.map(q => q.id));
+  const hasCompleteBehavioralTest = answeredQuestionIds.size === requiredQuestionIds.size &&
+    [...requiredQuestionIds].every(id => answeredQuestionIds.has(id));
+  if (!hasCompleteBehavioralTest) {
+    throw new Error(`Davranışsal Totem Testi tamamlanmadan totem hesaplanamaz. ${requiredQuestionIds.size} sorunun tamamı yanıtlanmalıdır.`);
+  }
 
-  // 3. Test henüz tamamlanmamışsa: Doğum, İsim, Element ve Yaşam Yolu matrisinden deterministik seçim
+  // Bu noktaya yalnızca tamamlanmış davranışsal test ile gelinir.
+  // Legacy doğum/isim/hash fallback'i bilinçli olarak devre dışıdır.
+  return (() => { throw new Error('Beklenmeyen totem hesaplama durumu.'); })();
+
+  // 3. Legacy fallback (erişilemez; tarihsel uyumluluk için kaynakta tutulmamalıdır).
   // 52 hayvan kataloğundan dengeli dağılım
   const primaryIndex = totalDeterministicHash % totalCatalogSize;
   const primaryTotem = TOTEM_ANIMALS_52[primaryIndex] || TOTEM_ANIMALS_52[0];
