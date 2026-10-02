@@ -418,7 +418,7 @@ export function generateEsotericTattooStencilSvg(options: StencilOptions = {}): 
       <line x1="-80" y1="0" x2="80" y2="0" stroke="${colors.fineStroke}" stroke-width="0.8" stroke-dasharray="4,2" />
     </g>
 
-    <!-- Side Botanical Flow Vines & Leaves (Seamlessly embracing the totem silhouette) -->
+    <!-- Side Botanical Flow Vines & Leaves (framing the central composition) -->
     <g transform="translate(-110, 50) rotate(-15)">
       <path d="M 0 -80 Q -30 0 0 80 Q 20 120 0 160" fill="none" stroke="${colors.heavyStroke}" stroke-width="1.6" />
       <!-- Leaves -->
