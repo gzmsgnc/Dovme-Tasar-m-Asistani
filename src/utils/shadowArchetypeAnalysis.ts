@@ -154,7 +154,7 @@ export function generateShadowArchetypeAnalysis(
       shadowGeometric = 'Kusursuz kare ızgaranın alt köşesinden hafifçe kıvrılarak organik eğriye dönüşen çizgiler';
       shadowOrganic = 'Kayaların arasından filizlenen, geometrisi asimetrik yaban gülü ve diken';
       shadowLocation = 'Kompozisyonun üst-orta aksında, kutsal geometri matrisinin merkezinde';
-      shadowRelation = 'Ana totem figürünün göğüs kafesi hizasında, onun sert zırhını yumuşatan bir çekirdek gibi';
+      shadowRelation = 'Ana sembolün göğüs kafesi hizasında, sert geometrik dili yumuşatan bir çekirdek gibi';
       shadowPortrayal = 'Karanlık veya tehditkar değil; mükemmellik yükünün ağırlığını taşıyan vakur bir keder ve arınma hissi';
       break;
     case 2:
@@ -165,7 +165,7 @@ export function generateShadowArchetypeAnalysis(
       shadowGeometric = 'İç içe geçmiş damla ve ters üçgen formlarının oluşturduğu kadeh matrisi';
       shadowOrganic = 'Taç yaprakları ağırlaşmış, kendi tohumunu saklayan kutsal lotus ve sarmaşık';
       shadowLocation = 'Merkez ve alt çakra bağlantı aksında';
-      shadowRelation = 'Ana totemin ayak ucunda veya kuyruk kıvrımında akışı besleyen su kaynağı gibi';
+      shadowRelation = 'Ana sembolün alt akışında kompozisyonu besleyen su kaynağı gibi';
       shadowPortrayal = 'Kötücül bir varlık değil; sevilme ihtiyacının yarattığı soylu bir açlık ve sınır arayışı';
       break;
     case 3:
@@ -187,7 +187,7 @@ export function generateShadowArchetypeAnalysis(
       shadowGeometric = 'Fibonacci altın spirali ve parçalanarak yeniden birleşen elipsler';
       shadowOrganic = 'Kökleri geceye, dalları şafağa uzanan ay çiçeği ve söğüt kıvrımları';
       shadowLocation = 'Alt sol veya alt merkez dinamik ekseninde';
-      shadowRelation = 'Ana totem figürünün gölgesinden doğan ve onun ayaklarını toprağa bağlayan mistik sis';
+      shadowRelation = 'Ana sembolün çevresinden doğan ve kompozisyonu zemine bağlayan mistik sis';
       shadowPortrayal = 'Depresif karanlık değil; evrenin hüznünü taşıyan zarif, şiirsel ve dönüştürücü bir simya';
       break;
     case 5:
@@ -438,7 +438,7 @@ export function generateShadowArchetypeAnalysis(
 
   const eliminatedRedundantSymbols = includeTotem ? [
     `Doğrudan literal çakra ikonları (Aşırı yapay ve klişe olduğu için elendi; organik geometriye yedirildi)`,
-    `Ekstra 3. ve 4. hayvan figürleri (Görsel karmaşayı önlemek ve ana totemin gücünü zayıflatmamak için elendi)`,
+    `Ekstra görsel katmanlar (görsel karmaşayı önlemek için elendi)`,
     `Rastgele astrolojik glifler (Sadece tasarımın akışına hizmet eden tekil takımyıldız düğümü tutuldu)`
   ] : [
     `Totem hayvan figürleri (${primaryTotemName} ve ${section4TotemAnimals[1]?.name || shadowGuardianTotem}) (Danışan tercihi doğrultusunda dövme görseline KESİNLİKLE hayvan figürü dahil edilmedi, yalnızca kişisel analitik rehber olarak tutuldu)`,
@@ -635,7 +635,7 @@ export function generateShadowArchetypeAnalysis(
 11. DÖVME SANATÇISI TEKNİK UYGULAMA BRİFİ (STUDIO SPEC SHEET)
 =====================================================
 DANIŞAN: ${person.name || 'Danışan'}
-ANA ODAK: ${actualMainSymbol} (${includeTotem ? '3/4 Açılı Totem Figürü' : 'Kutsal Odak Sembolü'}, %65 Görsel Ağırlık)
+ANA ODAK: ${actualMainSymbol} ('Kutsal Odak Sembolü', %65 Görsel Ağırlık)
 YARDIMCI SEMBOLLER: ${includeTotem ? `${section4TotemAnimals[1]?.name || shadowGuardianTotem} (Gölge Tabanı), ` : ''}${symbolism.plantFlora}, ${section5ChakraBlockages[0].healingTransformationSymbol}
 GÖLGE ARKETİP: Enneagram Tip ${enneagram.wing} Gölgesi (${shadowFigure})
 TOTEM HAYVANI DURUMU: ${includeTotem ? `${primaryTotemName} (Tasarıma Dahil Edildi)` : `Tasarıma dahil edilmedi (Danışanın tercihiyle yalnızca kişisel ruhani analizde tutuldu; dövmeye KESİNLİKLE hayvan figürü çizilmeyecektir)`}
