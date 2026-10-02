@@ -119,7 +119,7 @@ assert.equal(recipe.parameters.includeTotemInDesign, false);
 assert.ok(!recipe.masterEnglishPrompt.toLowerCase().includes('kızıl geyik'));
 assert.ok(!recipe.masterEnglishPrompt.includes('19 İlahi'));
 assert.ok(!recipe.masterEnglishPrompt.includes('19-dot matrix'));
-const integrationJson = JSON.stringify((recipe as any).symbolIntegration ?? (recipe as any).symbolIntegrationResult ?? '');
+const integrationJson = JSON.stringify((recipe as any).symbolicIntegration ?? (recipe as any).symbolIntegrationResult ?? '');
 assert.ok(!integrationJson.includes('sym_totem'));
 assert.ok(!integrationJson.includes('Totem Kulak & Çene'));
 
