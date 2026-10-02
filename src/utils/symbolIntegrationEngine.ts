@@ -415,7 +415,7 @@ export function executeSymbolicIntegrationEngine(params: {
       hiddenSymbolIds: [],
       rationale: 'Sert geometri ile organik doğayı tek çizgide kaynaştırarak dövmenin yapay görünmesini engelleme.'
     },
-    {
+    ...(includeTotemInDesign ? [    {
       integrationId: 'link_flora_totem',
       symbolIds: ['sym_flora', 'sym_totem'],
       integrationType: 'NEGATIVE_SPACE',
@@ -428,7 +428,7 @@ export function executeSymbolicIntegrationEngine(params: {
       secondarySymbolIds: ['sym_totem'],
       hiddenSymbolIds: ['sym_totem'],
       rationale: 'Hayvanı ayrı bir etiket gibi yapıştırmadan, dövmenin negatif alanına gizlenmiş yüksek estetik katman oluşturma.'
-    },
+    },] : []),
     {
       integrationId: 'link_astro_num',
       symbolIds: ['sym_astrology', 'sym_numerology', 'sym_chakra_balancer'],
@@ -598,7 +598,7 @@ export function executeSymbolicIntegrationEngine(params: {
       name: 'Gerekli Hesaplanan Sembollerin Temsiliyeti',
       passed: symbols.length >= 5,
       level: 'INFO' as const,
-      message: `${symbols.length} temel sembolün tamamı (Numeroloji, Astroloji, Enneagram, Totem, Çakra, Flora) başarıyla modellendi.`
+      message: `${symbols.length} temel sembolün tamamı (Numeroloji, Astroloji, Enneagram, Çakra, Flora${includeTotemInDesign ? ', Totem' : ''}) başarıyla modellendi.`
     },
     {
       name: 'İzole İkon / Çıkartma Tespiti (Anti-Sticker Guard)',
