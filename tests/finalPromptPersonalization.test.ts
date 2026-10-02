@@ -122,5 +122,7 @@ assert.ok(!recipe.masterEnglishPrompt.includes('19-dot matrix'));
 const integrationJson = JSON.stringify((recipe as any).symbolicIntegration ?? (recipe as any).symbolIntegrationResult ?? '');
 assert.ok(!integrationJson.includes('sym_totem'));
 assert.ok(!integrationJson.includes('Totem Kulak & Çene'));
+assert.equal(recipe.shadowAnalysis?.section4TotemAnimals?.[1]?.name, 'Su Samuru');
+assert.equal(recipe.shadowAnalysis?.section4TotemAnimals?.[2]?.name, 'Bal Porsuğu');
 
 console.log('Final prompt personalization tests passed');
