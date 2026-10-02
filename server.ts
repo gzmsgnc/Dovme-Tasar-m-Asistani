@@ -207,12 +207,14 @@ async function startServer() {
     const valid = suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
     if (!valid) return res.status(401).json({ success: false, error: 'Yönetici şifresi hatalı.' });
     const session = createAdminSession();
-    res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=' + encodeURIComponent(session) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + ADMIN_SESSION_TTL_SECONDS);
+    const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=' + encodeURIComponent(session) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + ADMIN_SESSION_TTL_SECONDS + secureFlag);
     return res.json({ success: true });
   });
 
   app.post('/api/auth/logout', (req: Request, res: Response) => {
-    res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+    const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0' + secureFlag);
     return res.json({ success: true });
   });
 
