@@ -24,7 +24,22 @@ const CLIENTS_STORAGE_FILE = path.join(DATA_DIR, 'clients.json');
 
 const ADMIN_SESSION_COOKIE = 'studio_admin_session';
 const ADMIN_SESSION_TTL_SECONDS = 8 * 60 * 60;
+const loginFailures = new Map<string, { count: number; resetAt: number }>();
+const intakeRequests = new Map<string, { count: number; resetAt: number }>();
+const RATE_WINDOW_MS = 15 * 60 * 1000;
 
+
+function isRateLimited(store: Map<string, { count: number; resetAt: number }>, key: string, limit: number): boolean {
+  const now = Date.now();
+  const current = store.get(key);
+  if (!current || current.resetAt <= now) {
+    store.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  if (current.count >= limit) return true;
+  current.count += 1;
+  return false;
+}
 function getAdminPassword(): string | null {
   const password = process.env.STUDIO_ADMIN_PASSWORD;
   return typeof password === 'string' && password.length >= 12 ? password : null;
@@ -201,11 +216,16 @@ async function startServer() {
   app.post('/api/auth/login', (req: Request, res: Response) => {
     const password = getAdminPassword();
     if (!password) return res.status(503).json({ success: false, error: 'Stüdyo yönetici şifresi sunucu ortamında yapılandırılmamış.' });
+    const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
+    if (isRateLimited(loginFailures, clientKey, 10)) {
+      return res.status(429).json({ success: false, error: 'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.' });
+    }
     const supplied = typeof req.body?.password === 'string' ? req.body.password : '';
     const suppliedBuffer = Buffer.from(supplied);
     const expectedBuffer = Buffer.from(password);
     const valid = suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
     if (!valid) return res.status(401).json({ success: false, error: 'Yönetici şifresi hatalı.' });
+    loginFailures.delete(clientKey);
     const session = createAdminSession();
     const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
     res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=' + encodeURIComponent(session) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + ADMIN_SESSION_TTL_SECONDS + secureFlag);
@@ -223,6 +243,10 @@ async function startServer() {
   });
   // Client Intake API (Danışan Formu Kaydı & Doğrulaması)
   app.post('/api/client-intake', async (req: Request, res: Response) => {
+    const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
+    if (isRateLimited(intakeRequests, clientKey, 20)) {
+      return res.status(429).json({ success: false, error: 'Çok fazla form gönderimi. Lütfen daha sonra tekrar deneyin.' });
+    }
     try {
       const body = req.body || {};
       const firstName = (body.firstName || '').trim();
