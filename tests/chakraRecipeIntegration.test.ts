@@ -16,6 +16,8 @@ const astrology = {
 
 const chakra = calculateChakraProfile(numerology, astrology);
 assert.deepEqual(chakra.blockedChakras.map(c => c.number), [1, 4]);
+assert.ok(!chakra.primaryHealingDirective.includes('19 İlahi'), 'Unverified 19 claim must not enter chakra directive');
+assert.ok(!chakra.chakras[8].healingSymbols.some(s => /19 İlahi/i.test(s)), 'Unverified 19 symbol must not enter chakra 9');
 
 const symbolism = {
   totemAnimal: 'Kızıl Geyik', totemAnimalId: 'kizil_geyik', totemAnimalMeaning: 'Test birincil anlamı',
