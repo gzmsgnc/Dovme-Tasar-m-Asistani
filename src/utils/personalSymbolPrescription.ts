@@ -795,7 +795,7 @@ Totem Rezonansı:
 • Ana Totem → ${canonical.totem.primaryTotem}
 • Gölge Totem → ${canonical.totem.shadowTotem}
 • İkincil Totem → ${canonical.totem.allyTotem}
-${!canonical.totem.includeAnimalInTattoo ? `[Not: Danışan tercihi doğrultusunda hayvan figürü dövmede doğrudan kullanılmamış; hayvanın sembolik nitelikleri soyut ve geometrik akış hatlarıyla aktarılmıştır.]\n` : ''}
+${!canonical.totem.includeAnimalInTattoo ? `[Not: Totem verileri yalnızca raporlama katmanında tutulur; final kompozisyonda kullanılmaz.]\n` : ''}
 Çakra Durumu (Tek Kaynak / Kanonik Sonuç):
 • ${canonical.chakra.summaryLine}
 
