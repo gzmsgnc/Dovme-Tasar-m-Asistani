@@ -897,6 +897,7 @@ function buildMasterIntegratedAiPrompt(opts: {
 
   const styleNames = designParameters.selectedStyles?.join(', ') || 'Fine Line, Micro Dotwork, Sacred Geometry';
   const placement = designParameters.bodyPlacement || 'Forearm Inner';
+  const primaryTotem = totemProfile.animalName;
   const requestedPrimary = designParameters.mainSymbol?.trim() || '';
   const requestedSupporting = (designParameters.secondarySymbols || [])
     .map(symbol => symbol.trim())
