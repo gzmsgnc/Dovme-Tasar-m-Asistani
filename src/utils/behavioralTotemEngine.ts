@@ -564,13 +564,12 @@ export function calculateVectorSimilarity(
   const avgZDiff = absDevDiffSum / N;
   const zDistanceScore = Math.max(0, 1 - (avgZDiff / 2.5)); // 0.0 to 1.0
 
-  // Birleşik benzerlik: %65 profil formu korelasyonu + %35 Z-mesafe uyumu
-  let composite = (normalizedPearson * 0.65) + (zDistanceScore * 0.35) + personalBonus;
-  composite = Math.min(0.99, Math.max(0.40, composite));
-
-  // Yüzdeye çevir (örn: %45 - %98.8 arası)
-  const percentage = (composite * 55) + 43.5;
-  return Math.round(Math.min(99.0, Math.max(48.0, percentage)) * 10) / 10;
+  // Birleşik benzerlik: %65 profil formu korelasyonu + %35 Z-mesafe uyumu.
+  // Skor yapay taban/tavan ile sıkıştırılmaz; 0-100 aralığında gerçek bileşik
+  // benzerliği temsil eder. Böylece confidenceScore kalibre edilmemiş bir
+  // "minimum güven" değil, doğrudan match score olur.
+  const composite = Math.min(1, Math.max(0, (normalizedPearson * 0.65) + (zDistanceScore * 0.35) + personalBonus));
+  return Math.round(composite * 1000) / 10;
 }
 
 /**
