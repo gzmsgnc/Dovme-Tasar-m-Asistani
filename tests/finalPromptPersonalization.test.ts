@@ -78,7 +78,7 @@ const symbolism = {
   symbolInterconnection: 'test',
   totemTestResult: {
     primaryTotem: { id: 'kizil_geyik', name: 'Kızıl Geyik' },
-    secondaryTotem: { id: 'su_samuru', name: 'Su Samuru' },
+    secondaryTotem: { id: 'bal_porsugu', name: 'Bal Porsuğu' },
     shadowTotem: { id: 'su_samuru', name: 'Su Samuru' },
     topMatches: [],
     confidenceScore: 90,
