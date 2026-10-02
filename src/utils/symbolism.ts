@@ -109,7 +109,7 @@ export function deriveSymbolismProfile(
       category: 'Çakra Şifası',
       targetDeficiency: 'Eksik 4. Çakra (Kalp Çakrası Blokajı / Katılık Riski)',
       esotericRationale: 'İsimde 4 frekansı (D, M, V) bulunmadığından kişi sınır koymakta veya sevgiyi kabul etmekte zorlanabilir. Lotus ve çift üçgen kalp yantrası sevgi dengesi kurar.',
-      compositionPlacement: 'Ana totem figürünün tam göğüs kafesi merkezine ince 03RL çizgilerle yerleştirilir.'
+      compositionPlacement: 'Merkez sembolün çevresindeki kontrollü negatif alana, ince 03RL çizgilerle yerleştirilir.'
     });
   }
   if (numerology.missingNumbers.includes(1)) {
