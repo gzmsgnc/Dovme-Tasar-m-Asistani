@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
@@ -20,6 +21,45 @@ const PORT = 3000;
 // Persistent Server-Side Client Storage
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CLIENTS_STORAGE_FILE = path.join(DATA_DIR, 'clients.json');
+
+const ADMIN_SESSION_COOKIE = 'studio_admin_session';
+const ADMIN_SESSION_TTL_SECONDS = 8 * 60 * 60;
+
+function getAdminPassword(): string | null {
+  const password = process.env.STUDIO_ADMIN_PASSWORD;
+  return typeof password === 'string' && password.length >= 12 ? password : null;
+}
+
+function createAdminSession(): string {
+  const password = getAdminPassword();
+  if (!password) throw new Error('STUDIO_ADMIN_PASSWORD is not configured or is too short.');
+  const expiresAt = Math.floor(Date.now() / 1000) + ADMIN_SESSION_TTL_SECONDS;
+  const payload = String(expiresAt);
+  const signature = crypto.createHmac('sha256', password).update(payload).digest('hex');
+  return payload + '.' + signature;
+}
+
+function isValidAdminSession(req: Request): boolean {
+  const password = getAdminPassword();
+  if (!password) return false;
+  const header = req.headers.cookie || '';
+  const match = header.match(new RegExp('(?:^|; )' + ADMIN_SESSION_COOKIE + '=([^;]+)'));
+  if (!match) return false;
+  const parts = decodeURIComponent(match[1]).split('.');
+  const expiresAt = Number(parts[0]);
+  const signature = parts[1];
+  if (!Number.isInteger(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000) || !signature) return false;
+  const expected = crypto.createHmac('sha256', password).update(String(expiresAt)).digest('hex');
+  return signature.length === expected.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+
+function requireAdmin(req: Request, res: Response, next: express.NextFunction): void {
+  if (!isValidAdminSession(req)) {
+    res.status(401).json({ success: false, error: getAdminPassword() ? 'Stüdyo oturumu gerekli.' : 'Stüdyo yönetici erişimi yapılandırılmamış.' });
+    return;
+  }
+  next();
+}
 
 const DEMO_ACCOUNT_IDS = new Set([
   'client_selin_kaya',
@@ -157,6 +197,28 @@ async function startServer() {
     }
   });
 
+  // Admin session: password never reaches the browser after verification.
+  app.post('/api/auth/login', (req: Request, res: Response) => {
+    const password = getAdminPassword();
+    if (!password) return res.status(503).json({ success: false, error: 'Stüdyo yönetici şifresi sunucu ortamında yapılandırılmamış.' });
+    const supplied = typeof req.body?.password === 'string' ? req.body.password : '';
+    const suppliedBuffer = Buffer.from(supplied);
+    const expectedBuffer = Buffer.from(password);
+    const valid = suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
+    if (!valid) return res.status(401).json({ success: false, error: 'Yönetici şifresi hatalı.' });
+    const session = createAdminSession();
+    res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=' + encodeURIComponent(session) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + ADMIN_SESSION_TTL_SECONDS);
+    return res.json({ success: true });
+  });
+
+  app.post('/api/auth/logout', (req: Request, res: Response) => {
+    res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+    return res.json({ success: true });
+  });
+
+  app.get('/api/auth/session', (req: Request, res: Response) => {
+    return res.json({ authenticated: isValidAdminSession(req), configured: Boolean(getAdminPassword()) });
+  });
   // Client Intake API (Danışan Formu Kaydı & Doğrulaması)
   app.post('/api/client-intake', async (req: Request, res: Response) => {
     try {
@@ -353,13 +415,13 @@ async function startServer() {
   });
 
   // Danışanları listele (hem /api/clients hem /api/client-intake)
-  app.get(['/api/client-intake', '/api/clients'], (req: Request, res: Response) => {
+  app.get(['/api/client-intake', '/api/clients'], requireAdmin, (req: Request, res: Response) => {
     const clients = getPersistedClients();
     res.json({ success: true, clients });
   });
 
   // Danışan silme
-  app.delete(['/api/clients/:id', '/api/client-intake/:id'], (req: Request, res: Response) => {
+  app.delete(['/api/clients/:id', '/api/client-intake/:id'], requireAdmin, (req: Request, res: Response) => {
     const { id } = req.params;
     const clients = getPersistedClients();
     const updated = clients.filter(c => c.id !== id);
@@ -368,7 +430,7 @@ async function startServer() {
   });
 
   // Danışan senkronizasyonu (Stüdyo ile sunucu arası iki yönlü birleştirme)
-  app.post('/api/clients/sync', (req: Request, res: Response) => {
+  app.post('/api/clients/sync', requireAdmin, (req: Request, res: Response) => {
     try {
       const { localClients = [], deletedClientIds = [] } = req.body || {};
       const deletedIds = new Set<string>(
@@ -537,11 +599,11 @@ Lütfen şu formatta geçerli bir JSON yanıt ver:
     }
   };
 
-  app.post('/api/ai/deep-synthesis', handleSynthesis);
-  app.post('/api/ai/synthesize', handleSynthesis);
+  app.post('/api/ai/deep-synthesis', requireAdmin, handleSynthesis);
+  app.post('/api/ai/synthesize', requireAdmin, handleSynthesis);
 
   // Prompt Variations Generator
-  app.post('/api/ai/refine-prompts', async (req: Request, res: Response) => {
+  app.post('/api/ai/refine-prompts', requireAdmin, async (req: Request, res: Response) => {
     try {
       const { recipe } = req.body;
       const ai = getGenAI();
@@ -599,7 +661,7 @@ Lütfen JSON formatında yanıt ver:
   });
 
   // Visual Sketch Generation (Tattoo Flash & Stencil Linework with Auto-Fallback & Seed Randomization)
-  app.post('/api/ai/generate-sketch', async (req: Request, res: Response) => {
+  app.post('/api/ai/generate-sketch', requireAdmin, async (req: Request, res: Response) => {
     const { 
       prompt, 
       recipe, 
