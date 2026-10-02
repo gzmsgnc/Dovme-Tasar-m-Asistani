@@ -61,7 +61,7 @@ export function generateTattooRecipe(
     return false;
   };
 
-  // Totem hayvanının tasarıma dahil edilme durumu
+  // Totemler analiz katmanında kalır; final görselde hiçbir hayvan figürü kullanılmaz.
   let mainSymbol = parameters.mainSymbol;
   if (!includeTotem) {
     if (!mainSymbol || isTotemAnimalName(mainSymbol)) {
@@ -69,7 +69,7 @@ export function generateTattooRecipe(
     }
   } else {
     if (!mainSymbol) {
-      mainSymbol = symbolism.totemAnimal;
+      mainSymbol = symbolism.sacredObject || symbolism.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği';
     }
   }
 
