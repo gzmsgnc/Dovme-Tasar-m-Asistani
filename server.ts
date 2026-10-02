@@ -322,6 +322,9 @@ async function startServer() {
       }
 
       // 2. Telefon Numarası Doğrulaması (Zorunlu, Türkiye & Uluslararası format kontrolü)
+      if (!phone || phone.length > MAX_TEXT_LENGTH) {
+        return res.status(400).json({ success: false, error: 'Geçersiz telefon numarası.' });
+      }
       const phoneValidation = normalizePhoneNumber(phone);
       if (!phoneValidation.valid) {
         return res.status(400).json({
@@ -357,7 +360,7 @@ async function startServer() {
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(birthTime)) {
         return res.status(400).json({
           success: false,
-          error: 'Doğum saati zorunludur (Yükselen burç hesaplaması için gereklidir).'
+          error: 'Geçersiz doğum saati. Saat SS:DD biçiminde olmalı ve 00:00–23:59 aralığında olmalıdır.'
         });
       }
 
