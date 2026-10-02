@@ -279,7 +279,7 @@ Mücadeleler: 1. Mücadele: |Ay-Gün| (${c1}) | 2. Mücadele: |Gün-Yıl| (${c2}
     divine19: {
       value: divine19Level,
       title: '19 İlahi Yardım Matrisi',
-      formula: 'Doğum Günü = 19 VEYA Rakamlar Toplamı = 19 VEYA 1-9 Aksı Rezonansı',
+      formula: 'Doğum Günü = 19 VEYA Ham Doğum Tarihi Rakamları Toplamı = 19 VEYA Ham İsim Harfleri Toplamı = 19',
       stepByStep: divine19FormulaBreakdown,
       interpretation: divine19Reason
     },
