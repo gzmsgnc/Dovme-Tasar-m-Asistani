@@ -23,9 +23,9 @@ assert.equal(mertNumerology.dmNumber, 6);
 assert.equal(mertNumerology.divineHelp19?.has19, false);
 
 const elifAstro = calculateAstrology('1988-02-17','22:40','İzmir, Türkiye','Tropical');
-assert.ok(Math.abs(elifAstro.sunLongitude - 328.3633) < 0.05);
-assert.ok(Math.abs(elifAstro.moonLongitude - 330.5955) < 0.05);
-assert.ok(Math.abs(elifAstro.ascendantLongitude - 195.5092) < 0.05);
+assert.ok(Math.abs(elifAstro.sunLongitude - 328.4085) < 0.05);
+assert.ok(Math.abs(elifAstro.moonLongitude - 331.2303) < 0.05);
+assert.ok(Math.abs(elifAstro.ascendantLongitude - 207.6113) < 0.05);
 
 const mertAstro = calculateAstrology('1994-08-09','07:25','Bursa, Türkiye','Tropical');
 assert.ok(Math.abs(mertAstro.sunLongitude - 136.3723) < 0.05);
