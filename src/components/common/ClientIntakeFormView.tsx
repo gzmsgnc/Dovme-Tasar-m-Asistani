@@ -276,11 +276,9 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
       const totemResult = calculateBehavioralTotemResult(totemAnswers, enneaResult.type);
 
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
-      const newClientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const nowIso = new Date().toISOString();
 
       const clientPayload = {
-        id: newClientId,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         name: fullName,
@@ -314,8 +312,9 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
         throw new Error(serverRes.error || 'Sunucu form kaydını kabul etmedi.');
       }
 
-      const savedRecord = serverRes.client || ({
+      const savedRecord = ({
         ...clientPayload,
+        id: serverRes.clientId!,
         zodiacSystem: 'Tropical',
         enneagramType: enneaResult.type,
         enneagramWing: enneaResult.wing,
