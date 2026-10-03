@@ -156,6 +156,7 @@ export interface PersonalSymbolPrescription {
   tattooDesignPrompt: string;
   negativePrompt: string;
   auditReportText: string;
+  excludedDesignSymbols?: Array<{ name: string; reason?: string }>;
 }
 
 // ============================================================================
