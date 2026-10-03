@@ -546,10 +546,6 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       setCurrentClientId(idToUse);
     }
 
-    const isTotemName = customMainSymbol === symbolism.totemAnimal ||
-      symbolism.totemHierarchy?.some(t => t.name === customMainSymbol) ||
-      symbolism.secondaryAnimals?.includes(customMainSymbol);
-
     const determinedMainSymbol = includeTotemInDesign
       ? (customMainSymbol.trim() || symbolism.totemAnimal)
       : customMainSymbol.trim();
