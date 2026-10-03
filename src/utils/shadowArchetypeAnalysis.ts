@@ -441,7 +441,7 @@ export function generateShadowArchetypeAnalysis(
     `Ekstra görsel katmanlar (görsel karmaşayı önlemek için elendi)`,
     `Rastgele astrolojik glifler (Sadece tasarımın akışına hizmet eden tekil takımyıldız düğümü tutuldu)`
   ] : [
-    `Totem hayvan figürleri (${primaryTotemName} ve ${section4TotemAnimals[1]?.name || shadowGuardianTotem}) (Danışan tercihi doğrultusunda dövme görseline KESİNLİKLE hayvan figürü dahil edilmedi, yalnızca kişisel analitik rehber olarak tutuldu)`,
+    `Totem hayvanları (${primaryTotemName} ve ${section4TotemAnimals[1]?.name || shadowGuardianTotem}) (${includeTotem ? 'danışanın açık tercihiyle görsel tasarıma dahil edilebilir' : 'tasarıma dahil edilmedi; yalnızca kişisel analitik rehber olarak tutuldu'})`,
     `Doğrudan literal çakra ikonları (Aşırı yapay ve klişe olduğu için elendi; organik geometriye yedirildi)`,
     `Rastgele astrolojik glifler (Sadece tasarımın akışına hizmet eden tekil takımyıldız düğümü tutuldu)`
   ];
@@ -578,7 +578,7 @@ export function generateShadowArchetypeAnalysis(
     topSection: 'Hafifleyen mikro dotwork geçişleri, yıldız düğümleri ve göğe açılan negatif alan',
     centerSection: includeTotem
       ? `${primaryTotemName} figürünün anatomik detayları, gözler, en derin gölge kontrastı ve kalp yantrası`
-      : `${actualMainSymbol} kutsal geometrik mühür odağı, altın oran kirişleri, en derin kontrast ve kalp yantrası (Totem hayvanı tasarıma dahil edilmemiştir)`,
+      : `${actualMainSymbol} kutsal geometrik mühür odağı, altın oran kirişleri, en derin kontrast ve kalp yantrası${includeTotem ? '' : ' (Totem hayvanı tasarıma dahil edilmemiştir)'}`,
     bottomSection: includeTotem
       ? `${section4TotemAnimals[1]?.name || shadowGuardianTotem} gölgesinin köklenen ağır tabanı, toprak/su sembolizmi ve kilitli enerjinin çözüldüğü nokta`
       : `Topraklanan kutsal yantra tabanı, akıcı organik botanik (${symbolism.plantFlora}) ve çözülen blokaj hattı`,
@@ -638,7 +638,7 @@ DANIŞAN: ${person.name || 'Danışan'}
 ANA ODAK: ${actualMainSymbol} ('Kutsal Odak Sembolü', %65 Görsel Ağırlık)
 YARDIMCI SEMBOLLER: ${includeTotem ? `${section4TotemAnimals[1]?.name || shadowGuardianTotem} (Gölge Tabanı), ` : ''}${symbolism.plantFlora}, ${section5ChakraBlockages[0].healingTransformationSymbol}
 GÖLGE ARKETİP: Enneagram Tip ${enneagram.wing} Gölgesi (${shadowFigure})
-TOTEM HAYVANI DURUMU: ${includeTotem ? `${primaryTotemName} (Tasarıma Dahil Edildi)` : `Tasarıma dahil edilmedi (Danışanın tercihiyle yalnızca kişisel ruhani analizde tutuldu; dövmeye KESİNLİKLE hayvan figürü çizilmeyecektir)`}
+TOTEM HAYVANI DURUMU: ${includeTotem ? `${primaryTotemName} (Tasarıma Dahil Edildi)` : `Tasarıma dahil edilmedi (Danışanın tercihiyle yalnızca kişisel ruhani analizde tutuldu; görsel tasarım sembolü değildir)`}
 ÇAKRA BLOKAJLARI: ${section5ChakraBlockages.map(c => `${c.chakraNumber}. ${c.chakraName} [${c.geometricEquivalent}]`).join(', ')}
 GİZLİ EZOTERİK DETAYLAR: ${hasVerified19 ? '19 İlahi Düğüm Noktası, ' : ''}Fibonacci Sarmalı, Ebced (${ebcedData.totalEbced}) Çentikleri
 
@@ -1048,7 +1048,7 @@ ${section4TotemAnimals.map((t, idx) => `
 • **GÖLGE TARAFI:** ${t.shadowSide}
 • **Dengesiz Hale Geldiğinde Temsil Ettiği Davranış:** ${t.unbalancedBehavior}
 • **Bastırılmış / Kontrolsüz Yönü:** ${t.suppressedUncontrolledTrait}
-• **${includeTotem ? 'Dövmede Kullanılacak Fiziksel Özellik' : 'Arketipik Fiziksel Özellik'}:** ${t.tattooPhysicalFeature}${includeTotem ? '' : ' (Not: Danışan tercihiyle dövme çizimine dahil edilmemiştir)'}
+• **${includeTotem ? 'Dövmede Kullanılacak Fiziksel Özellik' : 'Arketipik Fiziksel Özellik'}:** ${t.tattooPhysicalFeature}${includeTotem ? '' : ' (Not: Bu özellik yalnızca arketipsel analiz içindir; görsel tasarıma aktarılmaz)'}
 • **Bakış Yönü:** ${t.gazeDirection}
 • **Baş Açısı:** ${t.headAngle}
 • **Karakteristik Hareket Dili:** ${t.movementDetail}
