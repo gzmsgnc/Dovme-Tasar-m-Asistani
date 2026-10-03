@@ -29,6 +29,19 @@ localStorage.setItem('tattoo_assistant_recipes_v2', JSON.stringify([
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_real']);
 
 testStorage.clear();
+localStorage.setItem('tattoo_assistant_clients_v2', JSON.stringify([{ id: 'owner_1', name: 'Gerçek Sahip' }]));
+localStorage.setItem('tattoo_assistant_recipes_v2', JSON.stringify([
+  { id: 'owned', clientId: 'owner_1', clientName: 'Gerçek Sahip', title: 'Sahipli Reçete' },
+  { id: 'orphan', clientId: 'missing_owner', clientName: 'Gerçek Sahip', title: 'Yetim Reçete' },
+  { id: 'wrong_name', clientId: 'owner_1', clientName: 'Başka Kişi', title: 'Yanlış Sahip' }
+]));
+assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['owned']);
+assert.deepEqual(JSON.parse(localStorage.getItem('tattoo_assistant_recipes_v2') || '[]').map((r: any) => r.id), ['owned']);
+
+testStorage.clear();
+
+
+testStorage.clear();
 const clientA: any = { id: 'client_A', name: 'Danışan A', birthDate: '1990-01-01', birthPlace: 'Istanbul', personalStory: 'A hikayesi', existingSymbols: 'A sembolü', updatedAt: '2026-09-30T10:00:00.000Z' };
 const clientB: any = { id: 'client_B', name: 'Danışan B', birthDate: '1995-05-05', birthPlace: 'London', personalStory: 'B hikayesi', existingSymbols: 'B sembolü', updatedAt: '2026-09-30T10:01:00.000Z' };
 saveClient(clientA); saveClient(clientB);
