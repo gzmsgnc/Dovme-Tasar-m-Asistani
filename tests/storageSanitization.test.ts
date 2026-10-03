@@ -16,10 +16,10 @@ const testStorage = new MemoryStorage();
 
 localStorage.setItem('tattoo_assistant_clients_v2', JSON.stringify([
   { id:'real_1', name:'Gerçek Danışan' },
-  { id:'demo_1', name:'Demo Danışan' },
+  { id:'demo_1', name:'Demo Danışan', source:'demo' },
   { id:'client_selin_kaya', name:'Selin Kaya' }
 ]));
-assert.deepEqual(source.getStoredClients().map(c => c.id), ['real_1']);
+assert.deepEqual(source.getStoredClients().map(c => c.id), ['real_1', 'client_selin_kaya']);
 
 localStorage.setItem('tattoo_assistant_recipes_v2', JSON.stringify([
   { id:'recipe_real', clientId:'real_1', clientName:'Gerçek Danışan', title:'Gerçek Reçete' },
