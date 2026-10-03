@@ -679,7 +679,7 @@ export function generateDesignFormula(
   const geoSymbol = symbols.find(s => s.designCategory === 'Destekleyici geometri') || symbols[1];
   const organicSymbol = symbols.find(s => s.designCategory === 'Organik element') || symbols[2];
   const microSymbol = symbols.find(s => s.designCategory === 'Kişisel mikro detay') || symbols[3];
-  const negSymbol = symbols.find(s => s.designCategory === 'Negatif alan') || symbols[symbols.length - 1];
+  const negSymbol = null;
 
   const styles = (designParameters.selectedStyles && designParameters.selectedStyles.length > 0)
     ? designParameters.selectedStyles.join(' + ')
@@ -690,7 +690,7 @@ export function generateDesignFormula(
     supportingGeometry: geoSymbol.symbolName,
     organicElement: organicSymbol.symbolName,
     personalMicroDetail: microSymbol.symbolName,
-    negativeSpace: negSymbol.symbolName,
+    negativeSpace: 'Teknik üretim parametresi — müşteri reçetesinde gösterilmez',
     visualLanguage: styles
   };
 }
@@ -901,9 +901,16 @@ export function generateTattooDesignPromptFromPrescription(
   negativePrompt: string;
 } {
   const centerSym = symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
-  const geoSym = symbols.find(s => s.designCategory === 'Destekleyici geometri') || symbols[1];
-  const organicSym = symbols.find(s => s.designCategory === 'Organik element') || symbols[2];
-  const microSym = symbols.find(s => s.designCategory === 'Kişisel mikro detay') || symbols[3];
+  const generatedHelpers = symbols.filter(s => s.designCategory !== 'Negatif alan');
+  const selectedMain = designParameters.mainSymbol?.trim();
+  const selectedSecondary = (designParameters.secondarySymbols || []).map(s => s.trim()).filter(Boolean);
+  const activeNames = [selectedMain, ...selectedSecondary].filter(Boolean) as string[];
+  const activeSymbols = activeNames.length > 0 ? activeNames : generatedHelpers.map(s => s.symbolName);
+  const promptCenterName = activeSymbols[0] || centerSym?.symbolName || 'Kişisel sembol';
+  const promptSecondaryNames = activeSymbols.slice(1, 4);
+  const geoName = promptSecondaryNames[0] || generatedHelpers.find(s => s.designCategory === 'Destekleyici geometri')?.symbolName || 'Kutsal geometri';
+  const organicName = promptSecondaryNames[1] || generatedHelpers.find(s => s.designCategory === 'Organik element')?.symbolName || 'Organik akış';
+  const microName = promptSecondaryNames[2] || generatedHelpers.find(s => s.designCategory === 'Kişisel mikro detay')?.symbolName || 'Gizli mikro detay';
 
   const styles = formula.visualLanguage;
   const placement = designParameters.bodyPlacement || 'Önkol İç';
@@ -916,10 +923,10 @@ export function generateTattooDesignPromptFromPrescription(
 
   const promptText = `
 master tattoo design, stencil-ready tattoo flash artwork, single cohesive composition, clean intentional contours, skin-safe negative space.
-FOCAL SUBJECT (60-70% visual weight): Centrally placed ${centerSym.symbolName}, executed with commanding contrast and crisp 03RL linework, symbolizing ${centerSym.coreTheme}.
-SUPPORTING SACRED GEOMETRY (20% visual weight): ${geoSym.symbolName}, forming an architectural background matrix aligned with golden ratio proportions.
-ORGANIC FLOW & ANATOMY (10-15% visual weight): ${organicSym.symbolName}, soft whip-shaded curves flowing naturally along the ${placement} curvature.
-PERSONAL ESOTERIC MICRO-DETAILS (5% visual weight): Subtle micro-stippling dotwork sigils (${microSym.symbolName}), delicate numeric resonance of Life Path ${canonical.numerology.lifePathNumber} and Ebced ${canonical.ebcedAndMizan.totalEbced}.
+FOCAL SUBJECT (60-70% visual weight): Centrally placed ${promptCenterName}, executed with commanding contrast and crisp 03RL linework, symbolizing ${centerSym.coreTheme}.
+SUPPORTING SACRED GEOMETRY (20% visual weight): ${geoName}, forming an architectural background matrix aligned with golden ratio proportions.
+ORGANIC FLOW & ANATOMY (10-15% visual weight): ${organicName}, soft whip-shaded curves flowing naturally along the ${placement} curvature.
+PERSONAL ESOTERIC MICRO-DETAILS (5% visual weight): Subtle micro-stippling dotwork sigils (${microName}), delicate numeric resonance of Life Path ${canonical.numerology.lifePathNumber} and Ebced ${canonical.ebcedAndMizan.totalEbced}.
 STYLE SPECIFICATIONS: ${styles}, pure black carbon ink gradients with smooth 3-stage grey wash shading (%30, %60, %90).
 FEASIBILITY & SKIN SAFETY: Minimum 2mm line clearance, 45% skin-safe negative space, thermal stencil transfer ready, high contrast, zero muddy fills.
 PRESENTATION: Flat 2D tattoo flash sheet, isolated on pure neutral white background, no human body, no skin, no arm mockup, no photograph, no 3D render.
@@ -995,6 +1002,7 @@ export function generatePersonalSymbolPrescription(params: {
     fullPrescriptionText,
     tattooDesignPrompt: promptText,
     negativePrompt,
-    auditReportText
+    auditReportText,
+    excludedDesignSymbols: params.designParameters.excludedDesignSymbols || []
   };
 }
