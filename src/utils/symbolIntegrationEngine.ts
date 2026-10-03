@@ -44,8 +44,8 @@ export function executeSymbolicIntegrationEngine(params: {
   designParameters: TattooDesignParameters;
 }): SymbolicIntegrationModelResult {
   const { person, numerology, astrology, enneagram, symbolism, chakra, designParameters } = params;
-  // Product rule: totems are analysis-only and are never rendered in the final tattoo design.
-  const includeTotemInDesign = false;
+  // Totem is always analyzed; visual inclusion requires explicit opt-in.
+  const includeTotemInDesign = designParameters.includeTotemInDesign === true;
 
   // 1. ANA KURAL - VERİ UYDURMA YOK: Girdi doğrulama kontrolü
   if (!person || !person.name?.trim() || !person.birthDate) {
