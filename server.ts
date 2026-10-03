@@ -769,11 +769,11 @@ Lütfen JSON formatında yanıt ver:
     // Extract rich metadata for high-precision vector stencil & prompt building
     const mainSymbol = recipe?.parameters?.mainSymbol;
 
-    if (isAnalysisOnlyTotemSymbol(mainSymbol)) {
+    if (isAnalysisOnlyTotemSymbol(mainSymbol) && recipe?.parameters?.includeTotemInDesign !== true) {
       return res.status(400).json({
         success: false,
-        error: 'Totemler yalnızca analiz katmanında kullanılabilir.',
-        message: 'Hayvan figürü veya totem adı final görsel sembolü olarak kullanılamaz.'
+        error: 'Totem görsel tasarım için açıkça etkinleştirilmemiş.',
+        message: 'Totem yalnızca Tasarıma Dahil Et seçeneği açık olduğunda final görsel sembolü olabilir.'
       });
     }
 
