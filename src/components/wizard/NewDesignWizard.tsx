@@ -551,10 +551,8 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       symbolism.secondaryAnimals?.includes(customMainSymbol);
 
     const determinedMainSymbol = includeTotemInDesign
-      ? (customMainSymbol || symbolism.totemAnimal)
-      : (customMainSymbol && !isTotemName
-          ? customMainSymbol
-          : (symbolism.sacredObject || symbolism.geometricSymbol || 'Kutsal Geometri'));
+      ? (customMainSymbol.trim() || symbolism.totemAnimal)
+      : customMainSymbol.trim();
 
     const parameters: TattooDesignParameters = {
       selectedStyles: selectedStyles.length > 0 ? selectedStyles : ['Fine Line', 'Black & Grey'],
@@ -564,13 +562,17 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       density,
       colorScheme,
       mainSymbol: determinedMainSymbol,
-      secondarySymbols: customSecondarySymbols.length > 0 
-        ? customSecondarySymbols.filter(s => includeTotemInDesign || (s !== symbolism.totemAnimal && !symbolism.totemHierarchy?.some(t => t.name === s) && !symbolism.secondaryAnimals?.includes(s)))
-        : (includeTotemInDesign ? [symbolism.plantFlora, symbolism.geometricSymbol] : [symbolism.plantFlora, symbolism.geometricSymbol, symbolism.sacredObject]),
+      secondarySymbols: customSecondarySymbols.filter(s =>
+        includeTotemInDesign ||
+        (s !== symbolism.totemAnimal &&
+          !symbolism.totemHierarchy?.some(t => t.name === s) &&
+          !symbolism.secondaryAnimals?.includes(s))
+      ),
       visualAtmosphere,
       includeTotemInDesign,
       useMorseCodeForNumbers,
-      customMorseInput: customMorseInput.trim() || undefined
+      customMorseInput: customMorseInput.trim() || undefined,
+      excludedDesignSymbols
     };
 
     const recipe = generateTattooRecipe(person, numerology, astrology, enneagram, symbolism, parameters);
