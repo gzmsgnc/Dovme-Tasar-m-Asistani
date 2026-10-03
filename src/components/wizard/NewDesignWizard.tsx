@@ -2031,8 +2031,8 @@ ${r.turkishPromptExplanation}
                             <button
                               type="button"
                               onClick={() => {
-                                setIncludeTotemInDesign(false);
-                                setCustomMainSymbol(symbolism.sacredObject || symbolism.geometricSymbol || 'Kutsal Geometri');
+                                setIncludeTotemInDesign(true);
+                                setCustomMainSymbol(totem.name);
                               }}
                               className="w-full py-1 px-2 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer bg-[#1a1a1a] hover:bg-[#252525] text-zinc-300 hover:text-white"
                             >
@@ -2698,8 +2698,11 @@ ${r.turkishPromptExplanation}
               <button
                 type="button"
                 onClick={() => {
-                  setIncludeTotemInDesign(false);
-                  setCustomMainSymbol(symbolism?.sacredObject || symbolism?.geometricSymbol || 'Kutsal Geometri');
+                  const nextState = !includeTotemInDesign;
+                  setIncludeTotemInDesign(nextState);
+                  setCustomMainSymbol(nextState
+                    ? (symbolism?.totemAnimal || '')
+                    : (symbolism?.sacredObject || symbolism?.geometricSymbol || 'Kutsal Geometri'));
                 }}
                 className={`py-1.5 px-3 rounded text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer self-start sm:self-auto ${
                   includeTotemInDesign
