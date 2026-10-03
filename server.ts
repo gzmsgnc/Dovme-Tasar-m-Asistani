@@ -601,7 +601,7 @@ async function startServer() {
       // Totems are analysis-only. Never use a personal totem as a fallback visual symbol.
       const mainSymbol = parameters.mainSymbol;
 
-       if (isAnalysisOnlyTotemSymbol(mainSymbol)) {
+       if (isAnalysisOnlyTotemSymbol(mainSymbol) && parameters.includeTotemInDesign !== true) {
          return res.status(400).json({
            success: false,
            error: 'Totemler yalnızca analiz katmanında kullanılabilir.',
