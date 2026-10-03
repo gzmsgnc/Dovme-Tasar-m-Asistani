@@ -71,13 +71,15 @@ export function saveClient(client: PersonData): PersonData[] {
   return updated;
 }
 
-export async function postClientIntakeToServer(payload: any): Promise<{ success: boolean; client?: PersonData; error?: string }> {
+export async function postClientIntakeToServer(payload: any): Promise<{ success: boolean; clientId?: string; error?: string }> {
   try {
     const res = await fetch('/api/client-intake', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await res.json();
     if (!res.ok || !data.success) return { success: false, error: data.error || 'Sunucu form kaydını kabul etmedi.' };
-    if (data.client) saveClient(data.client);
-    return { success: true, client: data.client };
+    if (typeof data.clientId !== 'string' || data.clientId.trim().length === 0) {
+      return { success: false, error: 'Sunucu kaydı oluşturdu ancak danışan kimliği dönmedi.' };
+    }
+    return { success: true, clientId: data.clientId };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Sunucu bağlantı hatası oluştu.' };
   }
