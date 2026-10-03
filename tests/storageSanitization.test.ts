@@ -73,6 +73,8 @@ assert.throws(
   () => saveRecipe({ ...recipeA, id: 'wrong_person_data', clientId: 'client_A', clientName: 'Danışan A', personData: clientB }),
   /reçete kişi verisi bağlı danışanla eşleşmiyor/
 );
+saveRecipe({ ...recipeA, id: 'legacy_recipe_without_person_data', personData: undefined });
+assert.equal(source.getStoredRecipes().some(r => r.id === 'legacy_recipe_without_person_data'), true);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 2);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_B').length, 1);
 
