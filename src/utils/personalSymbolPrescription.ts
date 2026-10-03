@@ -756,8 +756,9 @@ export function generateFullPrescriptionMarkdown(prescription: {
   symbols: PrescriptionSymbol[];
   formula: PrescriptionDesignFormula;
   closing: string;
+  excludedDesignSymbols?: Array<{ name: string; reason?: string }>;
 }): string {
-  const { canonical, unifiedArchetype, symbols, formula, closing } = prescription;
+  const { canonical, unifiedArchetype, symbols, formula, closing, excludedDesignSymbols = [] } = prescription;
 
   const header = `
 ==================================================
@@ -810,7 +811,8 @@ SEMBOL REÇETESİ
 --------------------------------------------------
 `.trim();
 
-  const symbolsBody = symbols.map((sym, i) => `
+  const activeRecipeSymbols = symbols.filter(sym => sym.designCategory !== 'Negatif alan');
+  const symbolsBody = activeRecipeSymbols.map((sym, i) => `
 ${i + 1}. ${sym.symbolName}
 
 Kaynak:
@@ -822,6 +824,8 @@ ${sym.coreTheme}
 Tasarım görevi:
 ${sym.designRole}
 `.trim()).join('\n\n');
+
+  const excludedSection = excludedDesignSymbols.length > 0 ? `\n\n--------------------------------------------------\nTASARIMA DAHİL EDİLMEYEN SEMBOLLER\n--------------------------------------------------\n\n${excludedDesignSymbols.map((item, i) => `${i + 1}. ${item.name}${item.reason ? `\\nAçıklama: ${item.reason}` : ''}`).join('\\n\\n')}\n\n[Bu bölüm yalnızca bilgi/arşiv amaçlıdır; aşağıdaki tasarım üretim promptlarına dahil edilmez.]` : '';
 
   const formulaSection = `
 --------------------------------------------------
@@ -853,7 +857,7 @@ KİŞİSEL SONUÇ
 ${closing}
 `.trim();
 
-  return `${header}\n\n${symbolsBody}\n\n${formulaSection}`;
+  return `${header}\n\n${symbolsBody}${excludedSection}\n\n${formulaSection}`;
 }
 
 // ============================================================================
@@ -976,7 +980,8 @@ export function generatePersonalSymbolPrescription(params: {
     unifiedArchetype,
     symbols,
     formula: designFormula,
-    closing: personalClosing
+    closing: personalClosing,
+    excludedDesignSymbols: params.designParameters.excludedDesignSymbols || []
   });
 
   // 8. Rapor denetimi (Audit Report)
