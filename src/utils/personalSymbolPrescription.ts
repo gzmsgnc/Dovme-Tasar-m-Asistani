@@ -825,7 +825,7 @@ Tasarım görevi:
 ${sym.designRole}
 `.trim()).join('\n\n');
 
-  const excludedSection = excludedDesignSymbols.length > 0 ? `\n\n--------------------------------------------------\nTASARIMA DAHİL EDİLMEYEN SEMBOLLER\n--------------------------------------------------\n\n${excludedDesignSymbols.map((item, i) => `${i + 1}. ${item.name}${item.reason ? `\\nAçıklama: ${item.reason}` : ''}`).join('\\n\\n')}\n\n[Bu bölüm yalnızca bilgi/arşiv amaçlıdır; aşağıdaki tasarım üretim promptlarına dahil edilmez.]` : '';
+  const excludedSection = excludedDesignSymbols.length > 0 ? `\n\n--------------------------------------------------\nTASARIMA DAHİL EDİLMEYEN SEMBOLLER\n--------------------------------------------------\n\n${excludedDesignSymbols.map((item, i) => `${i + 1}. ${item.name}${item.reason ? `\nAçıklama: ${item.reason}` : ''}`).join('\n\n')}\n\n[Bu bölüm yalnızca bilgi/arşiv amaçlıdır; aşağıdaki tasarım üretim promptlarına dahil edilmez.]` : '';
 
   const formulaSection = `
 --------------------------------------------------
@@ -844,8 +844,6 @@ ${formula.organicElement}
 Kişisel mikro detay:
 ${formula.personalMicroDetail}
 
-Negatif alan:
-${formula.negativeSpace}
 
 Genel görsel dil:
 ${formula.visualLanguage}
