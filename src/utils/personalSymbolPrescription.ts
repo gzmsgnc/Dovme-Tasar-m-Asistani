@@ -675,10 +675,13 @@ export function generateDesignFormula(
   symbols: PrescriptionSymbol[],
   designParameters: TattooDesignParameters
 ): PrescriptionDesignFormula {
-  const centerSymbol = symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
-  const geoSymbol = symbols.find(s => s.designCategory === 'Destekleyici geometri') || symbols[1];
-  const organicSymbol = symbols.find(s => s.designCategory === 'Organik element') || symbols[2];
-  const microSymbol = symbols.find(s => s.designCategory === 'Kişisel mikro detay') || symbols[3];
+  const activeNames = [designParameters.mainSymbol?.trim(), ...(designParameters.secondarySymbols || []).map(s => s.trim())].filter(Boolean) as string[];
+  const activeNameSet = new Set(activeNames);
+  const activeSymbols = symbols.filter(s => activeNameSet.has(s.symbolName) && s.designCategory !== 'Negatif alan');
+  const centerSymbol = activeSymbols[0] || symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
+  const geoSymbol = activeSymbols[1] || symbols.find(s => s.designCategory === 'Destekleyici geometri') || symbols[1];
+  const organicSymbol = activeSymbols[2] || symbols.find(s => s.designCategory === 'Organik element') || symbols[2];
+  const microSymbol = activeSymbols[3] || symbols.find(s => s.designCategory === 'Kişisel mikro detay') || symbols[3];
   const negSymbol = null;
 
   const styles = (designParameters.selectedStyles && designParameters.selectedStyles.length > 0)
@@ -757,6 +760,7 @@ export function generateFullPrescriptionMarkdown(prescription: {
   formula: PrescriptionDesignFormula;
   closing: string;
   excludedDesignSymbols?: Array<{ name: string; reason?: string }>;
+  designParameters?: TattooDesignParameters;
 }): string {
   const { canonical, unifiedArchetype, symbols, formula, closing, excludedDesignSymbols = [] } = prescription;
 
@@ -811,7 +815,9 @@ SEMBOL REÇETESİ
 --------------------------------------------------
 `.trim();
 
-  const activeRecipeSymbols = symbols.filter(sym => sym.designCategory !== 'Negatif alan');
+  const activeNames = [prescription.designParameters?.mainSymbol?.trim(), ...(prescription.designParameters?.secondarySymbols || []).map(s => s.trim())].filter(Boolean) as string[];
+  const activeNameSet = new Set(activeNames);
+  const activeRecipeSymbols = symbols.filter(sym => sym.designCategory !== 'Negatif alan' && activeNameSet.has(sym.symbolName));
   const symbolsBody = activeRecipeSymbols.map((sym, i) => `
 ${i + 1}. ${sym.symbolName}
 
@@ -979,7 +985,8 @@ export function generatePersonalSymbolPrescription(params: {
     symbols,
     formula: designFormula,
     closing: personalClosing,
-    excludedDesignSymbols: params.designParameters.excludedDesignSymbols || []
+    excludedDesignSymbols: params.designParameters.excludedDesignSymbols || [],
+    designParameters: params.designParameters
   });
 
   // 8. Rapor denetimi (Audit Report)
