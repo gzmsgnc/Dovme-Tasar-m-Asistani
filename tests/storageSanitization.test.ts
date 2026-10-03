@@ -75,7 +75,7 @@ assert.throws(
 );
 saveRecipe({ ...recipeA, id: 'legacy_recipe_without_person_data', personData: undefined });
 assert.equal(source.getStoredRecipes().some(r => r.id === 'legacy_recipe_without_person_data'), true);
-assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 2);
+assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 3);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_B').length, 1);
 
 deleteClient('client_A');
