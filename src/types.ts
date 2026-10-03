@@ -255,6 +255,7 @@ export interface TattooDesignParameters {
   includeTotemInDesign?: boolean; // Totem hayvanı tasarıma dahil edilsin mi? (Varsayılan: false)
   useMorseCodeForNumbers?: boolean; // Rakamları Mors alfabesiyle (nokta/çizgi micro-dotwork) şifrele
   customMorseInput?: string; // İsteğe bağlı özel Mors metni/rakamı
+  excludedDesignSymbols?: Array<{ name: string; reason?: string }>; // Kullanıcı tarafından tasarımdan çıkarılan semboller; promptlara dahil edilmez
 }
 
 export interface SymbolRationale {
