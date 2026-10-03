@@ -145,4 +145,19 @@ assert.ok(
 assert.equal(recipe.symbolRationales.some((r: any) => /Kızıl Geyik|Bal Porsuğu|Su Samuru/i.test(r.symbolName)), false);
 
 
+
+const includedParameters = {
+  ...parameters,
+  includeTotemInDesign: true,
+  mainSymbol: 'Kızıl Geyik'
+} as any;
+const includedRecipe = generateTattooRecipe(person, numerology, astrology, enneagram, symbolism, includedParameters);
+
+assert.equal(includedRecipe.parameters.includeTotemInDesign, true);
+assert.ok(includedRecipe.masterEnglishPrompt.includes('Kızıl Geyik'));
+assert.ok(includedRecipe.masterEnglishPrompt.includes('Bal Porsuğu') || includedRecipe.shadowAnalysis?.fullMarkdownDossier?.includes('Bal Porsuğu'));
+assert.ok(includedRecipe.symbolRationales.some((r: any) => r.symbolName === 'Kızıl Geyik'));
+assert.equal(includedRecipe.prescription?.canonicalAnalysis?.totem?.includeAnimalInTattoo, true);
+assert.equal(includedRecipe.prescription?.canonicalAnalysis?.totem?.totemHandlingMode, 'Figüratif Odak');
+
 console.log('Final prompt personalization tests passed');
