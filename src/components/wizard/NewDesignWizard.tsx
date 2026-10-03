@@ -151,6 +151,22 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [customMainSymbol, setCustomMainSymbol] = useState<string>('');
   const [customSecondarySymbols, setCustomSecondarySymbols] = useState<string[]>([]);
   const [newSecSymbolInput, setNewSecSymbolInput] = useState<string>('');
+  const [excludedDesignSymbols, setExcludedDesignSymbols] = useState<Array<{ name: string; reason?: string }>>([]);
+
+  const rememberExcludedSymbol = (name: string, reason: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setExcludedDesignSymbols(prev => prev.some(item => item.name === trimmed) ? prev : [...prev, { name: trimmed, reason }]);
+  };
+
+  const handleMainSymbolChange = (nextValue: string) => {
+    const previous = customMainSymbol.trim();
+    const next = nextValue.trim();
+    if (previous && previous !== next) {
+      rememberExcludedSymbol(previous, 'Ana odak sembolü tasarımdan çıkarıldı veya değiştirildi.');
+    }
+    setCustomMainSymbol(nextValue);
+  };
 
   // Totem Hayvanı Tasarıma Dahil Edilsin mi? (Ekleme / Çıkarma Tercihi)
   const [includeTotemInDesign, setIncludeTotemInDesign] = useState<boolean>(false);
@@ -335,6 +351,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setIncludeTotemInDesign(false);
     setCustomMainSymbol('');
     setCustomSecondarySymbols([]);
+    setExcludedDesignSymbols([]);
     setGeneratedRecipe(null);
     setSymbolism(null);
     setNumerology(null);
@@ -393,6 +410,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setShowClientDossierModal(false);
     setCustomMainSymbol('');
     setCustomSecondarySymbols([]);
+    setExcludedDesignSymbols([]);
     setGeneratedRecipe(null);
     setCopiedPromptType(null);
     setGeneratedSketchUrl(null);
@@ -2302,7 +2320,7 @@ ${r.turkishPromptExplanation}
                 <input
                   type="text"
                   value={customMainSymbol}
-                  onChange={(e) => setCustomMainSymbol(e.target.value)}
+                  onChange={(e) => handleMainSymbolChange(e.target.value)}
                   className="w-full px-3 py-2 bg-[#111] border border-[#222] rounded-lg text-sm text-white font-semibold focus:border-[#c4a47c] focus:outline-none"
                 />
                 <p className="text-[11px] text-[#888] mt-1.5">
@@ -2408,7 +2426,11 @@ ${r.turkishPromptExplanation}
                       <span>{sym}</span>
                       <button
                         type="button"
-                        onClick={() => setCustomSecondarySymbols(customSecondarySymbols.filter((_, i) => i !== idx))}
+                        onClick={() => {
+                          const removed = customSecondarySymbols[idx];
+                          rememberExcludedSymbol(removed, 'Yardımcı sembol tasarımdan çıkarıldı.');
+                          setCustomSecondarySymbols(customSecondarySymbols.filter((_, i) => i !== idx));
+                        }}
                         className="text-[#666] hover:text-rose-400 ml-1 text-xs cursor-pointer"
                       >
                         ×
