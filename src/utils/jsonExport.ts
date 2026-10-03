@@ -2,28 +2,13 @@ import { TattooRecipe } from '../types';
 
 /**
  * Downloads full TattooRecipe and Symbol Integration analysis as a formatted JSON file.
- * 
- * Standartlaştırılmış JSON Çıktı Şeması:
- * {
- *   "user": { ... },
- *   "analysis": { ... },
- *   "symbols": [ ... ],
- *   "visualTranslations": [ ... ],
- *   "integrations": [ ... ],
- *   "designGeometry": { ... },
- *   "symbolMap": [ ... ],
- *   "finalDesign": { ... },
- *   "traceability": [ ... ],
- *   "validation": { ... },
- *   "versions": { ... }
- * }
+ * The export never claims a recipe is validated when no validation result exists.
  */
 export function downloadRecipeAsJson(recipe: TattooRecipe): boolean {
   try {
     const clientName = recipe.clientName || recipe.personData.name || 'Danisan';
     const sanitizedName = clientName.replace(/[^a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s_-]/g, '').trim().replace(/\s+/g, '_');
     const filename = `Dovme_Tasarim_Recetesi_${sanitizedName}_${recipe.id.substring(0, 8)}.json`;
-
     const integration = recipe.symbolicIntegration;
 
     const payload = {
@@ -102,9 +87,9 @@ export function downloadRecipeAsJson(recipe: TattooRecipe): boolean {
         feasibility: recipe.feasibility
       },
       traceability: integration?.traceability || [],
-      validation: integration?.validation || {
-        status: 'VALID',
-        score: 100,
+      validation: integration?.validation ?? {
+        status: 'NOT_VALIDATED',
+        score: null,
         checks: []
       },
       versions: integration?.version || {
@@ -118,7 +103,6 @@ export function downloadRecipeAsJson(recipe: TattooRecipe): boolean {
     const jsonString = JSON.stringify(payload, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
@@ -126,11 +110,7 @@ export function downloadRecipeAsJson(recipe: TattooRecipe): boolean {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 60000);
-
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
     return true;
   } catch (err) {
     console.error('Failed to export recipe JSON:', err);
