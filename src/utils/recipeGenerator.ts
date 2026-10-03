@@ -38,8 +38,8 @@ export function generateTattooRecipe(
   parameters: TattooDesignParameters
 ): TattooRecipe {
   const stylesStr = parameters.selectedStyles.join(' + ') || 'Fine Line & Geometric';
-  // Ürün kuralı: totemler analiz katmanındadır; final dövmede hayvan figürü/soyutlaması yoktur.
-  const includeTotem = false;
+  // Totem her zaman analiz edilir; yalnızca açık kullanıcı tercihiyle görsel tasarıma alınır.
+  const includeTotem = parameters.includeTotemInDesign === true;
 
   // Guard against stale/mismatched symbolism entering a recipe.
   validateRecipeSymbolism(symbolism);
@@ -524,7 +524,7 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
       const selectedSymbols = [
         mainSymbol,
         ...secondarySymbols
-      ].filter(Boolean).filter(sym => !isTotemReference(sym));
+      ].filter(Boolean).filter(sym => includeTotem || !isTotemReference(sym));
       const calculatedSymbols = [
         symbolism.geometricSymbol,
         symbolism.plantFlora,
