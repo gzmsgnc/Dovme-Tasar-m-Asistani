@@ -55,9 +55,9 @@ saveClient({ ...clientA, personalStory: 'A yeni hikayesi', existingSymbols: 'A y
 assert.equal(source.getStoredClients().find(c => c.id === 'client_A')?.personalStory, 'A yeni hikayesi');
 assert.equal(source.getStoredClients().find(c => c.id === 'client_B')?.personalStory, 'B hikayesi');
 
-const recipeA: any = { id: 'recipe_A', clientId: 'client_A', clientName: 'Danışan A', title: 'A Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
-const recipeA2: any = { id: 'recipe_A2', clientId: 'client_A', clientName: 'Danışan A', title: 'A İkinci Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
-const recipeB: any = { id: 'recipe_B', clientId: 'client_B', clientName: 'Danışan B', title: 'B Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
+const recipeA: any = { id: 'recipe_A', clientId: 'client_A', clientName: 'Danışan A', personData: clientA, title: 'A Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
+const recipeA2: any = { id: 'recipe_A2', clientId: 'client_A', clientName: 'Danışan A', personData: clientA, title: 'A İkinci Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
+const recipeB: any = { id: 'recipe_B', clientId: 'client_B', clientName: 'Danışan B', personData: clientB, title: 'B Reçetesi', parameters: { selectedStyles: [], mainSymbol: '', bodyPlacement: '' } };
 saveRecipe(recipeA); saveRecipe(recipeA2); saveRecipe(recipeB);
 assert.deepEqual(source.getStoredRecipes().map(r => r.id), ['recipe_B', 'recipe_A2', 'recipe_A']);
 
@@ -68,6 +68,10 @@ assert.throws(
 assert.throws(
   () => saveRecipe({ ...recipeA, id: 'mismatched_recipe', clientId: 'client_A', clientName: 'Danışan B' }),
   /danışan adı ile bağlı kayıt eşleşmiyor/
+);
+assert.throws(
+  () => saveRecipe({ ...recipeA, id: 'wrong_person_data', clientId: 'client_A', clientName: 'Danışan A', personData: clientB }),
+  /reçete kişi verisi bağlı danışanla eşleşmiyor/
 );
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_A').length, 2);
 assert.equal(source.getStoredRecipes().filter(r => r.clientId === 'client_B').length, 1);
