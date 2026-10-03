@@ -152,6 +152,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   const [customSecondarySymbols, setCustomSecondarySymbols] = useState<string[]>([]);
   const [newSecSymbolInput, setNewSecSymbolInput] = useState<string>('');
   const [excludedDesignSymbols, setExcludedDesignSymbols] = useState<Array<{ name: string; reason?: string }>>([]);
+  const [hasUserEditedDesignSymbols, setHasUserEditedDesignSymbols] = useState<boolean>(false);
 
   const rememberExcludedSymbol = (name: string, reason: string) => {
     const trimmed = name.trim();
@@ -166,6 +167,8 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
       rememberExcludedSymbol(previous, 'Ana odak sembolü tasarımdan çıkarıldı veya değiştirildi.');
     }
     setCustomMainSymbol(nextValue);
+    setHasUserEditedDesignSymbols(true);
+    if (next) setExcludedDesignSymbols(prev => prev.filter(item => item.name !== next));
   };
 
   // Totem Hayvanı Tasarıma Dahil Edilsin mi? (Ekleme / Çıkarma Tercihi)
@@ -291,12 +294,14 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
         setChakra(chk);
         setProfileValidationError(null);
 
-        if (includeTotemInDesign) {
-          setCustomMainSymbol(symb.totemAnimal);
-        } else if (!customMainSymbol || customMainSymbol === symb.totemAnimal || symb.totemHierarchy?.some(t => t.name === customMainSymbol)) {
-          setCustomMainSymbol(symb.sacredObject || symb.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği');
+        if (!hasUserEditedDesignSymbols) {
+          if (includeTotemInDesign) {
+            setCustomMainSymbol(symb.totemAnimal);
+          } else {
+            setCustomMainSymbol(symb.sacredObject || symb.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği');
+          }
+          setCustomSecondarySymbols([symb.plantFlora, symb.geometricSymbol, symb.sacredObject].filter(Boolean));
         }
-        setCustomSecondarySymbols([symb.plantFlora, symb.geometricSymbol, symb.sacredObject]);
       } catch (err: unknown) {
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : String(err);
@@ -311,7 +316,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
 
     void calculateProfiles();
     return () => { cancelled = true; };
-}, [name, birthDate, birthTime, birthPlace, selectedLocation, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers]);
+}, [name, birthDate, birthTime, birthPlace, selectedLocation, motherName, personalNumbers, personalStory, zodiacSystem, selectedEnneaType, selectedWing, includeTotemInDesign, totemAnswers, hasUserEditedDesignSymbols]);
 
   // Helper to load full client data into state cleanly
   const handleApplyClientData = (client: PersonData) => {
@@ -352,6 +357,7 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     setCustomMainSymbol('');
     setCustomSecondarySymbols([]);
     setExcludedDesignSymbols([]);
+    setHasUserEditedDesignSymbols(false);
     setGeneratedRecipe(null);
     setSymbolism(null);
     setNumerology(null);
@@ -2427,6 +2433,7 @@ ${r.turkishPromptExplanation}
                         onClick={() => {
                           const removed = customSecondarySymbols[idx];
                           rememberExcludedSymbol(removed, 'Yardımcı sembol tasarımdan çıkarıldı.');
+                          setHasUserEditedDesignSymbols(true);
                           setCustomSecondarySymbols(customSecondarySymbols.filter((_, i) => i !== idx));
                         }}
                         className="text-[#666] hover:text-rose-400 ml-1 text-xs cursor-pointer"
@@ -2446,6 +2453,10 @@ ${r.turkishPromptExplanation}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && newSecSymbolInput.trim()) {
                         e.preventDefault();
+                        setHasUserEditedDesignSymbols(true);
+                        setExcludedDesignSymbols(prev => prev.filter(item => item.name !== newSecSymbolInput.trim()));
+                        setHasUserEditedDesignSymbols(true);
+                        setExcludedDesignSymbols(prev => prev.filter(item => item.name !== newSecSymbolInput.trim()));
                         setCustomSecondarySymbols([...customSecondarySymbols, newSecSymbolInput.trim()]);
                         setNewSecSymbolInput('');
                       }
