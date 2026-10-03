@@ -207,8 +207,11 @@ export function saveRecipe(recipe: TattooRecipe): TattooRecipe[] {
   if (!owner) {
     throw new Error('Reçete kaydedilemedi: bağlı danışan kaydı bulunamadı.');
   }
-  if (recipe.clientName && recipe.clientName !== owner.name) {
+  if (recipe.clientName !== owner.name) {
     throw new Error('Reçete kaydedilemedi: danışan adı ile bağlı kayıt eşleşmiyor.');
+  }
+  if (recipe.personData?.id !== owner.id || recipe.personData?.name !== owner.name) {
+    throw new Error('Reçete kaydedilemedi: reçete kişi verisi bağlı danışanla eşleşmiyor.');
   }
 
   const recipes = getStoredRecipes();
