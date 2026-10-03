@@ -618,12 +618,172 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     }
   };
 
-  // Copy Prompt Helper
-  const copyPromptToClipboard = (text: string, type: string) => {
+  // Copy / export helpers
+  const copyPromptToClipboard = async (text: string, type: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedPromptType(type);
-    setTimeout(() => setCopiedPromptType(null), 2500);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPromptType(type);
+      setTimeout(() => setCopiedPromptType(null), 2500);
+    } catch (error) {
+      console.error('Clipboard copy failed:', error);
+      setClientSaveFeedback('⚠️ Kopyalama başarısız. Tarayıcı pano iznini kontrol edin.');
+      setTimeout(() => setClientSaveFeedback(null), 3500);
+    }
+  };
+
+  const buildTotemTestExport = () => ({
+    exportType: 'TOTEM_TEST_SONUCU',
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    client: {
+      id: currentClientId || generatedRecipe?.personData?.id || null,
+      name,
+      birthDate,
+      birthTime,
+      birthPlace,
+      motherName
+    },
+    test: {
+      questionsAnswered: Object.keys(totemAnswers).length,
+      answers: totemAnswers
+    },
+    calculatedResult: symbolism?.totemTestResult || null,
+    totemHierarchy: symbolism?.totemHierarchy || [],
+    symbolismTotemFields: symbolism ? {
+      totemAnimal: symbolism.totemAnimal,
+      totemAnimalId: symbolism.totemAnimalId,
+      totemAnimalMeaning: symbolism.totemAnimalMeaning,
+      shadowTotemName: symbolism.shadowTotemName,
+      shadowTotemMeaning: symbolism.shadowTotemMeaning,
+      shadowTotemPower: symbolism.shadowTotemPower,
+      secondaryAnimals: symbolism.secondaryAnimals,
+      calculatedTotemName: symbolism.calculatedTotemName,
+      calculatedTotemMeaning: symbolism.calculatedTotemMeaning
+    } : null
+  });
+
+  const buildEnneagramTestExport = () => ({
+    exportType: 'ENNEAGRAM_TEST_SONUCU',
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    client: {
+      id: currentClientId || generatedRecipe?.personData?.id || null,
+      name,
+      birthDate,
+      birthTime,
+      birthPlace,
+      motherName
+    },
+    test: {
+      questionsAnswered: Object.keys(enneagramAnswers).length,
+      answers: enneagramAnswers
+    },
+    selectedResult: {
+      type: selectedEnneaType,
+      wing: selectedWing
+    },
+    calculatedProfile: enneagram || null
+  });
+
+  const buildPrescriptionExport = () => ({
+    exportType: 'KISISEL_SEMBOL_RECETESI',
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    client: generatedRecipe?.personData || {
+      id: currentClientId,
+      name,
+      birthDate,
+      birthTime,
+      birthPlace,
+      motherName
+    },
+    prescription: generatedRecipe?.prescription || null,
+    recipeCore: generatedRecipe ? {
+      title: generatedRecipe.title,
+      summaryRationale: generatedRecipe.summaryRationale,
+      numerology: generatedRecipe.numerology,
+      astrology: generatedRecipe.astrology,
+      enneagram: generatedRecipe.enneagram,
+      symbolism: generatedRecipe.symbolism,
+      chakra: generatedRecipe.chakra,
+      parameters: generatedRecipe.parameters,
+      symbolRationales: generatedRecipe.symbolRationales,
+      subtleDetails: generatedRecipe.subtleDetails,
+      symbolInterconnection: generatedRecipe.symbolInterconnection,
+      compositionGuide: generatedRecipe.compositionGuide,
+      placementAnatomyNotes: generatedRecipe.placementAnatomyNotes,
+      needleAndTechniqueGuide: generatedRecipe.needleAndTechniqueGuide,
+      artisticAtmosphereGuide: generatedRecipe.artisticAtmosphereGuide,
+      feasibility: generatedRecipe.feasibility
+    } : null
+  });
+
+  const buildCompleteClientExport = () => ({
+    exportType: 'DANISAN_TAM_DOSYA_A_DAN_ZYE',
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    note: 'Bu çıktı danışana ait mevcut girdileri, test cevaplarını, hesaplamaları, sembol reçetesini, dövme reçetesini ve tüm promptları tek pakette toplar.',
+    rawFormInput: {
+      id: currentClientId,
+      name,
+      birthDate,
+      birthTime,
+      birthPlace,
+      selectedLocation,
+      motherName,
+      existingTotems,
+      existingSymbols,
+      personalNumbers,
+      personalStory,
+      zodiacSystem,
+      notes,
+      selectedStyles,
+      composition,
+      orientation,
+      bodyPlacement,
+      density,
+      colorScheme,
+      visualAtmosphere,
+      customMainSymbol,
+      customSecondarySymbols,
+      includeTotemInDesign,
+      useMorseCodeForNumbers,
+      customMorseInput,
+      totemAnswers,
+      enneagramAnswers,
+      selectedEnneaType,
+      selectedWing
+    },
+    calculatedProfiles: {
+      numerology,
+      astrology,
+      enneagram,
+      symbolism,
+      chakra
+    },
+    testExports: {
+      totem: buildTotemTestExport(),
+      enneagram: buildEnneagramTestExport()
+    },
+    prescription: buildPrescriptionExport(),
+    completeRecipe: generatedRecipe || null
+  });
+
+  const handleCopyTotemTestResult = () => {
+    copyPromptToClipboard(JSON.stringify(buildTotemTestExport(), null, 2), 'totem-test');
+  };
+
+  const handleCopyEnneagramTestResult = () => {
+    copyPromptToClipboard(JSON.stringify(buildEnneagramTestExport(), null, 2), 'enneagram-test');
+  };
+
+  const handleCopyPrescription = () => {
+    copyPromptToClipboard(JSON.stringify(buildPrescriptionExport(), null, 2), 'prescription');
+  };
+
+  const handleCopyCompleteClientFile = () => {
+    copyPromptToClipboard(JSON.stringify(buildCompleteClientExport(), null, 2), 'complete-client');
   };
 
   const handleCopyAllPrompts = () => {
@@ -1836,6 +1996,16 @@ ${r.turkishPromptExplanation}
                 <span className="font-bold text-white">{enneagram.typeName} ({enneagram.wing})</span>
                 <span className="text-[10px] text-[#666] font-mono">Stres: {enneagram.stressPoint} / Büyüme: {enneagram.growthPoint}</span>
               </div>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={handleCopyEnneagramTestResult}
+                  className="px-2.5 py-1 rounded bg-[#18150f] hover:bg-[#252015] border border-[#c4a47c]/40 hover:border-[#c4a47c] text-[#c4a47c] text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                >
+                  {copiedPromptType === 'enneagram-test' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedPromptType === 'enneagram-test' ? 'KOPYALANDI' : 'Enneagram Sonucunu Kopyala'}</span>
+                </button>
+              </div>
               <p className="text-[11px] text-[#aaa]">
                 <strong className="text-[#666]">Temel Motivasyon:</strong> {enneagram.coreMotivation}
               </p>
@@ -1899,6 +2069,14 @@ ${r.turkishPromptExplanation}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyTotemTestResult}
+                      className="text-[10px] font-mono px-2.5 py-1 rounded bg-[#18150f] hover:bg-[#252015] border border-[#c4a47c]/40 hover:border-[#c4a47c] text-[#c4a47c] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      {copiedPromptType === 'totem-test' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedPromptType === 'totem-test' ? 'KOPYALANDI' : 'Totem Sonucunu Kopyala'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setShowTotemQuizModal(true)}
@@ -3460,6 +3638,25 @@ ${r.turkishPromptExplanation}
 
             {/* Quick Actions Panel */}
             <div className="space-y-2 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyPrescription}
+                  className="w-full py-2.5 px-3 rounded-lg bg-[#18150f] hover:bg-[#252015] border border-[#c4a47c]/50 hover:border-[#c4a47c] text-[#c4a47c] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  {copiedPromptType === 'prescription' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedPromptType === 'prescription' ? 'REÇETE KOPYALANDI' : 'Reçeteyi Kopyala'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyCompleteClientFile}
+                  className="w-full py-2.5 px-3 rounded-lg bg-[#c4a47c] hover:bg-[#b89569] text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#c4a47c]/20"
+                >
+                  {copiedPromptType === 'complete-client' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedPromptType === 'complete-client' ? 'TÜM DANIŞAN DOSYASI KOPYALANDI' : "A'dan Z'ye Tüm Danışan Verisini Kopyala"}</span>
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowClientDossierModal(true)}
