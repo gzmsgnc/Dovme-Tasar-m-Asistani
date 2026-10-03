@@ -391,7 +391,7 @@ export async function exportRecipeToPDF(
                 </div>
                 <div style="font-size: 14px; font-weight: 700; color: #ffffff; font-family: Georgia, serif;">${t.name}</div>
                 <div style="font-size: 10px; color: #a1a1aa; margin-top: 4px; line-height: 1.4;">${t.meaning}</div>
-                <div style="font-size: 9px; color: #c4a47c; margin-top: 6px; font-family: monospace;">Rol: ${t.visualRoleInTattoo}</div>
+                ${params.includeTotemInDesign ? `<div style="font-size: 9px; color: #c4a47c; margin-top: 6px; font-family: monospace;">Tasarım Rolü: ${t.visualRoleInTattoo}</div>` : `<div style="font-size: 9px; color: #a1a1aa; margin-top: 6px; font-family: monospace;">Tasarım Durumu: TASARIMA DAHİL DEĞİL — Yalnızca ruhani analiz ve arketipsel rehber.</div>`}
               </div>
             `).join('') : `
               <div style="background: #16161e; border: 1px solid #262633; border-radius: 8px; padding: 12px; grid-column: span 3;">
