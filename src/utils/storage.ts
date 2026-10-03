@@ -170,6 +170,12 @@ export function deleteClient(id: string): PersonData[] {
 
 export function getStoredRecipes(): TattooRecipe[] {
   try {
+    const clientsById = new Map<string, PersonData>(getStoredClients().map(client => [client.id, client]));
+    const sanitize = (parsed: unknown): TattooRecipe[] => {
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(recipe => isValidImportedRecipe(recipe, clientsById));
+    };
+
     let raw = localStorage.getItem(RECIPES_STORAGE_KEY);
     if (!raw) {
       const legacyRaw = localStorage.getItem(LEGACY_RECIPES_KEY);
@@ -177,7 +183,7 @@ export function getStoredRecipes(): TattooRecipe[] {
         try {
           const parsed = JSON.parse(legacyRaw);
           if (Array.isArray(parsed)) {
-            const realOnly = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
+            const realOnly = sanitize(parsed);
             localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realOnly));
             return realOnly;
           }
@@ -185,10 +191,13 @@ export function getStoredRecipes(): TattooRecipe[] {
       }
       return [];
     }
+
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    const realRecipes = parsed.filter(r => r && r.clientId && !DEMO_ACCOUNT_IDS.has(r.clientId) && !isDemoClient({ id: r.clientId, name: r.clientName }));
-    if (realRecipes.length !== parsed.length) localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realRecipes));
+    const realRecipes = sanitize(parsed);
+    if (realRecipes.length !== parsed.length) {
+      localStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(realRecipes));
+    }
     return realRecipes;
   } catch { return []; }
 }
