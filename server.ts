@@ -119,14 +119,13 @@ function isDemoClientRecord(client: any): boolean {
   if (!client || typeof client !== 'object') return true;
   if (client.id && DEMO_ACCOUNT_IDS.has(client.id)) return true;
 
-  const name = String(client.name || '').trim().toLocaleLowerCase('tr-TR');
   const email = String(client.email || '').trim().toLocaleLowerCase('tr-TR');
   const source = String(client.source || '').trim().toLocaleLowerCase('tr-TR');
   const status = String(client.status || '').trim().toLocaleLowerCase('tr-TR');
 
-  const demoNamePatterns = ['selin kaya', 'emir arslan', 'derya yılmaz', 'demo', 'test danışan', 'test müşteri', 'test musteri'];
-  return demoNamePatterns.some(pattern => name === pattern || name.includes(pattern))
-    || email.includes('demo@')
+  // A person's name is not sufficient evidence that a record is demo data.
+  // Real clients can legitimately share names with historical test records.
+  return email.includes('demo@')
     || email.includes('test@')
     || source === 'demo'
     || source === 'test'
