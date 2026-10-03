@@ -677,12 +677,6 @@ export function generateDesignFormula(
   designParameters: TattooDesignParameters
 ): PrescriptionDesignFormula {
   const activeNames = [designParameters.mainSymbol?.trim(), ...(designParameters.secondarySymbols || []).map(s => s.trim())].filter(Boolean) as string[];
-  const activeNameSet = new Set(activeNames);
-  const activeSymbols = symbols.filter(s => activeNameSet.has(s.symbolName) && s.designCategory !== 'Negatif alan');
-  const centerSymbol = activeSymbols[0] || symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
-  const geoSymbol = activeSymbols[1];
-  const organicSymbol = activeSymbols[2];
-  const microSymbol = activeSymbols[3];
   const negSymbol = null;
 
   const styles = (designParameters.selectedStyles && designParameters.selectedStyles.length > 0)
