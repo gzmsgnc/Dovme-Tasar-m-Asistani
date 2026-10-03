@@ -116,6 +116,10 @@ const expectedChakraDirective = calculateChakraProfile(numerology, astrology).pr
 assert.ok(recipe.turkishPromptExplanation.includes(expectedChakraDirective));
 assert.ok(recipe.symbolRationales.some(r => r.esotericConnection.includes('Yaşam Yolu 7')));
 assert.equal(recipe.parameters.includeTotemInDesign, false);
+assert.equal(recipe.prescription?.canonicalAnalysis?.totem?.includeAnimalInTattoo, false);
+assert.equal(recipe.prescription?.canonicalAnalysis?.totem?.totemHandlingMode, 'Analiz Yalnızca');
+assert.ok(recipe.prescription?.canonicalAnalysis?.totem?.totemHandlingExplanation?.includes('yalnızca analiz/yorum katmanında'));
+assert.ok(!recipe.prescription?.designFormula?.center?.toLowerCase().includes('kızıl geyik'));
 assert.ok(!recipe.masterEnglishPrompt.toLowerCase().includes('kızıl geyik'));
 assert.ok(!recipe.masterEnglishPrompt.includes('19 İlahi'));
 assert.ok(!recipe.masterEnglishPrompt.includes('19-dot matrix'));
