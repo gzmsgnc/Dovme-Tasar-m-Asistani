@@ -19,8 +19,9 @@ function isDemoClient(client: any): boolean {
   const email = String(client.email || '').trim().toLocaleLowerCase('tr-TR');
   const source = String(client.source || '').trim().toLocaleLowerCase('tr-TR');
   const status = String(client.status || '').trim().toLocaleLowerCase('tr-TR');
-  const demoNamePatterns = ['selin kaya', 'emir arslan', 'derya yılmaz', 'demo', 'test danışan', 'test musteri', 'test müşteri'];
-  return demoNamePatterns.some(pattern => name === pattern || name.includes(pattern)) || email.includes('demo@') || email.includes('test@') || source === 'demo' || source === 'test' || status === 'demo';
+  // A person's name is not sufficient evidence that a record is demo data.
+  // Real clients can legitimately have the same names as historical test records.
+  return email.includes('demo@') || email.includes('test@') || source === 'demo' || source === 'test' || status === 'demo';
 }
 
 function isValidImportedClient(client: any): client is PersonData {
