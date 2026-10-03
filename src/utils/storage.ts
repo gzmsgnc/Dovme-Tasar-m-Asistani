@@ -210,7 +210,7 @@ export function saveRecipe(recipe: TattooRecipe): TattooRecipe[] {
   if (recipe.clientName !== owner.name) {
     throw new Error('Reçete kaydedilemedi: danışan adı ile bağlı kayıt eşleşmiyor.');
   }
-  if (recipe.personData?.id !== owner.id || recipe.personData?.name !== owner.name) {
+  if (recipe.personData && (recipe.personData.id !== owner.id || recipe.personData.name !== owner.name)) {
     throw new Error('Reçete kaydedilemedi: reçete kişi verisi bağlı danışanla eşleşmiyor.');
   }
 
