@@ -142,5 +142,7 @@ assert.ok(
   'Analysis-only totems must not leak into any final visual prompt/export instruction.'
 );
 
+assert.equal(recipe.symbolRationales.some((r: any) => /Kızıl Geyik|Bal Porsuğu|Su Samuru/i.test(r.symbolName)), false);
+
 
 console.log('Final prompt personalization tests passed');
