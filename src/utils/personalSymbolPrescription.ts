@@ -679,9 +679,9 @@ export function generateDesignFormula(
   const activeNameSet = new Set(activeNames);
   const activeSymbols = symbols.filter(s => activeNameSet.has(s.symbolName) && s.designCategory !== 'Negatif alan');
   const centerSymbol = activeSymbols[0] || symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
-  const geoSymbol = activeSymbols[1] || symbols.find(s => s.designCategory === 'Destekleyici geometri') || symbols[1];
-  const organicSymbol = activeSymbols[2] || symbols.find(s => s.designCategory === 'Organik element') || symbols[2];
-  const microSymbol = activeSymbols[3] || symbols.find(s => s.designCategory === 'Kişisel mikro detay') || symbols[3];
+  const geoSymbol = activeSymbols[1];
+  const organicSymbol = activeSymbols[2];
+  const microSymbol = activeSymbols[3];
   const negSymbol = null;
 
   const styles = (designParameters.selectedStyles && designParameters.selectedStyles.length > 0)
@@ -689,10 +689,10 @@ export function generateDesignFormula(
     : 'Fine Line + Micro Realism + Dotwork';
 
   return {
-    center: centerSymbol.symbolName,
-    supportingGeometry: geoSymbol.symbolName,
-    organicElement: organicSymbol.symbolName,
-    personalMicroDetail: microSymbol.symbolName,
+    center: activeNames[0] || 'Aktif ana sembol seçilmedi',
+    supportingGeometry: activeNames[1] || 'Ek destekleyici sembol seçilmedi',
+    organicElement: activeNames[2] || 'Ek organik sembol seçilmedi',
+    personalMicroDetail: activeNames[3] || 'Ek mikro sembol seçilmedi',
     negativeSpace: 'Teknik üretim parametresi — müşteri reçetesinde gösterilmez',
     visualLanguage: styles
   };
@@ -913,12 +913,13 @@ export function generateTattooDesignPromptFromPrescription(
   const selectedMain = designParameters.mainSymbol?.trim();
   const selectedSecondary = (designParameters.secondarySymbols || []).map(s => s.trim()).filter(Boolean);
   const activeNames = [selectedMain, ...selectedSecondary].filter(Boolean) as string[];
-  const activeSymbols = activeNames.length > 0 ? activeNames : generatedHelpers.map(s => s.symbolName);
-  const promptCenterName = activeSymbols[0] || centerSym?.symbolName || 'Kişisel sembol';
+  const activeSymbols = activeNames;
+  const promptCenterName = activeSymbols[0] || 'Açıkça seçilmiş ana sembol yok';
   const promptSecondaryNames = activeSymbols.slice(1, 4);
-  const geoName = promptSecondaryNames[0] || generatedHelpers.find(s => s.designCategory === 'Destekleyici geometri')?.symbolName || 'Kutsal geometri';
-  const organicName = promptSecondaryNames[1] || generatedHelpers.find(s => s.designCategory === 'Organik element')?.symbolName || 'Organik akış';
-  const microName = promptSecondaryNames[2] || generatedHelpers.find(s => s.designCategory === 'Kişisel mikro detay')?.symbolName || 'Gizli mikro detay';
+  const geoName = promptSecondaryNames[0] || 'Ek açıkça seçilmiş destek sembolü yok';
+  const organicName = promptSecondaryNames[1] || 'Ek açıkça seçilmiş organik sembol yok';
+  const microName = promptSecondaryNames[2] || 'Ek açıkça seçilmiş mikro sembol yok';
+  const centerTheme = centerSym && centerSym.symbolName === promptCenterName ? centerSym.coreTheme : 'kullanıcının aktif olarak seçtiği sembolün anlamı';
 
   const styles = formula.visualLanguage;
   const placement = designParameters.bodyPlacement || 'Önkol İç';
@@ -931,7 +932,7 @@ export function generateTattooDesignPromptFromPrescription(
 
   const promptText = `
 master tattoo design, stencil-ready tattoo flash artwork, single cohesive composition, clean intentional contours, skin-safe negative space.
-FOCAL SUBJECT (60-70% visual weight): Centrally placed ${promptCenterName}, executed with commanding contrast and crisp 03RL linework, symbolizing ${centerSym.coreTheme}.
+FOCAL SUBJECT (60-70% visual weight): Centrally placed ${promptCenterName}, executed with commanding contrast and crisp 03RL linework, symbolizing ${centerTheme}.
 SUPPORTING SACRED GEOMETRY (20% visual weight): ${geoName}, forming an architectural background matrix aligned with golden ratio proportions.
 ORGANIC FLOW & ANATOMY (10-15% visual weight): ${organicName}, soft whip-shaded curves flowing naturally along the ${placement} curvature.
 PERSONAL ESOTERIC MICRO-DETAILS (5% visual weight): Subtle micro-stippling dotwork sigils (${microName}), delicate numeric resonance of Life Path ${canonical.numerology.lifePathNumber} and Ebced ${canonical.ebcedAndMizan.totalEbced}.
