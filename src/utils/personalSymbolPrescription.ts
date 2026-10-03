@@ -239,7 +239,7 @@ export function extractCanonicalClientAnalysis(params: {
     throw new Error('Totem hiyerarşisi tamamlanmadan kişisel sembol reçetesi üretilemez.');
   }
 
-  const includeAnimalInTattoo = false; // Final ürün kuralı: totemler analiz-only.
+  const includeAnimalInTattoo = designParameters.includeTotemInDesign === true;
   const totemHandlingMode: 'Figüratif Odak' | 'Analiz Yalnızca' = includeAnimalInTattoo 
     ? 'Figüratif Odak' 
     : 'Analiz Yalnızca';
