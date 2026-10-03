@@ -79,13 +79,17 @@ export function generateTattooRecipe(
     ...(symbolism.chakraProfile?.dominantChakras ?? []).flatMap(chakra => chakra.healingSymbols.slice(0, 1))
   ];
 
-  const shadowDrivenSymbols = [
-    symbolism.shadowTotemRole,
-    symbolism.shadowTotemName
-      ? `${symbolism.shadowTotemName} — ${symbolism.shadowTotemMeaning || 'gölge entegrasyonu'}`
-      : undefined,
-    ...(symbolism.enneagramShadowTraits ?? []).slice(0, 2).map(trait => `Gölge dönüşümü: ${trait}`)
-  ];
+  const shadowDrivenSymbols = includeTotem
+    ? [
+        symbolism.shadowTotemRole,
+        symbolism.shadowTotemName
+          ? `${symbolism.shadowTotemName} — ${symbolism.shadowTotemMeaning || 'gölge entegrasyonu'}`
+          : undefined,
+        ...(symbolism.enneagramShadowTraits ?? []).slice(0, 2).map(trait => `Gölge dönüşümü: ${trait}`)
+      ]
+    : [
+        ...(symbolism.enneagramShadowTraits ?? []).slice(0, 2).map(trait => `Gölge dönüşümü: ${trait}`)
+      ];
 
   const rawSecondary = parameters.secondarySymbols.length > 0
     ? parameters.secondarySymbols
@@ -100,9 +104,18 @@ export function generateTattooRecipe(
   // Remove duplicate symbols while preserving the user's calculated hierarchy.
   const uniqueSecondarySymbols = [...new Set(rawSecondary.filter(Boolean).map(s => s.trim()))];
 
+  const isTotemReference = (value: string): boolean => {
+    const normalized = value.toLowerCase().trim();
+    if (isTotemAnimalName(normalized)) return true;
+    const allNames = [symbolism.totemAnimal, ...(symbolism.secondaryAnimals ?? []), ...(symbolism.totemHierarchy?.map(t => t.name) ?? [])]
+      .filter(Boolean)
+      .map(name => name!.toLowerCase().trim());
+    return allNames.some(name => normalized === name || normalized.startsWith(name + ' —') || normalized.startsWith(name + ' -'));
+  };
+
   const secondarySymbols = includeTotem
     ? uniqueSecondarySymbols
-    : uniqueSecondarySymbols.filter(s => !isTotemAnimalName(s));
+    : uniqueSecondarySymbols.filter(s => !isTotemReference(s));
 
   const hasVerified19 = numerology.divineHelp19?.has19 === true;
   let subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
@@ -509,9 +522,9 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     masterEnglishPrompt: (() => {
       const basePrompt = symbolicIntegration.masterIntegratedAiPrompt || masterEnglishPrompt;
       const selectedSymbols = [
-        ...(parameters.mainSymbol ? [parameters.mainSymbol] : []),
-        ...(parameters.secondarySymbols || [])
-      ].filter(Boolean);
+        mainSymbol,
+        ...secondarySymbols
+      ].filter(Boolean).filter(sym => !isTotemReference(sym));
       const calculatedSymbols = [
         symbolism.geometricSymbol,
         symbolism.plantFlora,
