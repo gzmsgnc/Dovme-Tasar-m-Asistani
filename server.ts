@@ -372,28 +372,17 @@ async function startServer() {
         });
       }
       let resolvedLocation: CityLocation;
-      if (typeof body.birthLatitude === 'number' && typeof body.birthLongitude === 'number' && !isNaN(body.birthLatitude) && !isNaN(body.birthLongitude)) {
-        resolvedLocation = resolveCityLocation({
-          name: birthPlace,
-          lat: body.birthLatitude,
-          lon: body.birthLongitude,
-          timezone: body.birthTimezone,
-          city: body.birthCity,
-          region: body.birthRegion,
-          country: body.birthCountry,
-          countryCode: body.birthCountryCode,
-          defaultTz: body.birthTimezoneOffset
+      // Doğum koordinatları/saat dilimi istemciden geldiğinde güvenilmez kabul edilir.
+      // Sunucu, hesaplamaların deterministik ve doğru kalması için doğum yerini yalnızca
+      // doğrulanmış metin + ülke kodundan yeniden çözer; istemci koordinatlarını override olarak kullanmaz.
+      try {
+        const asyncLoc = await resolveLocationAsync(birthPlace, body.birthCountryCode);
+        resolvedLocation = resolveCityLocation(asyncLoc);
+      } catch (err: unknown) {
+        return res.status(400).json({
+          success: false,
+          error: err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
         });
-      } else {
-        try {
-          const asyncLoc = await resolveLocationAsync(birthPlace, body.birthCountryCode);
-          resolvedLocation = resolveCityLocation(asyncLoc);
-        } catch (err: unknown) {
-          return res.status(400).json({
-            success: false,
-            error: err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
-          });
-        }
       }
 
       // 7. Anne Adı Doğrulaması (Ebced & Yıldızname soy kökü için zorunlu)
