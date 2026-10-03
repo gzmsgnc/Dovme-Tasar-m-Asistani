@@ -904,7 +904,6 @@ export function generateTattooDesignPromptFromPrescription(
   negativePrompt: string;
 } {
   const centerSym = symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
-  const generatedHelpers = symbols.filter(s => s.designCategory !== 'Negatif alan');
   const selectedMain = designParameters.mainSymbol?.trim();
   const selectedSecondary = (designParameters.secondarySymbols || []).map(s => s.trim()).filter(Boolean);
   const activeNames = [selectedMain, ...selectedSecondary].filter(Boolean) as string[];
