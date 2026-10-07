@@ -157,50 +157,97 @@ function hashResetCode(code: string): string {
 }
 
 async function sendAdminResetCode(email: string, code: string): Promise<{ ok: boolean; error?: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const apiKey = String(process.env.RESEND_API_KEY || '').trim();
+  const from = String(process.env.RESEND_FROM_EMAIL || '').trim();
+
   if (!apiKey || !from) {
-    console.error('[admin-reset] Resend secrets missing:', {
+    console.error('[admin-reset] Resend configuration missing:', {
       hasApiKey: Boolean(apiKey),
       hasFrom: Boolean(from)
     });
-    return { ok: false, error: 'Resend secretları eksik.' };
+    return { ok: false, error: 'Resend API anahtarı veya gönderici e-posta ayarı eksik.' };
+  }
+
+  if (!/^re_[A-Za-z0-9_]+$/.test(apiKey)) {
+    console.error('[admin-reset] Resend API key format is invalid.');
+    return { ok: false, error: 'Resend API anahtarı geçersiz görünüyor.' };
+  }
+
+  // Resend requires the From address to belong to a verified sending domain
+  // (except Resend's own test sender). Fail clearly before making a request.
+  const fromMatch = from.match(/<([^<>\s]+@[^<>\s]+)>$/) || from.match(/^([^<>\s]+@[^<>\s]+)$/);
+  if (!fromMatch || !isValidEmail(fromMatch[1])) {
+    console.error('[admin-reset] Resend From address is invalid:', from);
+    return { ok: false, error: 'Resend gönderici e-posta adresi geçersiz.' };
   }
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from,
-        to: [email],
-        subject: 'Dövme Tasarım Asistanı — Yönetici Şifre Sıfırlama',
-        text: `Yönetici şifre sıfırlama kodunuz: ${code}
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    let response: Response;
+    try {
+      response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + apiKey,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({
+          from,
+          to: [email],
+          subject: 'Dövme Tasarım Asistanı — Yönetici Şifre Sıfırlama',
+          text: `Yönetici şifre sıfırlama kodunuz: ${code}
 
 Bu kod 10 dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı dikkate almayın.`
-      })
-    });
-
-    if (response.ok) {
-      const result = await response.json().catch(() => null);
-      console.log('[admin-reset] Resend accepted email:', result);
-      return { ok: true };
+        }),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
     }
 
     const responseText = await response.text().catch(() => '');
-    console.error('[admin-reset] Resend rejected email:', response.status, responseText);
+    let result: any = null;
+    try {
+      result = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      // Resend should return JSON, but preserve the raw response for diagnostics.
+    }
+
+    if (response.ok) {
+      console.log('[admin-reset] Resend accepted email:', {
+        id: result?.id || null,
+        status: response.status
+      });
+      return { ok: true };
+    }
+
+    const apiMessage = typeof result?.message === 'string' ? result.message.trim() : '';
+    const apiName = typeof result?.name === 'string' ? result.name.trim() : '';
+    const diagnostic = [apiName, apiMessage].filter(Boolean).join(': ');
+    console.error('[admin-reset] Resend rejected email:', {
+      status: response.status,
+      name: apiName || undefined,
+      message: apiMessage || undefined,
+      body: responseText || undefined
+    });
+
     return {
       ok: false,
-      error: `Resend ${response.status}: ${responseText || 'gönderim reddedildi'}`
+      error: `Resend ${response.status}: ${diagnostic || responseText || 'gönderim reddedildi'}`
     };
   } catch (error: unknown) {
-    console.error('[admin-reset] Resend request failed:', error);
+    const message = error instanceof Error ? error.message : 'Bilinmeyen Resend bağlantı hatası.';
+    const isTimeout = error instanceof Error && error.name === 'AbortError';
+    console.error('[admin-reset] Resend request failed:', {
+      message,
+      timeout: isTimeout
+    });
     return {
       ok: false,
-      error: error instanceof Error ? error.message : 'Resend bağlantı hatası.'
+      error: isTimeout ? 'Resend bağlantısı zaman aşımına uğradı.' : message
     };
   }
 }
@@ -423,8 +470,8 @@ async function startServer() {
       resetRequests.delete(clientKey);
       return res.status(503).json({
         success: false,
-        error: 'Şifre kurtarma e-postası gönderilemedi. Resend gönderimi reddetti.',
-        detail: process.env.NODE_ENV === 'production' ? undefined : delivery.error
+        error: 'Şifre kurtarma e-postası gönderilemedi.',
+        detail: delivery.error
       });
     }
     return res.json({ success: true, message: 'Doğrulama kodu e-posta adresinize gönderildi.' });
