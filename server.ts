@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import sharp from 'sharp';
 import { generateEsotericTattooStencilSvg } from './src/utils/stencilGenerator';
 import { isValidCalendarDate, resolveCityLocation, CityLocation } from './src/utils/astrology';
 import { searchGlobalLocationsApi, resolveLocationSync, resolveLocationAsync, LocationValidationError } from './src/utils/locationResolver';
@@ -1089,6 +1088,7 @@ Lütfen JSON formatında yanıt ver:
       // Convert SVG to ultra-crisp, high-fidelity 1400x1800 PNG using Sharp
       // This produces a 100% compliant, standard PNG file with magic header 0x89 0x50 0x4E 0x47
       const isStencil = mode === 'stencil';
+      const { default: sharp } = await import('sharp');
       const pngBuffer = await sharp(svgBuffer)
         .resize(1400, 1800, {
           fit: 'contain',
