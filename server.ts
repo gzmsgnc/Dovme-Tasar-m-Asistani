@@ -440,7 +440,12 @@ async function startServer() {
     if (isRateLimited(resetRateLimits, clientKey, 5)) {
       return res.status(429).json({ success: false, error: 'Çok fazla sıfırlama isteği. Lütfen daha sonra tekrar deneyin.' });
     }
-    const configuredEmail = String(process.env.STUDIO_ADMIN_RECOVERY_EMAIL || '').trim().toLowerCase();
+    const recoveryEmailSecret = String(process.env.STUDIO_ADMIN_RECOVERY_EMAIL || '').trim();
+    const fromSecret = String(process.env.RESEND_FROM_EMAIL || '').trim();
+    const fromAddressMatch = fromSecret.match(/<([^<>\s]+@[^<>\s]+)>$/) || fromSecret.match(/^([^<>\s]+@[^<>\s]+)$/);
+    // If a dedicated recovery secret is not present, safely fall back to the
+    // verified Resend sender address.
+    const configuredEmail = (recoveryEmailSecret || (fromAddressMatch ? fromAddressMatch[1] : '')).trim().toLowerCase();
     const suppliedEmail = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
 
     // The recovery address is required for the feature to work. Do not silently
@@ -455,7 +460,7 @@ async function startServer() {
     }
 
     // Keep the email address private: a wrong address gets the same generic response.
-    if (suppliedEmail !== configuredEmail) {
+    if (!isValidEmail(suppliedEmail) || suppliedEmail !== configuredEmail) {
       return res.json({ success: true, message: 'Eğer bu e-posta yönetici hesabına kayıtlıysa doğrulama kodu gönderildi.' });
     }
     const code = String(crypto.randomInt(100000, 1000000));
