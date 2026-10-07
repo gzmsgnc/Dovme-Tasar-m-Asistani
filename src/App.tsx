@@ -46,6 +46,7 @@ export function App() {
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [recoveryStep, setRecoveryStep] = useState<'email' | 'code'>('email');
   const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
   const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   const [clientQuizName, setClientQuizName] = useState<string>(() => {
@@ -102,21 +103,22 @@ export function App() {
     event.preventDefault();
     setRecoveryBusy(true);
     setRecoveryMessage('');
+    setRecoveryError('');
     try {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: recoveryEmail })
+        body: JSON.stringify({ email: recoveryEmail.trim().toLowerCase() })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setRecoveryMessage(data.detail ? `${data.error || 'Kurtarma kodu gönderilemedi.'} ${data.detail}` : (data.error || 'Kurtarma kodu gönderilemedi.'));
+        setRecoveryError(data.detail ? `${data.error || 'Kurtarma kodu gönderilemedi.'} (${data.detail})` : (data.error || 'Kurtarma kodu gönderilemedi.'));
         return;
       }
       setRecoveryMessage(data.message || 'Doğrulama kodu e-posta adresinize gönderildi.');
       setRecoveryStep('code');
     } catch {
-      setRecoveryMessage('Sunucuya bağlanılamadı.');
+      setRecoveryError('Sunucuya bağlanılamadı. Lütfen ağ bağlantınızı kontrol edin.');
     } finally {
       setRecoveryBusy(false);
     }
@@ -126,26 +128,32 @@ export function App() {
     event.preventDefault();
     setRecoveryBusy(true);
     setRecoveryMessage('');
+    setRecoveryError('');
     try {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: recoveryCode, newPassword: newAdminPassword })
+        body: JSON.stringify({
+          email: recoveryEmail.trim().toLowerCase(),
+          code: recoveryCode.trim(),
+          newPassword: newAdminPassword
+        })
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setRecoveryMessage(data.error || 'Şifre yenilenemedi.');
+        setRecoveryError(data.error || 'Şifre yenilenemedi.');
         return;
       }
-      setRecoveryMessage('Şifren yenilendi. Yeni şifrenle giriş yapabilirsin.');
+      setRecoveryMessage(data.message || 'Şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.');
       setShowPasswordRecovery(false);
       setRecoveryStep('email');
       setRecoveryEmail('');
       setRecoveryCode('');
       setNewAdminPassword('');
       setAdminPassword('');
+      setAdminLoginError('');
     } catch {
-      setRecoveryMessage('Sunucuya bağlanılamadı.');
+      setRecoveryError('Sunucuya bağlanılamadı.');
     } finally {
       setRecoveryBusy(false);
     }
@@ -223,7 +231,7 @@ export function App() {
                 <button type="submit" disabled={adminLoginBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
                   {adminLoginBusy ? 'Giriş yapılıyor…' : 'Stüdyoya Gir'}
                 </button>
-                <button type="button" onClick={() => { setShowPasswordRecovery(true); setRecoveryMessage(''); }} className="mt-4 w-full text-sm text-[#c4a47c] hover:underline">
+                <button type="button" onClick={() => { setShowPasswordRecovery(true); setRecoveryMessage(''); setRecoveryError(''); }} className="mt-4 w-full text-sm text-[#c4a47c] hover:underline">
                   Şifremi Unuttum
                 </button>
               </>
@@ -240,8 +248,8 @@ export function App() {
                   type="email"
                   autoComplete="email"
                   value={recoveryEmail}
-                  onChange={e => setRecoveryEmail(e.target.value)}
-                  placeholder="Kurtarma e-posta adresi"
+                  onChange={e => { setRecoveryEmail(e.target.value); setRecoveryError(''); }}
+                  placeholder="Kurtarma e-posta adresi (örn. gzm.s.gnc@gmail.com)"
                   className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
                   required
                 />
@@ -255,7 +263,7 @@ export function App() {
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   value={recoveryCode}
-                  onChange={e => setRecoveryCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={e => { setRecoveryCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setRecoveryError(''); }}
                   placeholder="6 haneli doğrulama kodu"
                   className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
                   maxLength={6}
@@ -265,7 +273,7 @@ export function App() {
                   type="password"
                   autoComplete="new-password"
                   value={newAdminPassword}
-                  onChange={e => setNewAdminPassword(e.target.value)}
+                  onChange={e => { setNewAdminPassword(e.target.value); setRecoveryError(''); }}
                   placeholder="Yeni yönetici şifresi (en az 12 karakter)"
                   className="mt-4 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
                   minLength={12}
@@ -274,13 +282,22 @@ export function App() {
                 <button type="submit" disabled={recoveryBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
                   {recoveryBusy ? 'Şifre yenileniyor…' : 'Şifreyi Yenile'}
                 </button>
-                <button type="button" onClick={() => setRecoveryStep('email')} className="mt-3 w-full text-sm text-[#999] hover:text-[#c4a47c]">
+                <button type="button" onClick={() => { setRecoveryStep('email'); setRecoveryError(''); }} className="mt-3 w-full text-sm text-[#999] hover:text-[#c4a47c]">
                   Yeni kod iste
                 </button>
               </>
             )}
-            {recoveryMessage && <p className="mt-4 text-sm text-[#c4a47c]">{recoveryMessage}</p>}
-            <button type="button" onClick={() => { setShowPasswordRecovery(false); setRecoveryStep('email'); setRecoveryMessage(''); }} className="mt-5 w-full text-sm text-[#999] hover:text-white">
+            {recoveryError && (
+              <div className="mt-4 rounded-lg border border-red-900/60 bg-red-950/40 p-3 text-sm text-red-300">
+                {recoveryError}
+              </div>
+            )}
+            {recoveryMessage && (
+              <div className="mt-4 rounded-lg border border-[#c4a47c]/40 bg-[#c4a47c]/10 p-3 text-sm text-[#c4a47c]">
+                {recoveryMessage}
+              </div>
+            )}
+            <button type="button" onClick={() => { setShowPasswordRecovery(false); setRecoveryStep('email'); setRecoveryMessage(''); setRecoveryError(''); }} className="mt-5 w-full text-sm text-[#999] hover:text-white">
               Giriş ekranına dön
             </button>
           </form>

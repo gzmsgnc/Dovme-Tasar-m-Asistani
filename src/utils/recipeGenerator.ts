@@ -53,7 +53,7 @@ export function generateTattooRecipe(
   const stripExcludedSymbols = (value: string): string => {
     let result = value;
     for (const name of excludedSymbolNames) {
-      const escaped = name.replace(/[.*+?^$()|[\\]\\]/g, '\\$&');
+      const escaped = name.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
       result = result.replace(new RegExp(escaped, 'giu'), '').replace(/\s{2,}/g, ' ').trim();
     }
     return result;
