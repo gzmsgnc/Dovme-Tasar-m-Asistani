@@ -31,6 +31,11 @@ for (const animal of TOTEM_ANIMALS_52) {
 }
 assert.throws(() => getTotemAnimalStrict('kur'), /kimliği doğrulanamadı/, 'Strict lookup must not match partial animal names');
 assert.throws(() => getTotemAnimalStrict('totally-unrelated-kurt-fragment'), /kimliği doğrulanamadı/, 'Strict lookup must not use loose substring matching');
+assert.throws(
+  () => getTotemAnimalStrict({ id: 'not-a-canonical-animal' } as any),
+  /kimliği doğrulanamadı/,
+  'Strict lookup must reject non-canonical profile objects instead of returning caller-supplied data'
+);
 
 // 3) The same answers must always produce the same behavioral vector and result.
 const vectorA = calculateUserBehavioralVector(completeAnswers);
