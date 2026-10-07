@@ -1158,4 +1158,7 @@ Lütfen JSON formatında yanıt ver:
   });
 }
 
-startServer();
+startServer().catch((error: unknown) => {
+  console.error('[server] Startup failed:', error);
+  process.exit(1);
+});
