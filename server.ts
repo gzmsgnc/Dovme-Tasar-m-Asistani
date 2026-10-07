@@ -168,7 +168,7 @@ async function sendAdminResetCode(email: string, code: string): Promise<{ ok: bo
     return { ok: false, error: 'Resend API anahtarı veya gönderici e-posta ayarı eksik.' };
   }
 
-  if (!/^re_[A-Za-z0-9_]+$/.test(apiKey)) {
+  if (!/^re_\S+$/.test(apiKey)) {
     console.error('[admin-reset] Resend API key format is invalid.');
     return { ok: false, error: 'Resend API anahtarı geçersiz görünüyor.' };
   }
