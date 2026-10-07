@@ -1455,7 +1455,7 @@ export function getTotemAnimalStrict(idOrNameOrProfile: string | TotemAnimalProf
   if (typeof idOrNameOrProfile === 'object' && idOrNameOrProfile.id) {
     const fromCatalog = getTotemAnimalById(idOrNameOrProfile.id);
     if (fromCatalog) return fromCatalog;
-    return idOrNameOrProfile as TotemAnimalProfile;
+    throw new Error(`Totem hayvanı kimliği doğrulanamadı: "${idOrNameOrProfile.id}". Sistem yalnızca kanonik 52 hayvan kataloğundaki profilleri kabul eder.`);
   }
 
 function normalizeTr(s: string): string {
