@@ -185,7 +185,7 @@ async function sendAdminResetCode(email: string, code: string): Promise<{ ok: bo
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
 
-    let response: Response;
+    let response: Awaited<ReturnType<typeof fetch>>;
     try {
       response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
