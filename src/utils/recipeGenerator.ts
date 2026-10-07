@@ -555,21 +555,22 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
         symbolism.plantFlora,
         symbolism.sacredObject
       ].filter(Boolean);
-      const fidelitySymbols = [...new Set([...selectedSymbols, ...calculatedSymbols])];
+      const fidelitySymbols = [...new Set([...selectedSymbols, ...calculatedSymbols])]
+        .filter(sym => !isExcludedSymbol(sym));
       const fidelityBlock = fidelitySymbols.length > 0
         ? `\\n\\nSYMBOL FIDELITY — MANDATORY: Preserve these exact symbol names in the visual design instructions: ${fidelitySymbols.join(', ')}. Do not omit, rename, replace, or silently substitute them.\\n`
         : '';
-      return basePrompt + fidelityBlock;
+      return stripExcludedSymbols(basePrompt + fidelityBlock);
     })(),
-    masterOutlinePrompt,
-    masterShadedPrompt,
-    midjourneyPrompt: shadowAnalysis.section12Prompts.midjourneyMasterPrompt || midjourneyPrompt,
-    dalle3Prompt: shadowAnalysis.section12Prompts.dalle3Prompt || dalle3Prompt,
-    stencilPrompt: shadowAnalysis.section12Prompts.stencilPrompt || stencilPrompt,
-    fluxPrompt: shadowAnalysis.section12Prompts.fluxPrompt || fluxPrompt,
-    artistSpecSheet: shadowAnalysis.section11TattooArtistBrief || artistSpecSheet,
-    turkishPromptExplanation,
-    negativePrompt: shadowAnalysis.section12Prompts.negativePrompt || negativePrompt,
+    masterOutlinePrompt: stripExcludedSymbols(masterOutlinePrompt),
+    masterShadedPrompt: stripExcludedSymbols(masterShadedPrompt),
+    midjourneyPrompt: stripExcludedSymbols(shadowAnalysis.section12Prompts.midjourneyMasterPrompt || midjourneyPrompt),
+    dalle3Prompt: stripExcludedSymbols(shadowAnalysis.section12Prompts.dalle3Prompt || dalle3Prompt),
+    stencilPrompt: stripExcludedSymbols(shadowAnalysis.section12Prompts.stencilPrompt || stencilPrompt),
+    fluxPrompt: stripExcludedSymbols(shadowAnalysis.section12Prompts.fluxPrompt || fluxPrompt),
+    artistSpecSheet: stripExcludedSymbols(shadowAnalysis.section11TattooArtistBrief || artistSpecSheet),
+    turkishPromptExplanation: stripExcludedSymbols(turkishPromptExplanation),
+    negativePrompt: stripExcludedSymbols(shadowAnalysis.section12Prompts.negativePrompt || negativePrompt),
     promptParameters: {
       aspectRatio: '2:3',
       stylizeLevel: '200',
