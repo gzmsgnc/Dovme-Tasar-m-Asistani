@@ -13,6 +13,7 @@
         manager = "web";
         env = {
           PORT = "$PORT";
+          DISABLE_HMR = "true";
         };
       };
     };
