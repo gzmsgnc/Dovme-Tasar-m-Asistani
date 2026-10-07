@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { generateTattooRecipe } from '../src/utils/recipeGenerator';
 import { calculateChakraProfile } from '../src/utils/chakra';
+import { generateTattooDesignPromptFromPrescription } from '../src/utils/personalSymbolPrescription';
 
 const person = {
   id: 'prompt-test',
@@ -148,6 +149,42 @@ assert.ok(
 
 assert.equal(recipe.symbolRationales.some((r: any) => /Kızıl Geyik|Bal Porsuğu|Su Samuru/i.test(r.symbolName)), false);
 
+// Excluded-design regression: a stale selected symbol must never reach any visual prompt,
+// prescription formula, or prescription-generated prompt.
+const excludedParameters = {
+  ...parameters,
+  mainSymbol: 'Çift Ağızlı Kılıç',
+  secondarySymbols: ['Lavanta', 'Çift Ağızlı Kılıç'],
+  excludedDesignSymbols: [{ name: 'Çift Ağızlı Kılıç', reason: 'Danışan tasarıma dahil etmiyor.' }]
+} as any;
+const excludedRecipe = generateTattooRecipe(person, numerology, astrology, enneagram, symbolism, excludedParameters);
+const excludedVisualBundle = [
+  excludedRecipe.masterEnglishPrompt,
+  excludedRecipe.masterOutlinePrompt,
+  excludedRecipe.masterShadedPrompt,
+  excludedRecipe.midjourneyPrompt,
+  excludedRecipe.dalle3Prompt,
+  excludedRecipe.stencilPrompt,
+  excludedRecipe.fluxPrompt,
+  excludedRecipe.artistSpecSheet,
+  excludedRecipe.turkishPromptExplanation,
+  excludedRecipe.negativePrompt
+].join('\\n');
+assert.ok(!/çift ağızlı kılıç|kılıç/i.test(excludedVisualBundle), 'Excluded symbols must not leak into visual prompts.');
+assert.ok(!/çift ağızlı kılıç|kılıç/i.test(excludedRecipe.prescription?.designFormula?.center || ''));
+assert.ok(!/çift ağızlı kılıç|kılıç/i.test(excludedRecipe.prescription?.designFormula?.supportingGeometry || ''));
+assert.ok(!/çift ağızlı kılıç|kılıç/i.test(excludedRecipe.prescription?.designFormula?.organicElement || ''));
+assert.ok(!/çift ağızlı kılıç|kılıç/i.test(excludedRecipe.prescription?.designFormula?.personalMicroDetail || ''));
+if (excludedRecipe.prescription) {
+  const prescriptionPrompt = generateTattooDesignPromptFromPrescription(
+    excludedRecipe.prescription.canonicalAnalysis,
+    excludedRecipe.prescription.symbols,
+    excludedRecipe.prescription.designFormula,
+    excludedParameters
+  );
+  assert.ok(!/çift ağızlı kılıç|kılıç/i.test(prescriptionPrompt.promptText));
+  assert.ok(!/çift ağızlı kılıç|kılıç/i.test(prescriptionPrompt.negativePrompt));
+}
 
 
 const includedParameters = {
