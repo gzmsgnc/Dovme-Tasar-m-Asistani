@@ -707,7 +707,9 @@ async function startServer() {
       // senkronizasyonlarda silinen danışan yeniden dirilemez.
       if (deletedIds.size > 0) {
         const currentClients = getPersistedClients();
-        savePersistedClients(currentClients.filter(c => !deletedIds.has(c.id)));
+        if (!savePersistedClients(currentClients.filter(c => !deletedIds.has(c.id)))) {
+          return res.status(503).json({ success: false, error: 'Silme işlemi kalıcı olarak kaydedilemedi. Lütfen tekrar deneyin.' });
+        }
       }
 
       const serverClients = getPersistedClients();
