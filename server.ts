@@ -157,23 +157,53 @@ function hashResetCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
 }
 
-async function sendAdminResetCode(email: string, code: string): Promise<boolean> {
+async function sendAdminResetCode(email: string, code: string): Promise<{ ok: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from) return false;
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from,
-      to: [email],
-      subject: 'Dövme Tasarım Asistanı — Yönetici Şifre Sıfırlama',
-      text: `Yönetici şifre sıfırlama kodunuz: ${code}
+  if (!apiKey || !from) {
+    console.error('[admin-reset] Resend secrets missing:', {
+      hasApiKey: Boolean(apiKey),
+      hasFrom: Boolean(from)
+    });
+    return { ok: false, error: 'Resend secretları eksik.' };
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        subject: 'Dövme Tasarım Asistanı — Yönetici Şifre Sıfırlama',
+        text: `Yönetici şifre sıfırlama kodunuz: ${code}
 
 Bu kod 10 dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı dikkate almayın.`
-    })
-  });
-  return response.ok;
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json().catch(() => null);
+      console.log('[admin-reset] Resend accepted email:', result);
+      return { ok: true };
+    }
+
+    const responseText = await response.text().catch(() => '');
+    console.error('[admin-reset] Resend rejected email:', response.status, responseText);
+    return {
+      ok: false,
+      error: `Resend ${response.status}: ${responseText || 'gönderim reddedildi'}`
+    };
+  } catch (error: unknown) {
+    console.error('[admin-reset] Resend request failed:', error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Resend bağlantı hatası.'
+    };
+  }
 }
 
 function requireAdmin(req: Request, res: Response, next: express.NextFunction): void {
@@ -368,10 +398,14 @@ async function startServer() {
       expiresAt: Date.now() + ADMIN_RESET_TTL_MS,
       attempts: 0
     });
-    const sent = await sendAdminResetCode(configuredEmail, code);
-    if (!sent) {
+    const delivery = await sendAdminResetCode(configuredEmail, code);
+    if (!delivery.ok) {
       resetRequests.delete(clientKey);
-      return res.status(503).json({ success: false, error: 'Şifre kurtarma e-postası yapılandırılmamış. RESEND_API_KEY ve RESEND_FROM_EMAIL secretlarını ekleyin.' });
+      return res.status(503).json({
+        success: false,
+        error: 'Şifre kurtarma e-postası gönderilemedi. Resend gönderimi reddetti.',
+        detail: process.env.NODE_ENV === 'production' ? undefined : delivery.error
+      });
     }
     return res.json({ success: true, message: 'Doğrulama kodu e-posta adresinize gönderildi.' });
   });
