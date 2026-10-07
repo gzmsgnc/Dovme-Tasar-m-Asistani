@@ -41,6 +41,23 @@ export function generateTattooRecipe(
   // Totem her zaman analiz edilir; yalnızca açık kullanıcı tercihiyle görsel tasarıma alınır.
   const includeTotem = parameters.includeTotemInDesign === true;
 
+  // Tasarımdan çıkarılan semboller hiçbir görsel üretim promptuna sızmamalıdır.
+  const excludedSymbolNames = (parameters.excludedDesignSymbols ?? [])
+    .map(item => item?.name?.trim().toLocaleLowerCase('tr-TR'))
+    .filter(Boolean);
+  const isExcludedSymbol = (value: string | undefined): boolean => {
+    if (!value) return false;
+    const normalized = value.trim().toLocaleLowerCase('tr-TR');
+    return excludedSymbolNames.some(name => normalized === name || normalized.startsWith(name + ' —') || normalized.startsWith(name + ' -'));
+  };
+  const stripExcludedSymbols = (value: string): string => {
+    let result = value;
+    for (const name of excludedSymbolNames) {
+      result = result.split(name).join('').replace(/\s{2,}/g, ' ').trim();
+    }
+    return result;
+  };
+
   // Guard against stale/mismatched symbolism entering a recipe.
   validateRecipeSymbolism(symbolism);
 
@@ -62,7 +79,7 @@ export function generateTattooRecipe(
   };
 
   // Totemler analiz katmanında kalır; final görselde hiçbir hayvan figürü kullanılmaz.
-  let mainSymbol = parameters.mainSymbol;
+  let mainSymbol = isExcludedSymbol(parameters.mainSymbol) ? '' : parameters.mainSymbol;
   if (!includeTotem) {
     if (!mainSymbol || isTotemAnimalName(mainSymbol)) {
       mainSymbol = symbolism.sacredObject || symbolism.geometricSymbol || 'Kutsal Geometri & Yaşam Çiçeği';
@@ -92,7 +109,7 @@ export function generateTattooRecipe(
       ];
 
   const rawSecondary = parameters.secondarySymbols.length > 0
-    ? parameters.secondarySymbols
+    ? parameters.secondarySymbols.filter(s => !isExcludedSymbol(s))
     : [
         symbolism.plantFlora,
         symbolism.geometricSymbol,
@@ -120,7 +137,7 @@ export function generateTattooRecipe(
   const hasVerified19 = numerology.divineHelp19?.has19 === true;
   let subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
     ? parameters.subtleDetails
-    : symbolism.subtleDetails)];
+    : symbolism.subtleDetails)].filter(detail => !isExcludedSymbol(detail));
 
   // 19 yalnızca doğrulanmış numeroloji verisinden gelebilir.
   if (!hasVerified19) {
@@ -381,11 +398,12 @@ Tasarım, kişinin hem gölge yönlerini (${enneagram.shadowTraits.slice(0, 2).j
     : 'balanced rich tattoo flash palette with intentional color restraint';
 
   // 1. MASTER FINISHED TATTOO FLASH PROMPT (Full Shading & Texture)
+  const safeSubtleDetailsStr = stripExcludedSymbols(subtleDetailsStr);
   const masterEnglishPrompt = `
 tattoo design, tattoo flash, stencil-ready, tattoo linework, clean intentional contours, skin-safe negative space, tattoo-readable composition, single cohesive tattoo composition.
 PRIMARY FOCAL SUBJECT (60-70% visual weight): Centrally anchored ${mainSymbol}, rendered with dominant focal depth, commanding presence and sharp intentional contours, not overshadowed by secondary elements.
 ORGANIC SUPPORTING ELEMENTS (20-30% visual weight): ${sec1} and ${sec2}, organically fused into the base and silhouette of the primary subject, structural flow accents enhancing the natural anatomical line.
-HIDDEN ESOTERIC DETAILS (5-10% visual weight): Delicate ${subtleDetailsStr}, sacred geometry grid, fine micro-dotwork sigils, numerological resonance (Life Path ${numerology.lifePathNumber}).
+HIDDEN ESOTERIC DETAILS (5-10% visual weight): Delicate ${safeSubtleDetailsStr}, sacred geometry grid, fine micro-dotwork sigils, numerological resonance (Life Path ${numerology.lifePathNumber}).
 SELECTED TATTOO STYLES: ${englishStyleDescriptions}.
 COMPOSITION & PLACEMENT: ${parameters.composition} composition with ${parameters.orientation} flow designed for ${parameters.bodyPlacement} anatomical curvature.
 FEASIBILITY & TECHNIQUE: ${colorStylePrompt}, ${lineWeight}, ${shadingTechnique}, ${negativeSpaceRatio} open negative space, minimum 2mm line-clearance design guideline intended to reduce crowding and support long-term readability; healing, pigment spread, and blowout outcomes vary by skin, placement, technique, and aftercare.
