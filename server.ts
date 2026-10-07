@@ -387,8 +387,20 @@ async function startServer() {
     }
     const configuredEmail = String(process.env.STUDIO_ADMIN_RECOVERY_EMAIL || '').trim().toLowerCase();
     const suppliedEmail = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-    // Always return the same public response so the recovery address cannot be discovered.
-    if (!configuredEmail || suppliedEmail !== configuredEmail) {
+
+    // The recovery address is required for the feature to work. Do not silently
+    // advance the UI to the code screen when the AI Studio runtime did not load
+    // the secret; that creates the misleading "code sent" state with no email.
+    if (!configuredEmail) {
+      console.error('[admin-reset] STUDIO_ADMIN_RECOVERY_EMAIL is missing at runtime.');
+      return res.status(503).json({
+        success: false,
+        error: 'Şifre kurtarma e-posta ayarı uygulama sunucusunda yüklenmemiş. Google AI Studio Secrets bölümünü kontrol edip uygulamayı yeniden başlatın.'
+      });
+    }
+
+    // Keep the email address private: a wrong address gets the same generic response.
+    if (suppliedEmail !== configuredEmail) {
       return res.json({ success: true, message: 'Eğer bu e-posta yönetici hesabına kayıtlıysa doğrulama kodu gönderildi.' });
     }
     const code = String(crypto.randomInt(100000, 1000000));
