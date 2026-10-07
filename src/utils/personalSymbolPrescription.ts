@@ -676,7 +676,17 @@ export function generateDesignFormula(
   symbols: PrescriptionSymbol[],
   designParameters: TattooDesignParameters
 ): PrescriptionDesignFormula {
-  const activeNames = [designParameters.mainSymbol?.trim(), ...(designParameters.secondarySymbols || []).map(s => s.trim())].filter(Boolean) as string[];
+  const excludedSymbolNames = (designParameters.excludedDesignSymbols ?? [])
+    .map(item => item?.name?.trim().toLocaleLowerCase('tr-TR'))
+    .filter(Boolean);
+  const isExcludedSymbol = (value: string | undefined): boolean => {
+    if (!value) return false;
+    const normalized = value.trim().toLocaleLowerCase('tr-TR');
+    return excludedSymbolNames.some(name => normalized === name || normalized.startsWith(name + ' —') || normalized.startsWith(name + ' -'));
+  };
+  const activeNames = [designParameters.mainSymbol?.trim(), ...(designParameters.secondarySymbols || []).map(s => s.trim())]
+    .filter(Boolean)
+    .filter(name => !isExcludedSymbol(name)) as string[];
   const negSymbol = null;
 
   const styles = (designParameters.selectedStyles && designParameters.selectedStyles.length > 0)
@@ -810,7 +820,17 @@ SEMBOL REÇETESİ
 --------------------------------------------------
 `.trim();
 
-  const activeNames = [prescription.designParameters?.mainSymbol?.trim(), ...(prescription.designParameters?.secondarySymbols || []).map(s => s.trim())].filter(Boolean) as string[];
+  const excludedSymbolNames = excludedDesignSymbols
+    .map(item => item?.name?.trim().toLocaleLowerCase('tr-TR'))
+    .filter(Boolean);
+  const isExcludedSymbol = (value: string | undefined): boolean => {
+    if (!value) return false;
+    const normalized = value.trim().toLocaleLowerCase('tr-TR');
+    return excludedSymbolNames.some(name => normalized === name || normalized.startsWith(name + ' —') || normalized.startsWith(name + ' -'));
+  };
+  const activeNames = [prescription.designParameters?.mainSymbol?.trim(), ...(prescription.designParameters?.secondarySymbols || []).map(s => s.trim())]
+    .filter(Boolean)
+    .filter(name => !isExcludedSymbol(name)) as string[];
   const activeNameSet = new Set(activeNames);
   const activeRecipeSymbols = symbols.filter(sym => sym.designCategory !== 'Negatif alan' && activeNameSet.has(sym.symbolName));
   const symbolsBody = activeRecipeSymbols.map((sym, i) => `
@@ -904,8 +924,19 @@ export function generateTattooDesignPromptFromPrescription(
   negativePrompt: string;
 } {
   const centerSym = symbols.find(s => s.designCategory === 'Merkez') || symbols[0];
-  const selectedMain = designParameters.mainSymbol?.trim();
-  const selectedSecondary = (designParameters.secondarySymbols || []).map(s => s.trim()).filter(Boolean);
+  const excludedSymbolNames = (designParameters.excludedDesignSymbols ?? [])
+    .map(item => item?.name?.trim().toLocaleLowerCase('tr-TR'))
+    .filter(Boolean);
+  const isExcludedSymbol = (value: string | undefined): boolean => {
+    if (!value) return false;
+    const normalized = value.trim().toLocaleLowerCase('tr-TR');
+    return excludedSymbolNames.some(name => normalized === name || normalized.startsWith(name + ' —') || normalized.startsWith(name + ' -'));
+  };
+  const selectedMain = isExcludedSymbol(designParameters.mainSymbol) ? undefined : designParameters.mainSymbol?.trim();
+  const selectedSecondary = (designParameters.secondarySymbols || [])
+    .map(s => s.trim())
+    .filter(Boolean)
+    .filter(s => !isExcludedSymbol(s));
   const activeNames = [selectedMain, ...selectedSecondary].filter(Boolean) as string[];
   const activeSymbols = activeNames;
   const promptCenterName = activeSymbols[0] || 'Açıkça seçilmiş ana sembol yok';
