@@ -1138,24 +1138,33 @@ Lütfen JSON formatında yanıt ver:
     }
   });
 
-  // Serve Frontend
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req: Request, res: Response) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
+  // Bind the HTTP server before initializing Vite. This keeps /api/health and
+  // authentication endpoints reachable even if the AI Studio preview's Vite
+  // middleware initialization is slow or fails independently.
+  const httpServer = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Dövme Tasarım Asistanı server running on http://0.0.0.0:${PORT}`);
   });
+
+  try {
+    // Serve Frontend
+    if (process.env.NODE_ENV !== 'production') {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req: Request, res: Response) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+  } catch (error: unknown) {
+    console.error('[server] Frontend middleware initialization failed:', error);
+    httpServer.close();
+    throw error;
+  }
 }
 
 startServer().catch((error: unknown) => {
