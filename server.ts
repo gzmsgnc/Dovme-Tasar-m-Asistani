@@ -25,10 +25,15 @@ const CLIENTS_STORAGE_FILE = path.join(DATA_DIR, 'clients.json');
 
 const ADMIN_SESSION_COOKIE = 'studio_admin_session';
 const ADMIN_SESSION_TTL_SECONDS = 8 * 60 * 60;
+const ADMIN_PASSWORD_FILE = path.join(DATA_DIR, 'admin-password.json');
 const loginFailures = new Map<string, { count: number; resetAt: number }>();
+const resetRequests = new Map<string, { email: string; codeHash: string; expiresAt: number; attempts: number }>();
+const resetRateLimits = new Map<string, { count: number; resetAt: number }>();
 const intakeRequests = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_KEYS = 10_000;
+const ADMIN_RESET_TTL_MS = 10 * 60 * 1000;
+const ADMIN_RESET_MAX_ATTEMPTS = 5;
 
 function pruneRateLimitStore(store: Map<string, { count: number; resetAt: number }>, now: number): void {
   for (const [key, entry] of store) {
@@ -73,23 +78,70 @@ function recordLoginFailure(key: string): void {
   }
   current.count += 1;
 }
+type AdminPasswordRecord = { salt: string; hash: string };
+
+function hashAdminPassword(password: string, salt = crypto.randomBytes(16).toString('hex')): AdminPasswordRecord {
+  const hash = crypto.scryptSync(password, salt, 32).toString('hex');
+  return { salt, hash };
+}
+
+function readAdminPasswordRecord(): AdminPasswordRecord | null {
+  try {
+    if (!fs.existsSync(ADMIN_PASSWORD_FILE)) return null;
+    const parsed = JSON.parse(fs.readFileSync(ADMIN_PASSWORD_FILE, 'utf-8'));
+    if (typeof parsed?.salt !== 'string' || typeof parsed?.hash !== 'string') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeAdminPasswordRecord(password: string): void {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  const record = hashAdminPassword(password);
+  fs.writeFileSync(ADMIN_PASSWORD_FILE, JSON.stringify(record), 'utf-8');
+}
+
 function getAdminPassword(): string | null {
   const password = process.env.STUDIO_ADMIN_PASSWORD;
   return typeof password === 'string' && password.length >= 12 ? password : null;
 }
 
-function createAdminSession(): string {
+function getAdminCredential(): AdminPasswordRecord | { password: string } | null {
+  const stored = readAdminPasswordRecord();
+  if (stored) return stored;
   const password = getAdminPassword();
-  if (!password) throw new Error('STUDIO_ADMIN_PASSWORD is not configured or is too short.');
+  return password ? { password } : null;
+}
+
+function verifyAdminPassword(supplied: string, credential: AdminPasswordRecord | { password: string }): boolean {
+  if ('password' in credential) {
+    const expected = Buffer.from(credential.password);
+    const actual = Buffer.from(supplied);
+    return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+  }
+  const actual = crypto.scryptSync(supplied, credential.salt, 32);
+  const expected = Buffer.from(credential.hash, 'hex');
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+function adminSessionSecret(credential: AdminPasswordRecord | { password: string }): string {
+  const material = 'password' in credential ? credential.password : credential.salt + ':' + credential.hash;
+  return crypto.createHash('sha256').update('studio-session:' + material).digest('hex');
+}
+
+function createAdminSession(): string {
+  const credential = getAdminCredential();
+  if (!credential) throw new Error('Studio admin password is not configured.');
   const expiresAt = Math.floor(Date.now() / 1000) + ADMIN_SESSION_TTL_SECONDS;
   const payload = String(expiresAt);
-  const signature = crypto.createHmac('sha256', password).update(payload).digest('hex');
+  const signature = crypto.createHmac('sha256', adminSessionSecret(credential)).update(payload).digest('hex');
   return payload + '.' + signature;
 }
 
 function isValidAdminSession(req: Request): boolean {
-  const password = getAdminPassword();
-  if (!password) return false;
+  const credential = getAdminCredential();
+  if (!credential) return false;
   const header = req.headers.cookie || '';
   const match = header.match(new RegExp('(?:^|; )' + ADMIN_SESSION_COOKIE + '=([^;]+)'));
   if (!match) return false;
@@ -97,8 +149,31 @@ function isValidAdminSession(req: Request): boolean {
   const expiresAt = Number(parts[0]);
   const signature = parts[1];
   if (!Number.isInteger(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000) || !signature) return false;
-  const expected = crypto.createHmac('sha256', password).update(String(expiresAt)).digest('hex');
+  const expected = crypto.createHmac('sha256', adminSessionSecret(credential)).update(String(expiresAt)).digest('hex');
   return signature.length === expected.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+
+function hashResetCode(code: string): string {
+  return crypto.createHash('sha256').update(code).digest('hex');
+}
+
+async function sendAdminResetCode(email: string, code: string): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!apiKey || !from) return false;
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: 'Dövme Tasarım Asistanı — Yönetici Şifre Sıfırlama',
+      text: `Yönetici şifre sıfırlama kodunuz: ${code}
+
+Bu kod 10 dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı dikkate almayın.`
+    })
+  });
+  return response.ok;
 }
 
 function requireAdmin(req: Request, res: Response, next: express.NextFunction): void {
@@ -253,27 +328,77 @@ async function startServer() {
     }
   });
 
-  // Admin session: password never reaches the browser after verification.
+  // Admin login + secure self-service password recovery.
   app.post('/api/auth/login', (req: Request, res: Response) => {
-    const password = getAdminPassword();
-    if (!password) return res.status(503).json({ success: false, error: 'Stüdyo yönetici şifresi sunucu ortamında yapılandırılmamış.' });
+    const credential = getAdminCredential();
+    if (!credential) return res.status(503).json({ success: false, error: 'Stüdyo yönetici erişimi yapılandırılmamış.' });
     const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
     if (isLoginRateLimited(clientKey, 10)) {
       return res.status(429).json({ success: false, error: 'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.' });
     }
     const supplied = typeof req.body?.password === 'string' ? req.body.password : '';
-    const suppliedBuffer = Buffer.from(supplied);
-    const expectedBuffer = Buffer.from(password);
-    const valid = suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
-    if (!valid) {
+    if (!verifyAdminPassword(supplied, credential)) {
       recordLoginFailure(clientKey);
       return res.status(401).json({ success: false, error: 'Yönetici şifresi hatalı.' });
     }
+    // Migrate the original environment password to a salted server-side hash after the first successful login.
+    if ('password' in credential) writeAdminPasswordRecord(credential.password);
     loginFailures.delete(clientKey);
     const session = createAdminSession();
     const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
     res.setHeader('Set-Cookie', ADMIN_SESSION_COOKIE + '=' + encodeURIComponent(session) + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + ADMIN_SESSION_TTL_SECONDS + secureFlag);
     return res.json({ success: true });
+  });
+
+  app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
+    const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
+    if (isRateLimited(resetRateLimits, clientKey, 5)) {
+      return res.status(429).json({ success: false, error: 'Çok fazla sıfırlama isteği. Lütfen daha sonra tekrar deneyin.' });
+    }
+    const configuredEmail = String(process.env.STUDIO_ADMIN_RECOVERY_EMAIL || '').trim().toLowerCase();
+    const suppliedEmail = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    // Always return the same public response so the recovery address cannot be discovered.
+    if (!configuredEmail || suppliedEmail !== configuredEmail) {
+      return res.json({ success: true, message: 'Eğer bu e-posta yönetici hesabına kayıtlıysa doğrulama kodu gönderildi.' });
+    }
+    const code = String(crypto.randomInt(100000, 1000000));
+    resetRequests.set(clientKey, {
+      email: configuredEmail,
+      codeHash: hashResetCode(code),
+      expiresAt: Date.now() + ADMIN_RESET_TTL_MS,
+      attempts: 0
+    });
+    const sent = await sendAdminResetCode(configuredEmail, code);
+    if (!sent) {
+      resetRequests.delete(clientKey);
+      return res.status(503).json({ success: false, error: 'Şifre kurtarma e-postası yapılandırılmamış. RESEND_API_KEY ve RESEND_FROM_EMAIL secretlarını ekleyin.' });
+    }
+    return res.json({ success: true, message: 'Doğrulama kodu e-posta adresinize gönderildi.' });
+  });
+
+  app.post('/api/auth/reset-password', (req: Request, res: Response) => {
+    const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
+    const request = resetRequests.get(clientKey);
+    const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+    const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
+    if (!request || request.expiresAt <= Date.now()) {
+      resetRequests.delete(clientKey);
+      return res.status(400).json({ success: false, error: 'Doğrulama kodunun süresi dolmuş. Yeniden kod isteyin.' });
+    }
+    if (request.attempts >= ADMIN_RESET_MAX_ATTEMPTS) {
+      resetRequests.delete(clientKey);
+      return res.status(429).json({ success: false, error: 'Çok fazla hatalı kod denemesi. Yeniden kod isteyin.' });
+    }
+    request.attempts += 1;
+    if (!/^\d{6}$/.test(code) || !crypto.timingSafeEqual(Buffer.from(hashResetCode(code)), Buffer.from(request.codeHash))) {
+      return res.status(400).json({ success: false, error: 'Doğrulama kodu hatalı.' });
+    }
+    if (newPassword.length < 12) {
+      return res.status(400).json({ success: false, error: 'Yeni şifre en az 12 karakter olmalıdır.' });
+    }
+    writeAdminPasswordRecord(newPassword);
+    resetRequests.delete(clientKey);
+    return res.json({ success: true, message: 'Yönetici şifreniz yenilendi. Yeni şifrenizle giriş yapabilirsiniz.' });
   });
 
   app.post('/api/auth/logout', (req: Request, res: Response) => {
@@ -283,7 +408,7 @@ async function startServer() {
   });
 
   app.get('/api/auth/session', (req: Request, res: Response) => {
-    return res.json({ authenticated: isValidAdminSession(req), configured: Boolean(getAdminPassword()) });
+    return res.json({ authenticated: isValidAdminSession(req), configured: Boolean(getAdminCredential()) });
   });
   // Client Intake API (Danışan Formu Kaydı & Doğrulaması)
   app.post('/api/client-intake', async (req: Request, res: Response) => {
