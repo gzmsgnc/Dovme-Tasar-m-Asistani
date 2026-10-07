@@ -1138,15 +1138,10 @@ Lütfen JSON formatında yanıt ver:
     }
   });
 
-  // Bind the HTTP server before initializing Vite. This keeps /api/health and
-  // authentication endpoints reachable even if the AI Studio preview's Vite
-  // middleware initialization is slow or fails independently.
-  const httpServer = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Dövme Tasarım Asistanı server running on http://0.0.0.0:${PORT}`);
-  });
-
+  // Configure the frontend middleware before opening the public listener.
+  // This removes the startup race where Firebase Studio could probe the port
+  // while the frontend middleware was still being attached.
   try {
-    // Serve Frontend
     if (process.env.NODE_ENV !== 'production') {
       const vite = await createViteServer({
         server: { middlewareMode: true },
@@ -1155,16 +1150,25 @@ Lütfen JSON formatında yanıt ver:
       app.use(vite.middlewares);
     } else {
       const distPath = path.join(process.cwd(), 'dist');
+      const indexPath = path.join(distPath, 'index.html');
+
+      if (!fs.existsSync(indexPath)) {
+        throw new Error(`Production frontend build missing: ${indexPath}`);
+      }
+
       app.use(express.static(distPath));
       app.get('*', (req: Request, res: Response) => {
-        res.sendFile(path.join(distPath, 'index.html'));
+        res.sendFile(indexPath);
       });
     }
   } catch (error: unknown) {
     console.error('[server] Frontend middleware initialization failed:', error);
-    httpServer.close();
     throw error;
   }
+
+  const httpServer = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Dövme Tasarım Asistanı server running on http://0.0.0.0:${PORT}`);
+  });
 }
 
 startServer().catch((error: unknown) => {
