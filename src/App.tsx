@@ -110,7 +110,7 @@ export function App() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setRecoveryMessage(data.error || 'Kurtarma kodu gönderilemedi.');
+        setRecoveryMessage(data.detail ? `${data.error || 'Kurtarma kodu gönderilemedi.'} ${data.detail}` : (data.error || 'Kurtarma kodu gönderilemedi.'));
         return;
       }
       setRecoveryMessage(data.message || 'Doğrulama kodu e-posta adresinize gönderildi.');
