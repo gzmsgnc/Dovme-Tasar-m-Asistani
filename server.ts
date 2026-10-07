@@ -255,15 +255,24 @@ function getPersistedClients(): PersonData[] {
   }
 }
 
-function savePersistedClients(clients: PersonData[]): void {
+function savePersistedClients(clients: PersonData[]): boolean {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     const realOnly = clients.filter(c => c && c.id && c.name && !isDemoClientRecord(c));
-    fs.writeFileSync(CLIENTS_STORAGE_FILE, JSON.stringify(realOnly, null, 2), 'utf-8');
+    const serialized = JSON.stringify(realOnly, null, 2);
+    const tempFile = CLIENTS_STORAGE_FILE + '.tmp';
+    fs.writeFileSync(tempFile, serialized, 'utf-8');
+    fs.renameSync(tempFile, CLIENTS_STORAGE_FILE);
+    return true;
   } catch (err) {
     console.error('Failed writing persisted clients:', err);
+    try {
+      const tempFile = CLIENTS_STORAGE_FILE + '.tmp';
+      if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+    } catch {}
+    return false;
   }
 }
 
@@ -646,7 +655,12 @@ async function startServer() {
       } else {
         updatedClients = [newClient, ...existingClients];
       }
-      savePersistedClients(updatedClients);
+      if (!savePersistedClients(updatedClients)) {
+        return res.status(503).json({
+          success: false,
+          error: 'Danışan kaydı kalıcı olarak kaydedilemedi. Lütfen tekrar deneyin.'
+        });
+      }
 
       return res.status(200).json({
         success: true,
@@ -673,7 +687,9 @@ async function startServer() {
     const { id } = req.params;
     const clients = getPersistedClients();
     const updated = clients.filter(c => c.id !== id);
-    savePersistedClients(updated);
+    if (!savePersistedClients(updated)) {
+      return res.status(503).json({ success: false, error: 'Danışan kaydı kalıcı olarak güncellenemedi. Lütfen tekrar deneyin.' });
+    }
     res.json({ success: true, clients: updated });
   });
 
@@ -727,7 +743,9 @@ async function startServer() {
         return timeB - timeA;
       });
 
-      savePersistedClients(mergedList);
+      if (!savePersistedClients(mergedList)) {
+        return res.status(503).json({ success: false, error: 'Danışan senkronizasyonu kalıcı olarak kaydedilemedi. Lütfen tekrar deneyin.' });
+      }
       res.json({ success: true, clients: mergedList });
     } catch (err: unknown) {
       console.error('Client sync error:', err);
