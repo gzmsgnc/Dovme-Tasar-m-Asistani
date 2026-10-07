@@ -40,6 +40,13 @@ export function App() {
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoginError, setAdminLoginError] = useState('');
   const [adminLoginBusy, setAdminLoginBusy] = useState(false);
+  const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [recoveryStep, setRecoveryStep] = useState<'email' | 'code'>('email');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   const [clientQuizName, setClientQuizName] = useState<string>(() => {
     if (typeof window !== 'undefined') return new URLSearchParams(window.location.search).get('client') || 'Değerli Danışanımız';
@@ -88,6 +95,59 @@ export function App() {
       setAdminLoginError('Sunucuya bağlanılamadı.');
     } finally {
       setAdminLoginBusy(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setRecoveryBusy(true);
+    setRecoveryMessage('');
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmail })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setRecoveryMessage(data.error || 'Kurtarma kodu gönderilemedi.');
+        return;
+      }
+      setRecoveryMessage(data.message || 'Doğrulama kodu e-posta adresinize gönderildi.');
+      setRecoveryStep('code');
+    } catch {
+      setRecoveryMessage('Sunucuya bağlanılamadı.');
+    } finally {
+      setRecoveryBusy(false);
+    }
+  };
+
+  const handleResetAdminPassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setRecoveryBusy(true);
+    setRecoveryMessage('');
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: recoveryCode, newPassword: newAdminPassword })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setRecoveryMessage(data.error || 'Şifre yenilenemedi.');
+        return;
+      }
+      setRecoveryMessage('Şifren yenilendi. Yeni şifrenle giriş yapabilirsin.');
+      setShowPasswordRecovery(false);
+      setRecoveryStep('email');
+      setRecoveryEmail('');
+      setRecoveryCode('');
+      setNewAdminPassword('');
+      setAdminPassword('');
+    } catch {
+      setRecoveryMessage('Sunucuya bağlanılamadı.');
+    } finally {
+      setRecoveryBusy(false);
     }
   };
 
@@ -142,29 +202,89 @@ export function App() {
   if (!adminAuthenticated) {
     return (
       <div className="min-h-screen bg-[#050505] text-[#e0e0e0] flex items-center justify-center p-6">
-        <form onSubmit={handleAdminLogin} className="w-full max-w-md rounded-2xl border border-[#2a2a2a] bg-[#0b0b0b] p-8 shadow-2xl">
-          <h1 className="text-2xl font-semibold text-[#c4a47c]">Stüdyo Yönetici Girişi</h1>
-          <p className="mt-2 text-sm text-[#999]">Danışan kayıtları ve tasarım arşivi yalnızca yetkili stüdyo oturumunda kullanılabilir.</p>
-          {!adminConfigured && <p className="mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-3 text-sm text-red-300">Sunucuda STUDIO_ADMIN_PASSWORD yapılandırılmamış. Güvenli yönetici erişimi açılmadan stüdyo ekranı kullanılamaz.</p>}
-          {adminConfigured && (
-            <>
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={adminPassword}
-                onChange={e => setAdminPassword(e.target.value)}
-                placeholder="Yönetici şifresi"
-                className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
-                minLength={12}
-                required
-              />
-              {adminLoginError && <p className="mt-3 text-sm text-red-300">{adminLoginError}</p>}
-              <button type="submit" disabled={adminLoginBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
-                {adminLoginBusy ? 'Giriş yapılıyor…' : 'Stüdyoya Gir'}
-              </button>
-            </>
-          )}
-        </form>
+        {!showPasswordRecovery ? (
+          <form onSubmit={handleAdminLogin} className="w-full max-w-md rounded-2xl border border-[#2a2a2a] bg-[#0b0b0b] p-8 shadow-2xl">
+            <h1 className="text-2xl font-semibold text-[#c4a47c]">Stüdyo Yönetici Girişi</h1>
+            <p className="mt-2 text-sm text-[#999]">Danışan kayıtları ve tasarım arşivi yalnızca yetkili stüdyo oturumunda kullanılabilir.</p>
+            {!adminConfigured && <p className="mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-3 text-sm text-red-300">Sunucuda yönetici erişimi yapılandırılmamış.</p>}
+            {adminConfigured && (
+              <>
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={adminPassword}
+                  onChange={e => setAdminPassword(e.target.value)}
+                  placeholder="Yönetici şifresi"
+                  className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
+                  minLength={12}
+                  required
+                />
+                {adminLoginError && <p className="mt-3 text-sm text-red-300">{adminLoginError}</p>}
+                <button type="submit" disabled={adminLoginBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
+                  {adminLoginBusy ? 'Giriş yapılıyor…' : 'Stüdyoya Gir'}
+                </button>
+                <button type="button" onClick={() => { setShowPasswordRecovery(true); setRecoveryMessage(''); }} className="mt-4 w-full text-sm text-[#c4a47c] hover:underline">
+                  Şifremi Unuttum
+                </button>
+              </>
+            )}
+          </form>
+        ) : (
+          <form onSubmit={recoveryStep === 'email' ? handleRequestPasswordReset : handleResetAdminPassword} className="w-full max-w-md rounded-2xl border border-[#2a2a2a] bg-[#0b0b0b] p-8 shadow-2xl">
+            <h1 className="text-2xl font-semibold text-[#c4a47c]">Yönetici Şifre Kurtarma</h1>
+            <p className="mt-2 text-sm text-[#999]">Kayıtlı kurtarma e-posta adresinle doğrulama kodu al ve yeni şifreni belirle.</p>
+
+            {recoveryStep === 'email' ? (
+              <>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={recoveryEmail}
+                  onChange={e => setRecoveryEmail(e.target.value)}
+                  placeholder="Kurtarma e-posta adresi"
+                  className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
+                  required
+                />
+                <button type="submit" disabled={recoveryBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
+                  {recoveryBusy ? 'Kod gönderiliyor…' : 'Doğrulama Kodu Gönder'}
+                </button>
+              </>
+            ) : (
+              <>
+                <input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={recoveryCode}
+                  onChange={e => setRecoveryCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="6 haneli doğrulama kodu"
+                  className="mt-6 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
+                  maxLength={6}
+                  required
+                />
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={newAdminPassword}
+                  onChange={e => setNewAdminPassword(e.target.value)}
+                  placeholder="Yeni yönetici şifresi (en az 12 karakter)"
+                  className="mt-4 w-full rounded-lg border border-[#333] bg-[#111] px-4 py-3 outline-none focus:border-[#c4a47c]"
+                  minLength={12}
+                  required
+                />
+                <button type="submit" disabled={recoveryBusy} className="mt-5 w-full rounded-lg bg-[#c4a47c] px-4 py-3 font-semibold text-black disabled:opacity-50">
+                  {recoveryBusy ? 'Şifre yenileniyor…' : 'Şifreyi Yenile'}
+                </button>
+                <button type="button" onClick={() => setRecoveryStep('email')} className="mt-3 w-full text-sm text-[#999] hover:text-[#c4a47c]">
+                  Yeni kod iste
+                </button>
+              </>
+            )}
+            {recoveryMessage && <p className="mt-4 text-sm text-[#c4a47c]">{recoveryMessage}</p>}
+            <button type="button" onClick={() => { setShowPasswordRecovery(false); setRecoveryStep('email'); setRecoveryMessage(''); }} className="mt-5 w-full text-sm text-[#999] hover:text-white">
+              Giriş ekranına dön
+            </button>
+          </form>
+        )}
       </div>
     );
   }
