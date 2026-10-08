@@ -18,6 +18,10 @@ import { saveClient, postClientIntakeToServer } from '../../utils/storage';
 import { normalizePhoneNumber, isValidEmail } from '../../utils/clientValidation';
 import { PersonData } from '../../types';
 import { 
+  generateWhatsAppShareLink, 
+  encodeClientIntakeToken 
+} from '../../utils/enneagramSharing';
+import { 
   Sparkles, 
   User, 
   Calendar, 
@@ -35,7 +39,9 @@ import {
   Layers,
   FileCheck,
   Phone,
-  Mail
+  Mail,
+  Send,
+  Copy
 } from 'lucide-react';
 
 interface ClientIntakeFormViewProps {
@@ -72,6 +78,8 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedClientData, setSubmittedClientData] = useState<PersonData | null>(null);
+  const [copiedToken, setCopiedToken] = useState<boolean>(false);
+  const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
 
   // Helper validation functions
   const validateStep1 = (): boolean => {
@@ -449,6 +457,87 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                 * Ezoterik güvenlik gereği kişisel harita hesaplamalarınız doğrudan dövme sanatçınızın tasarım konsoluna iletilmiştir.
               </div>
             </div>
+
+            {/* WhatsApp ile Stüdyoya Geri İletim Kartı */}
+            {(() => {
+              const intakeToken = encodeClientIntakeToken(submittedClientData);
+              const returnMsg = `✨ Merhaba! Danışan Formumu tamamladım:\n\n👤 *Danışan:* ${submittedClientData.name}\n📞 *İletişim:* ${submittedClientData.phone} • ${submittedClientData.email}\n📍 *Doğum:* ${submittedClientData.birthDate} ${submittedClientData.birthTime} (${submittedClientData.birthPlace})\n\n📋 *Stüdyo Aktarım Kodu:*\n${intakeToken}\n\nTüm test ve doğum bilgilerim sisteme kaydedilmiştir! ✨🖋️`;
+              
+              const handleSendWhatsAppReturn = () => {
+                const link = generateWhatsAppShareLink('', returnMsg);
+                const a = document.createElement('a');
+                a.href = link;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              };
+
+              const handleCopyIntakeToken = () => {
+                if (intakeToken) {
+                  navigator.clipboard.writeText(intakeToken);
+                  setCopiedToken(true);
+                  setTimeout(() => setCopiedToken(false), 2000);
+                }
+              };
+
+              const handleCopySummary = () => {
+                navigator.clipboard.writeText(returnMsg);
+                setCopiedSummary(true);
+                setTimeout(() => setCopiedSummary(false), 2000);
+              };
+
+              return (
+                <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-b from-[#14120c] to-[#0c0c0c] border border-emerald-500/40 text-left space-y-3 shadow-xl">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#222]">
+                    <span className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>WhatsApp ile Dövme Sanatçısına Bildir</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                      Önerilen
+                    </span>
+                  </div>
+                  
+                  <p className="text-xs text-[#aaa] font-mono leading-relaxed">
+                    Formunuz stüdyo sunucusuna kaydedildi. Dövme sanatçınızla WhatsApp üzerinden yazışıyorsanız, aşağıdaki butona tıklayarak formu doldurduğunuzu sanatçınıza tek tıkla iletebilirsiniz:
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSendWhatsAppReturn}
+                      className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition-all cursor-pointer"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>WhatsApp'tan Sanatçıma Gönder</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyIntakeToken}
+                      className="py-3 px-4 rounded-xl bg-[#181818] hover:bg-[#222] border border-[#333] hover:border-[#c4a47c] text-xs text-white font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      title="Aktarım kodunu panoya kopyalar"
+                    >
+                      {copiedToken ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedToken ? 'Kod Kopyalandı!' : 'Aktarım Kodunu Kopyala'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-[#666] font-mono pt-1 border-t border-[#1a1a1a]">
+                    <span>* WhatsApp sohbetinize döndüğünüzde mesaj otomatik doldurulacaktır.</span>
+                    <button
+                      type="button"
+                      onClick={handleCopySummary}
+                      className="text-[#888] hover:text-[#c4a47c] transition-colors cursor-pointer"
+                    >
+                      {copiedSummary ? '✓ Özet Kopyalandı' : 'Tüm Özeti Kopyala'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               {onReturnToStudio && (

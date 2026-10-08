@@ -17,16 +17,18 @@ export const SymbolLibraryView: React.FC<SymbolLibraryViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('Hepsi');
   const [selectedSymbol, setSelectedSymbol] = useState<SymbolLibraryItem | null>(null);
 
-  const categories = ['Hepsi', 'Hayvan', 'Bitki/Çiçek', 'Geometri', 'Mitoloji', 'Kutsal Obje'];
+  const categories = ['Hepsi', 'Bitki/Çiçek', 'Geometri', 'Mitoloji', 'Kutsal Obje', 'Hayvan', 'Kozmik', 'Element'];
 
   const filteredSymbols = SYMBOL_LIBRARY.filter(sym => {
     const matchesCat = selectedCategory === 'Hepsi' || sym.category === selectedCategory;
     const matchesSearch = 
       sym.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sym.meaning.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sym.subcategory && sym.subcategory.toLowerCase().includes(searchTerm.toLowerCase())) ||
       sym.numerologyConnection.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sym.astrologyConnection.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sym.enneagramConnection.toLowerCase().includes(searchTerm.toLowerCase());
+      sym.enneagramConnection.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sym.archetypes && sym.archetypes.some(a => a.toLowerCase().includes(searchTerm.toLowerCase())));
     return matchesCat && matchesSearch;
   });
 
@@ -86,15 +88,34 @@ export const SymbolLibraryView: React.FC<SymbolLibraryViewProps> = ({
             className="border border-[#1a1a1a] hover:border-[#c4a47c]/50 bg-[#0a0a0a] rounded-xl p-5 transition-all cursor-pointer space-y-3 flex flex-col justify-between shadow-lg"
           >
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white font-serif">{sym.name}</h3>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#151515] text-[#c4a47c] border border-[#222]">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-white font-serif truncate">{sym.name}</h3>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#151515] text-[#c4a47c] border border-[#222] shrink-0">
                   {sym.category}
                 </span>
               </div>
+              {sym.subcategory && (
+                <div className="text-[10px] text-[#c4a47c]/80 font-mono tracking-wide">
+                  ✦ {sym.subcategory}
+                </div>
+              )}
               <p className="text-xs text-[#999] leading-relaxed line-clamp-3">
                 {sym.meaning}
               </p>
+              {sym.archetypes && sym.archetypes.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {sym.archetypes.slice(0, 3).map((arc, i) => (
+                    <span key={i} className="text-[9px] px-1.5 py-0.2 rounded bg-[#111] text-[#777] border border-[#1e1e1e] font-mono">
+                      {arc}
+                    </span>
+                  ))}
+                  {sym.category === 'Hayvan' && sym.designCompatibility?.canBeAbstractedToLines && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/40 text-cyan-400 border border-cyan-800/40 font-mono">
+                      Çizgisel Soyutlanabilir
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5 text-[10px] text-[#666] pt-3 border-t border-[#1a1a1a] font-mono">
@@ -115,8 +136,15 @@ export const SymbolLibraryView: React.FC<SymbolLibraryViewProps> = ({
           <div className="bg-[#0a0a0a] border border-[#222] rounded-xl max-w-md w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl custom-scrollbar">
             <div className="flex items-start justify-between border-b border-[#1a1a1a] pb-3">
               <div>
-                <span className="text-[10px] font-mono text-[#c4a47c] uppercase tracking-wider">{selectedSymbol.category}</span>
-                <h3 className="text-base font-bold text-white font-serif">{selectedSymbol.name}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-[#c4a47c] uppercase tracking-wider">{selectedSymbol.category}</span>
+                  {selectedSymbol.subcategory && (
+                    <span className="text-[9px] font-mono text-[#888] bg-[#141414] px-1.5 py-0.5 rounded border border-[#222]">
+                      {selectedSymbol.subcategory}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-bold text-white font-serif mt-0.5">{selectedSymbol.name}</h3>
               </div>
               <button
                 onClick={() => setSelectedSymbol(null)}
@@ -126,12 +154,60 @@ export const SymbolLibraryView: React.FC<SymbolLibraryViewProps> = ({
               </button>
             </div>
 
+            {selectedSymbol.archetypes && selectedSymbol.archetypes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedSymbol.archetypes.map((arc, i) => (
+                  <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-[#161616] text-[#c4a47c] border border-[#262626] font-mono">
+                    ✦ {arc}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="space-y-2">
               <span className="text-xs font-mono uppercase text-[#c4a47c] block">Ezoterik & Psikolojik Anlam</span>
               <p className="text-xs text-[#bbb] leading-relaxed bg-[#0d0d0d] p-3.5 rounded border border-[#1a1a1a]">
                 {selectedSymbol.meaning}
               </p>
             </div>
+
+            {selectedSymbol.positiveThemes && selectedSymbol.positiveThemes.length > 0 && (
+              <div className="p-3 rounded bg-[#0d0d0d] border border-[#1a1a1a] space-y-2">
+                <div>
+                  <span className="text-emerald-400 font-mono font-bold block mb-1 text-[10px] uppercase">Aydınlık Temalar:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedSymbol.positiveThemes.map((t, i) => (
+                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/30 text-emerald-300 border border-emerald-800/30 font-mono">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {selectedSymbol.shadowThemes && selectedSymbol.shadowThemes.length > 0 && (
+                  <div>
+                    <span className="text-rose-400 font-mono font-bold block mb-1 text-[10px] uppercase">Gölge / Dönüşüm Temaları:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedSymbol.shadowThemes.map((t, i) => (
+                        <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/30 text-rose-300 border border-rose-800/30 font-mono">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedSymbol.designCompatibility?.abstractGeometricEquivalent && (
+              <div className="p-3 rounded bg-[#0d1216] border border-cyan-900/40">
+                <span className="text-cyan-400 font-mono font-bold block mb-1 text-[10px] uppercase">
+                  ✦ Çizgisel / Geometrik Soyutlama (Figür İstemeyenler İçin):
+                </span>
+                <p className="text-[11px] text-[#a0c0d0] leading-relaxed">
+                  {selectedSymbol.designCompatibility.abstractGeometricEquivalent}
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2 text-xs">
               <div className="p-3 rounded bg-[#0d0d0d] border border-[#1a1a1a]">

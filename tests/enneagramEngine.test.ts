@@ -25,4 +25,26 @@ const invalid = getEnneagramProfile(999, '999w1', false);
 assert.equal(invalid.type, 4);
 assert.equal(invalid.wing, '4w3');
 
+// Test all 9 types can be matched exactly across the 5 questions
+for (let t = 1; t <= 9; t++) {
+  const answers = Object.fromEntries(
+    ENNEAGRAM_MINI_TEST_QUESTIONS.map(q => {
+      const opt = q.options.find(o => o.type === t);
+      assert.ok(opt, `Question ${q.id} must have option for type ${t}`);
+      return [q.id, opt.type];
+    })
+  );
+  const res = calculateEnneagramFromAnswers(answers);
+  assert.equal(res.type, t, `All options set to type ${t} must produce type ${t}`);
+  assert.ok(res.wing.startsWith(`${t}w`), `Wing must belong to type ${t}`);
+}
+
+// Partial answers (e.g. 2 questions answered) must calculate without throwing
+const partialRes = calculateEnneagramFromAnswers({ 1: 6, 2: 6 });
+assert.equal(partialRes.type, 6);
+
+// Empty answers must safely fallback to type 4
+const emptyRes = calculateEnneagramFromAnswers({});
+assert.equal(emptyRes.type, 4);
+
 console.log('Enneagram engine tests passed');

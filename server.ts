@@ -690,17 +690,41 @@ async function startServer() {
         });
       }
       let resolvedLocation: CityLocation;
-      // Doğum koordinatları/saat dilimi istemciden geldiğinde güvenilmez kabul edilir.
-      // Sunucu, hesaplamaların deterministik ve doğru kalması için doğum yerini yalnızca
-      // doğrulanmış metin + ülke kodundan yeniden çözer; istemci koordinatlarını override olarak kullanmaz.
       try {
         const asyncLoc = await resolveLocationAsync(birthPlace, body.birthCountryCode);
         resolvedLocation = resolveCityLocation(asyncLoc);
-      } catch (err: unknown) {
-        return res.status(400).json({
-          success: false,
-          error: err instanceof Error ? err.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
-        });
+      } catch (asyncErr: unknown) {
+        // Fallback 1: Yerel offline dünya şehirleri veritabanında ara
+        try {
+          const syncLoc = resolveLocationSync(birthPlace);
+          resolvedLocation = resolveCityLocation(syncLoc);
+        } catch {
+          // Fallback 2: İstemciden doğrulanmış koordinatlar geldiyse koordinat bazlı oluştur
+          if (
+            typeof body.birthLatitude === 'number' &&
+            typeof body.birthLongitude === 'number' &&
+            !isNaN(body.birthLatitude) &&
+            !isNaN(body.birthLongitude) &&
+            body.birthLatitude >= -90 &&
+            body.birthLatitude <= 90
+          ) {
+            const coordLoc = resolveLocationSync({
+              lat: body.birthLatitude,
+              lon: body.birthLongitude,
+              city: body.birthCity || birthPlace,
+              country: body.birthCountry || 'Türkiye',
+              countryCode: body.birthCountryCode || 'TR',
+              timezone: body.birthTimezone,
+              defaultTz: body.birthTimezoneOffset
+            });
+            resolvedLocation = resolveCityLocation(coordLoc);
+          } else {
+            return res.status(400).json({
+              success: false,
+              error: asyncErr instanceof Error ? asyncErr.message : 'Doğum yeri tanınamadı. Lütfen geçerli bir şehir giriniz.'
+            });
+          }
+        }
       }
 
       // 7. Anne Adı Doğrulaması (Ebced & Yıldızname soy kökü için zorunlu)
@@ -813,6 +837,57 @@ async function startServer() {
         success: false,
         error: 'Form işlenirken sunucuda bir hata oluştu. Lütfen daha sonra tekrar deneyin.'
       });
+    }
+  });
+
+  // Client Enneagram Quiz API (WhatsApp veya doğrudan test gönderimleri için)
+  app.post('/api/client-quiz', (req: Request, res: Response) => {
+    try {
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ success: false, error: 'Geçersiz test verisi.' });
+      }
+      const { clientName = 'Danışan', answers = {}, phone = '' } = req.body;
+      const enneaKeys = Object.keys(answers);
+      if (enneaKeys.length < 5) {
+        return res.status(400).json({ success: false, error: 'Enneagram testi eksik. Lütfen 5 sorunun tamamını yanıtlayın.' });
+      }
+      const enneaResult = calculateEnneagramFromAnswers(answers);
+      const nowIso = new Date().toISOString();
+      const clientId = `client_quiz_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+      const name = String(clientName).trim() || 'Danışan';
+      
+      const newClient: PersonData = {
+        id: clientId,
+        name,
+        phone: typeof phone === 'string' ? phone.trim() : '',
+        birthDate: '',
+        birthTime: '',
+        birthPlace: '',
+        zodiacSystem: 'Tropical',
+        enneagramType: enneaResult.type,
+        enneagramWing: enneaResult.wing,
+        enneagramAnswers: { ...answers },
+        source: 'enneagram_quiz',
+        status: 'new',
+        notes: `WhatsApp / Web Enneagram Testi Sonucu: Tip ${enneaResult.wing}`,
+        createdAt: nowIso,
+        updatedAt: nowIso
+      };
+
+      const existingClients = getPersistedClients();
+      const updatedClients = [newClient, ...existingClients];
+      savePersistedClients(updatedClients);
+
+      return res.json({
+        success: true,
+        clientId: newClient.id,
+        type: enneaResult.type,
+        wing: enneaResult.wing,
+        message: 'Test sonuçları başarıyla stüdyo sistemine kaydedildi.'
+      });
+    } catch (err: unknown) {
+      console.error('Client quiz error:', err);
+      return res.status(500).json({ success: false, error: 'Test kaydedilemedi.' });
     }
   });
 

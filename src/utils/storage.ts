@@ -95,6 +95,25 @@ export async function postClientIntakeToServer(payload: any): Promise<{ success:
   }
 }
 
+export async function postClientQuizToServer(payload: {
+  clientName: string;
+  answers: Record<number, number>;
+  phone?: string;
+}): Promise<{ success: boolean; clientId?: string; type?: number; wing?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/client-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) return { success: false, error: data.error || 'Test kaydedilemedi.' };
+    return { success: true, clientId: data.clientId, type: data.type, wing: data.wing };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'Sunucu bağlantı hatası oluştu.' };
+  }
+}
+
 export async function syncClientsWithServer(): Promise<PersonData[]> {
   try {
     const localClients = getStoredClients();

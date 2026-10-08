@@ -4,6 +4,7 @@
  */
 
 import { ENNEAGRAM_MINI_TEST_QUESTIONS, calculateEnneagramFromAnswers, ENNEAGRAM_TYPES } from './enneagram';
+import { parseClientTotemAnswers } from './totemSharing';
 
 /**
  * Müşteriye gönderilecek zengin WhatsApp mesaj metnini oluşturur.
@@ -189,6 +190,192 @@ export function parseClientAnswers(rawText: string): {
       calculatedType: t,
       calculatedWing: defWing,
       matchedCount: 5
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Danışan Kabul Formu verilerini tekil güvenli bir aktarım token'ına paketler.
+ */
+export function encodeClientIntakeToken(client: Record<string, any>): string {
+  try {
+    const compactPayload = {
+      n: client.name || `${client.firstName || ''} ${client.lastName || ''}`.trim(),
+      p: client.phone || '',
+      e: client.email || '',
+      bd: client.birthDate || '',
+      bt: client.birthTime || '',
+      bp: client.birthPlace || '',
+      bc: client.birthCity || '',
+      bco: client.birthCountry || '',
+      lat: client.birthLatitude,
+      lon: client.birthLongitude,
+      tz: client.birthTimezone,
+      mn: client.motherName || '',
+      et: client.enneagramType,
+      ew: client.enneagramWing,
+      ea: client.enneagramAnswers,
+      ta: client.totemAnswers,
+      pt: client.primaryTotemId,
+      st: client.secondaryTotemId,
+      sht: client.shadowTotemId,
+      ps: client.personalStory || ''
+    };
+    const jsonStr = JSON.stringify(compactPayload);
+    const b64 = typeof window !== 'undefined' && typeof window.btoa === 'function'
+      ? window.btoa(encodeURIComponent(jsonStr))
+      : Buffer.from(jsonStr).toString('base64');
+    return `[CLIENT-INTAKE:${b64}]`;
+  } catch (err) {
+    console.error('Failed encoding intake token:', err);
+    return '';
+  }
+}
+
+export interface UniversalParsedClient {
+  kind: 'full_client' | 'enneagram_quiz' | 'totem_quiz';
+  name: string;
+  phone?: string;
+  email?: string;
+  birthDate?: string;
+  birthTime?: string;
+  birthPlace?: string;
+  birthCity?: string;
+  birthCountry?: string;
+  birthLatitude?: number;
+  birthLongitude?: number;
+  birthTimezone?: string;
+  motherName?: string;
+  enneagramType?: number;
+  enneagramWing?: string;
+  enneagramAnswers?: Record<number, number>;
+  totemAnswers?: Record<number, string>;
+  primaryTotemId?: string;
+  secondaryTotemId?: string;
+  shadowTotemId?: string;
+  totemConfidenceScore?: number;
+  personalStory?: string;
+}
+
+/**
+ * WhatsApp'tan veya panodan yapıştırılan HER TÜRLÜ danışan mesajını akıllıca çözer.
+ */
+export function parseUniversalClientImport(rawText: string): UniversalParsedClient | null {
+  if (!rawText || !rawText.trim()) return null;
+  const text = rawText.trim();
+
+  // 1. [CLIENT-INTAKE:base64] formatı
+  const fullIntakeMatch = text.match(/\[CLIENT-INTAKE:([A-Za-z0-9+/=_%-]+)\]/i);
+  if (fullIntakeMatch) {
+    try {
+      const b64 = fullIntakeMatch[1];
+      const decodedJson = typeof window !== 'undefined' && typeof window.atob === 'function'
+        ? decodeURIComponent(window.atob(b64))
+        : Buffer.from(b64, 'base64').toString('utf-8');
+      const p = JSON.parse(decodedJson);
+      if (p && (p.n || p.name)) {
+        return {
+          kind: 'full_client',
+          name: p.n || p.name || 'Danışan',
+          phone: p.p || p.phone,
+          email: p.e || p.email,
+          birthDate: p.bd || p.birthDate,
+          birthTime: p.bt || p.birthTime,
+          birthPlace: p.bp || p.birthPlace,
+          birthCity: p.bc || p.birthCity,
+          birthCountry: p.bco || p.birthCountry,
+          birthLatitude: p.lat || p.birthLatitude,
+          birthLongitude: p.lon || p.birthLongitude,
+          birthTimezone: p.tz || p.birthTimezone,
+          motherName: p.mn || p.motherName,
+          enneagramType: p.et || p.enneagramType,
+          enneagramWing: p.ew || p.enneagramWing,
+          enneagramAnswers: p.ea || p.enneagramAnswers,
+          totemAnswers: p.ta || p.totemAnswers,
+          primaryTotemId: p.pt || p.primaryTotemId,
+          secondaryTotemId: p.st || p.secondaryTotemId,
+          shadowTotemId: p.sht || p.shadowTotemId,
+          personalStory: p.ps || p.personalStory
+        };
+      }
+    } catch (err) {
+      console.warn('Error parsing CLIENT-INTAKE token:', err);
+    }
+  }
+
+  // 2. [TOTEM-TOKEN:...] formatı veya Totem yanıtları
+  const totemParsed = parseClientTotemAnswers(text);
+  if (totemParsed) {
+    const nameMatch = text.match(/(?:Danışan|İsim|Ad\s*Soyad|Adı)\s*[:=]\s*([^\n\r,]+)/i);
+    const extractedName = (nameMatch ? nameMatch[1].trim() : totemParsed.clientName) || 'Danışan';
+    const phoneMatch = text.match(/(?:Telefon|Tel|Phone|GSM)\s*[:=]\s*([+0-9\s-]{10,20})/i);
+    const phone = phoneMatch ? phoneMatch[1].trim() : undefined;
+
+    return {
+      kind: 'totem_quiz',
+      name: extractedName,
+      phone,
+      totemAnswers: totemParsed.answers,
+      primaryTotemId: totemParsed.calculatedResult.primaryTotem.id,
+      secondaryTotemId: totemParsed.calculatedResult.secondaryTotem.id,
+      shadowTotemId: totemParsed.calculatedResult.shadowTotem.id,
+      totemConfidenceScore: totemParsed.calculatedResult.confidenceScore
+    };
+  }
+
+  // 3. [ENNEA-TOKEN:...] formatı veya Enneagram metin eşleşmesi
+  const enneaParsed = parseClientAnswers(text);
+  if (enneaParsed) {
+    // Danışan adı metin içinden de aranabilir (örn: "Danışan: Melis Kaya" veya "İsim: Melis")
+    const nameMatch = text.match(/(?:Danışan|İsim|Ad\s*Soyad|Adı)\s*[:=]\s*([^\n\r,]+)/i);
+    const extractedName = (nameMatch ? nameMatch[1].trim() : enneaParsed.clientName) || 'Danışan';
+    
+    // Telefon da aranabilir
+    const phoneMatch = text.match(/(?:Telefon|Tel|Phone|GSM)\s*[:=]\s*([+0-9\s-]{10,20})/i);
+    const phone = phoneMatch ? phoneMatch[1].trim() : undefined;
+
+    return {
+      kind: 'enneagram_quiz',
+      name: extractedName,
+      phone,
+      enneagramType: enneaParsed.calculatedType,
+      enneagramWing: enneaParsed.calculatedWing,
+      enneagramAnswers: enneaParsed.answers
+    };
+  }
+
+  // 3. WhatsApp serbest metin danışan formu formatı
+  const nameLine = text.match(/(?:Danışan|İsim|Ad\s*Soyad|Adı)\s*[:=]\s*([^\n\r]+)/i);
+  if (nameLine) {
+    const name = nameLine[1].replace(/[*_~]/g, '').trim();
+    const phoneLine = text.match(/(?:Telefon|Tel|Phone|GSM)\s*[:=]\s*([^\n\r]+)/i);
+    const birthLine = text.match(/(?:Doğum|Doğum\s*Tarihi)\s*[:=]\s*([^\n\r]+)/i);
+    const motherLine = text.match(/(?:Anne\s*Adı|Anne)\s*[:=]\s*([^\n\r]+)/i);
+
+    let birthDate: string | undefined = undefined;
+    let birthTime: string | undefined = undefined;
+    let birthPlace: string | undefined = undefined;
+
+    if (birthLine) {
+      const bStr = birthLine[1].replace(/[*_~]/g, '').trim();
+      const dateM = bStr.match(/(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/);
+      if (dateM) birthDate = dateM[1];
+      const timeM = bStr.match(/(\d{1,2}:\d{2})/);
+      if (timeM) birthTime = timeM[1];
+      const placePart = bStr.replace(/(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/, '').replace(/(\d{1,2}:\d{2})/, '').replace(/[,–-]/g, ' ').trim();
+      if (placePart) birthPlace = placePart;
+    }
+
+    return {
+      kind: 'full_client',
+      name,
+      phone: phoneLine ? phoneLine[1].replace(/[*_~]/g, '').trim() : undefined,
+      birthDate,
+      birthTime,
+      birthPlace,
+      motherName: motherLine ? motherLine[1].replace(/[*_~]/g, '').trim() : undefined
     };
   }
 

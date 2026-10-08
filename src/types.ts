@@ -331,6 +331,7 @@ export interface TattooRecipe {
   userNotes?: string;
   symbolicIntegration?: SymbolicIntegrationModelResult;
   prescription?: PersonalSymbolPrescription;
+  excludedSymbols?: Array<{ name: string; reason?: string }>;
 }
 
 export interface ShadowArchetypeAnalysisReport {
@@ -501,11 +502,33 @@ export interface ClientExplanationSection {
   attachmentsText?: string; // Parçalar ve Ek Dosyalar
 }
 
+export interface SymbolDesignCompatibility {
+  recommendedStyles: string[];
+  bodyPlacements: string[];
+  compositionRole: string;
+  canBeAbstractedToLines: boolean;
+  abstractGeometricEquivalent: string;
+}
+
 export interface SymbolLibraryItem {
   id: string;
   name: string;
   category: 'Hayvan' | 'Bitki/Çiçek' | 'Geometri' | 'Mitoloji' | 'Element' | 'Doğal Taş' | 'Kutsal Obje' | 'Kozmik';
+  subcategory?: string;
   meaning: string;
+  archetypes?: string[];
+  positiveThemes?: string[];
+  shadowThemes?: string[];
+  relatedChakras?: number[];
+  relatedElements?: Array<'Ateş' | 'Toprak' | 'Hava' | 'Su' | 'Eter' | string>;
+  relatedNumerology?: number[];
+  relatedAstrology?: string[];
+  relatedEnneagram?: number[];
+  relatedTotemThemes?: string[];
+  suitableFor?: string[];
+  avoidWhen?: string[];
+  designCompatibility?: SymbolDesignCompatibility;
+  visualDescription?: string;
   numerologyConnection: string;
   astrologyConnection: string;
   enneagramConnection: string;

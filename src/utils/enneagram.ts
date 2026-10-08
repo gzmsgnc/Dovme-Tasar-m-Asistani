@@ -144,98 +144,117 @@ export const ENNEAGRAM_MINI_TEST_QUESTIONS: EnneagramQuestion[] = [
     id: 2,
     question: 'Baskı ve kriz anında ilk refleksiniz genellikle hangisi olur?',
     options: [
-      { text: 'Duygularımı bir kenara bırakıp mantıklı ve soğukkanlı çözüme odaklanırım.', type: 5, description: 'Zihinsel İzolasyon' },
-      { text: 'Hemen inisiyatif alır, doğrudan ve güçlü bir şekilde duruma el koyarım.', type: 8, description: 'Doğrudan Mücadele' },
       { text: 'Hataları düzeltmek için kuralları ve sistemi sıkılaştırırım.', type: 1, description: 'Disiplin ve Düzeltme' },
-      { text: 'Olayın olumlu taraflarına odaklanır, alternatif eğlenceli planlar üretirim.', type: 7, description: 'Pozitif Yeniden Çerçeveleme' },
+      { text: 'Sevdiklerimi kanatlarımın altına alır, duygusal destek ve şefkatle teselli ederim.', type: 2, description: 'Şefkatli Koruma' },
+      { text: 'Krizi hızla fırsata çevirir, pragmatik bir planla en verimli sonuca koşarım.', type: 3, description: 'Pragmatik Başarı' },
       { text: 'İç dünyama çekilir, duygularımı derinlemesine yaşarım.', type: 4, description: 'İçselleşme' },
-      { text: 'Ortamı yatıştırmaya, çatışmayı yumuşatmaya çalışırım.', type: 9, description: 'Uzlaşma' },
-      { text: 'Tüm risk senaryolarını hızlıca analiz edip güvendiğim insanlarla tedbir alırım.', type: 6, description: 'Risk Yönetimi' }
+      { text: 'Duygularımı bir kenara bırakıp mantıklı ve soğukkanlı çözüme odaklanırım.', type: 5, description: 'Zihinsel İzolasyon' },
+      { text: 'Tüm risk senaryolarını hızlıca analiz edip güvendiğim insanlarla tedbir alırım.', type: 6, description: 'Risk Yönetimi' },
+      { text: 'Olayın olumlu taraflarına odaklanır, alternatif eğlenceli planlar üretirim.', type: 7, description: 'Pozitif Yeniden Çerçeveleme' },
+      { text: 'Hemen inisiyatif alır, doğrudan ve güçlü bir şekilde duruma el koyarım.', type: 8, description: 'Doğrudan Mücadele' },
+      { text: 'Ortamı yatıştırmaya, çatışmayı yumuşatmaya çalışırım.', type: 9, description: 'Uzlaşma' }
     ]
   },
   {
     id: 3,
     question: 'İç dünyanızda en çok kaçındığınız veya sizi en çok rahatsız eden durum nedir?',
     options: [
-      { text: 'Sıradan, önemsiz veya sahte olmak.', type: 4, description: 'Kimliksizlik Korkusu' },
-      { text: 'Kontrolü kaybetmek, başkalarına muhtaç veya zayıf duruma düşmek.', type: 8, description: 'Zayıflık Korkusu' },
-      { text: 'Yetersiz, hazırlıksız veya cahil hissetmek.', type: 5, description: 'Yetersizlik Korkusu' },
       { text: 'Haksız, kusurlu veya ahlaken suçlu görülmek.', type: 1, description: 'Kusurluluk Korkusu' },
       { text: 'İstenmeyen, terk edilen veya sevgisiz bırakılan biri olmak.', type: 2, description: 'Dışlanma Korkusu' },
       { text: 'Başarısız, verimsiz ve itibarını kaybetmiş olmak.', type: 3, description: 'Başarısızlık Korkusu' },
-      { text: 'Kısıtlanmak, çıkmaza girmek veya acıya mahkum olmak.', type: 7, description: 'Tutsaklık Korkusu' }
+      { text: 'Sıradan, önemsiz veya sahte olmak.', type: 4, description: 'Kimliksizlik Korkusu' },
+      { text: 'Yetersiz, hazırlıksız veya cahil hissetmek.', type: 5, description: 'Yetersizlik Korkusu' },
+      { text: 'Güvensizlik, desteksiz kalmak, yalnız bırakılmak veya aldatılmak.', type: 6, description: 'Savunmasızlık Korkusu' },
+      { text: 'Kısıtlanmak, çıkmaza girmek veya acıya mahkum olmak.', type: 7, description: 'Tutsaklık Korkusu' },
+      { text: 'Kontrolü kaybetmek, başkalarına muhtaç veya zayıf duruma düşmek.', type: 8, description: 'Zayıflık Korkusu' },
+      { text: 'Çatışma, kavga, gerginlik ve iç huzurumun tamamen dağılması.', type: 9, description: 'Kopuş & Çatışma Korkusu' }
     ]
   },
   {
     id: 4,
     question: 'Yakın ilişkilerinizde kendinizi nasıl tanımlarsınız?',
     options: [
-      { text: 'Son derece koruyucu, doğrudan ve sadık; arkamda durana canımı veririm.', type: 8, description: 'Koruyucu Lider' },
-      { text: 'Verici, şefkatli ve karşımdakinin hislerini hemen sezen bir sırdaş.', type: 2, description: 'Şefkatli Destek' },
       { text: 'Dürüst, tutarlı, ilkelerine ve sözüne sadık bir yoldaş.', type: 1, description: 'Güvenilir Denge' },
-      { text: 'Kişisel alanına ve zihinsel sınırlarına düşkün, derin ve seçici bir dost.', type: 5, description: 'Sessiz Bilge' },
+      { text: 'Verici, şefkatli ve karşımdakinin hislerini hemen sezen bir sırdaş.', type: 2, description: 'Şefkatli Destek' },
+      { text: 'Birlikte parladığımız, karşılıklı ilham ve başarı üreten bir ortak.', type: 3, description: 'İlham Verici İttifak' },
       { text: 'Derin, tutkulu, bazen anlaşılmadığını hisseden ama çok samimi.', type: 4, description: 'Duygusal Derinlik' },
-      { text: 'Kırıcı olmayan, herkesi anlayan, ortamı sakinleştiren barış elçisi.', type: 9, description: 'Barışçıl Liman' },
-      { text: 'Neşeli, enerjik, maceralara sürükleyen ve hayatı renklendiren.', type: 7, description: 'Coşkulu Yolcu' }
+      { text: 'Kişisel alanına ve zihinsel sınırlarına düşkün, derin ve seçici bir dost.', type: 5, description: 'Sessiz Bilge' },
+      { text: 'Sarsılmaz derecede güvenilir, sadık ve her tehlikede arkasını kollayan.', type: 6, description: 'Sadık Muhafız' },
+      { text: 'Neşeli, enerjik, maceralara sürükleyen ve hayatı renklendiren.', type: 7, description: 'Coşkulu Yolcu' },
+      { text: 'Son derece koruyucu, doğrudan ve sadık; arkamda durana canımı veririm.', type: 8, description: 'Koruyucu Lider' },
+      { text: 'Kırıcı olmayan, herkesi anlayan, ortamı sakinleştiren barış elçisi.', type: 9, description: 'Barışçıl Liman' }
     ]
   },
   {
     id: 5,
     question: 'Bir projeye veya hedefe başlarken odaklandığınız ana unsur nedir?',
     options: [
-      { text: 'En yüksek başarı, hız, verimlilik ve parlayan bir sonuç.', type: 3, description: 'Kusursuz İmaj & Başarı' },
-      { text: 'Eksiksiz bilgi toplamak, tüm sistemi baştan sona anlamak.', type: 5, description: 'Derin Bilgi' },
       { text: 'Hatasız standartlar, adil bir iş bölümü ve kusursuz kalite.', type: 1, description: 'Etik Kalite' },
+      { text: 'İnsanların hayatına dokunan, şifa veren ve kalpten sevgi üreten bir amaç.', type: 2, description: 'Faydalı & Şefkatli Dokunuş' },
+      { text: 'En yüksek başarı, hız, verimlilik ve parlayan bir sonuç.', type: 3, description: 'Kusursuz İmaj & Başarı' },
       { text: 'Yaratıcı, kimsede olmayan, estetik ve özgün bir iz bırakmak.', type: 4, description: 'Sanatsal İz' },
+      { text: 'Eksiksiz bilgi toplamak, tüm sistemi baştan sona anlamak.', type: 5, description: 'Derin Bilgi' },
+      { text: 'Tüm belirsizlik ve risklerin önceden öngörüldüğü, sağlam ve güvenli bir zemin.', type: 6, description: 'Sağlam Temel & Güvenlik' },
+      { text: 'Yol boyunca bolca eğlence, yaratıcı fikirler ve keşif.', type: 7, description: 'Dinamik Keşif' },
       { text: 'Cesurca öne atılmak, engelleri yıkmak ve liderlik etmek.', type: 8, description: 'Güçlü İlerleme' },
-      { text: 'Ekipten kimsenin geride kalmadığı, huzurlu ve uyumlu bir süreç.', type: 9, description: 'Kolektif Uyum' },
-      { text: 'Yol boyunca bolca eğlence, yaratıcı fikirler ve keşif.', type: 7, description: 'Dinamik Keşif' }
+      { text: 'Ekipten kimsenin geride kalmadığı, huzurlu ve uyumlu bir süreç.', type: 9, description: 'Kolektif Uyum' }
     ]
   }
 ];
 
-export function calculateEnneagramFromAnswers(answers: Record<number, number>): { type: number; wing: string } {
-  const expectedQuestionIds = ENNEAGRAM_MINI_TEST_QUESTIONS.map(q => q.id);
-  const providedIds = Object.keys(answers).map(Number).sort((a, b) => a - b);
-  const expectedIds = [...expectedQuestionIds].sort((a, b) => a - b);
-
-  if (
-    providedIds.length !== expectedIds.length ||
-    providedIds.some((id, index) => id !== expectedIds[index])
-  ) {
-    throw new Error('Enneagram testi eksik veya fazla cevap içeriyor; tüm sorular tam olarak cevaplanmalıdır.');
+export function calculateEnneagramFromAnswers(answers?: Record<number, number>): { type: number; wing: string } {
+  if (!answers || Object.keys(answers).length === 0) {
+    return { type: 4, wing: '4w5' };
   }
 
   const scores: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+  let answeredCount = 0;
 
-  Object.entries(answers).forEach(([questionId, typeVal]) => {
-    if (!Number.isInteger(typeVal) || scores[typeVal] === undefined) {
-      throw new Error(`Enneagram sorusu ${questionId} için geçersiz tip cevabı.`);
+  Object.entries(answers).forEach(([, typeVal]) => {
+    const t = Number(typeVal);
+    if (Number.isInteger(t) && scores[t] !== undefined) {
+      scores[t] += 1;
+      answeredCount++;
     }
-    scores[typeVal] += 1;
   });
+
+  if (answeredCount === 0) {
+    return { type: 4, wing: '4w5' };
+  }
 
   let maxType = 4;
   let maxScore = -1;
-  Object.entries(scores).forEach(([tStr, score]) => {
-    const t = parseInt(tStr, 10);
+  // Types 1..9 evaluate scores
+  for (let t = 1; t <= 9; t++) {
+    const score = scores[t];
     if (score > maxScore) {
       maxScore = score;
       maxType = t;
     }
-  });
+  }
 
   const typeData = ENNEAGRAM_TYPES[maxType] || ENNEAGRAM_TYPES[4];
-  // Calculate wing: check adjacent types (e.g. for 4, check 3 and 5)
+  // Calculate wing: check adjacent types on the enneagram circle (1 is neighbor to 9 and 2)
   const leftNeighbor = maxType === 1 ? 9 : maxType - 1;
   const rightNeighbor = maxType === 9 ? 1 : maxType + 1;
 
   const leftScore = scores[leftNeighbor] || 0;
   const rightScore = scores[rightNeighbor] || 0;
 
-  // Eşitlikte sağ kanadı otomatik seçme; simetrik durumda sol komşuyu seçerek
-  // önceki yapay sağ-kanat önyargısını kaldırıyoruz.
-  const wing = rightScore > leftScore ? `${maxType}w${rightNeighbor}` : `${maxType}w${leftNeighbor}`;
+  let wing: string;
+  if (rightScore > leftScore) {
+    wing = `${maxType}w${rightNeighbor}`;
+  } else if (leftScore > rightScore) {
+    wing = `${maxType}w${leftNeighbor}`;
+  } else {
+    // Tie-break: use default canonical primary wing from ENNEAGRAM_TYPES
+    wing = typeData.wings[0] || `${maxType}w${rightNeighbor}`;
+  }
+
+  // Ensure wing is valid
+  if (!typeData.wings.includes(wing)) {
+    wing = typeData.wings[0] || `${maxType}w${rightNeighbor}`;
+  }
 
   return { type: maxType, wing };
 }

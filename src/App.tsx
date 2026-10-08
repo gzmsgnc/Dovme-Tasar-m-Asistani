@@ -3,9 +3,19 @@ import { Navigation, ActiveTab } from './components/Navigation';
 import { NewDesignWizard } from './components/wizard/NewDesignWizard';
 import { BackupModal } from './components/common/BackupModal';
 import { ClientEnneagramQuizView } from './components/common/ClientEnneagramQuizView';
+import { ClientTotemQuizView } from './components/common/ClientTotemQuizView';
 import { ClientIntakeFormView } from './components/common/ClientIntakeFormView';
 import { PersonData, TattooRecipe } from './types';
-import { getStoredClients, saveClient, deleteClient, getStoredRecipes, saveRecipe, deleteRecipe, clearAllData } from './utils/storage';
+import { 
+  getStoredClients, 
+  saveClient, 
+  deleteClient, 
+  getStoredRecipes, 
+  saveRecipe, 
+  deleteRecipe, 
+  clearAllData,
+  syncClientsWithServer
+} from './utils/storage';
 
 const ClientsView = lazy(() => import('./components/clients/ClientsView').then(m => ({ default: m.ClientsView })));
 const ArchiveView = lazy(() => import('./components/archive/ArchiveView').then(m => ({ default: m.ArchiveView })));
@@ -25,6 +35,13 @@ export function App() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       return params.get('mode') === 'enneagram-quiz' || params.get('mode') === 'enneagram-test';
+    }
+    return false;
+  });
+  const [isClientTotemMode, setIsClientTotemMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const mode = new URLSearchParams(window.location.search).get('mode');
+      return mode === 'totem-quiz' || mode === 'totem-test' || mode === 'totem' || mode === 'ruh-totemi';
     }
     return false;
   });
@@ -54,14 +71,48 @@ export function App() {
     return 'Değerli Danışanımız';
   });
 
-  const loadData = () => {
+  const loadData = async () => {
     setClients(getStoredClients());
     setRecipes(getStoredRecipes());
+    try {
+      const synced = await syncClientsWithServer();
+      if (synced && synced.length > 0) {
+        setClients(synced);
+      }
+    } catch {
+      // Offline or network error handled gracefully
+    }
   };
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    loadData(); 
+
+    // Danışan kabul formu veya sekme güncellemesi olduğunda anında veriyi tazele
+    const handleStorageUpdate = (event: Event) => {
+      loadData();
+    };
+    window.addEventListener('tattoo_assistant_data_updated', handleStorageUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
+
+    // Stüdyo açıkken her 12 saniyede bir arka planda sunucudan yeni gelen formları yokla
+    const syncInterval = setInterval(() => {
+      if (adminAuthenticated) {
+        syncClientsWithServer().then(synced => {
+          if (synced && synced.length > 0) {
+            setClients(synced);
+          }
+        }).catch(() => {});
+      }
+    }, 12000);
+
+    return () => {
+      window.removeEventListener('tattoo_assistant_data_updated', handleStorageUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
+      clearInterval(syncInterval);
+    };
+  }, [adminAuthenticated]);
 
   useEffect(() => {
-    if (isClientQuizMode || isClientFormMode) return;
+    if (isClientQuizMode || isClientFormMode || isClientTotemMode) return;
     fetch('/api/auth/session')
       .then(async res => {
         const data = await res.json();
@@ -191,6 +242,12 @@ export function App() {
   if (isClientQuizMode) {
     return <ClientEnneagramQuizView clientName={clientQuizName} onReturnToStudio={() => {
       setIsClientQuizMode(false);
+      if (typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
+    }} />;
+  }
+  if (isClientTotemMode) {
+    return <ClientTotemQuizView clientName={clientQuizName} onReturnToStudio={() => {
+      setIsClientTotemMode(false);
       if (typeof window !== 'undefined') window.history.replaceState({}, '', window.location.pathname);
     }} />;
   }

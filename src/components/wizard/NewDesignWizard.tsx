@@ -17,6 +17,7 @@ import { deriveSymbolismProfile } from '../../utils/symbolism';
 import { calculateChakraProfile, ChakraProfile } from '../../utils/chakra';
 import { TATTOO_STYLES } from '../../utils/styles';
 import { generateTattooRecipe } from '../../utils/recipeGenerator';
+import { SYMBOL_LIBRARY, matchPersonalizedSymbols } from '../../utils/symbolLibraryData';
 import { calculateEbcedAndYildizname } from '../../utils/ebced';
 import { ShadowAnalysisViewer } from './ShadowAnalysisViewer';
 import { SymbolIntegrationViewer } from '../symbols/SymbolIntegrationViewer';
@@ -1375,7 +1376,7 @@ ${r.turkishPromptExplanation}
                     <span>Anne Adı</span>
                     <span className="text-[10px] text-[#c4a47c] font-sans font-normal">(Ebced & Yıldızname Hesabı)</span>
                   </label>
-                  {name.trim() && (
+                  {name.trim() && motherName.trim() && (
                     <span className="text-[10px] font-mono text-amber-300/90 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-500/30">
                       Toplam Ebced: {calculateEbcedAndYildizname(name, motherName).totalEbced} | {calculateEbcedAndYildizname(name, motherName).yildiznameBurcName} ({calculateEbcedAndYildizname(name, motherName).yildiznameElement})
                     </span>
@@ -2466,6 +2467,8 @@ ${r.turkishPromptExplanation}
                     type="button"
                     onClick={() => {
                       if (newSecSymbolInput.trim()) {
+                        setHasUserEditedDesignSymbols(true);
+                        setExcludedDesignSymbols(prev => prev.filter(item => item.name !== newSecSymbolInput.trim()));
                         setCustomSecondarySymbols([...customSecondarySymbols, newSecSymbolInput.trim()]);
                         setNewSecSymbolInput('');
                       }
@@ -2476,6 +2479,130 @@ ${r.turkishPromptExplanation}
                   </button>
                 </div>
               </div>
+
+              {/* Kişiselleştirilmiş Kütüphane Sembol Önerileri */}
+              {numerology && astrology && enneagram && (
+                <div className="p-3.5 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-semibold text-[#c4a47c] flex items-center gap-1.5 font-mono">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Danışan Haritasına Özel Kütüphane Önerileri:</span>
+                      </span>
+                      <p className="text-[10px] text-[#666] font-mono mt-0.5">
+                        Yaşam Yolu {numerology.lifePathNumber}, Güneş {astrology.sunSign}, {astrology.dominantElement} elementi ve çakra analizine göre en yüksek rezonanslı semboller.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {matchPersonalizedSymbols(SYMBOL_LIBRARY, {
+                      numerology,
+                      astrology,
+                      enneagram,
+                      symbolism: symbolism || undefined,
+                      chakra: chakra || undefined,
+                      excludedSymbols: excludedDesignSymbols,
+                      allowAnimalFigures: includeTotemInDesign,
+                      limit: 6
+                    }).map((rec) => (
+                      <div
+                        key={rec.symbol.id}
+                        className="p-2.5 rounded bg-[#111] border border-[#1f1f1f] hover:border-[#c4a47c]/40 transition-all flex flex-col justify-between space-y-2 text-xs"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-bold text-white font-serif text-[11px] truncate">
+                              {rec.symbol.name}
+                            </span>
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#181818] text-[#c4a47c] border border-[#2a2a2a] shrink-0">
+                              {rec.symbol.category}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-[#888] line-clamp-2 leading-relaxed">
+                            {rec.symbol.meaning}
+                          </p>
+                          {rec.isAnimalSuppressedToGeometry && rec.abstractGeometricGuidance && (
+                            <div className="mt-1 text-[9px] text-cyan-400 font-mono bg-cyan-950/20 p-1 rounded border border-cyan-900/30">
+                              ✦ Çizgisel Karşılık: {rec.abstractGeometricGuidance.substring(0, 55)}...
+                            </div>
+                          )}
+                          <div className="mt-1 text-[9px] text-[#c4a47c] font-mono truncate">
+                            ✓ {rec.matchReasons[0] || 'Harita uyumlu'}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 pt-1.5 border-t border-[#181818]">
+                          <button
+                            type="button"
+                            onClick={() => handleMainSymbolChange(rec.symbol.name)}
+                            className="flex-1 py-1 rounded bg-[#161616] hover:bg-[#c4a47c] hover:text-black text-[#bbb] text-[10px] font-mono transition-all border border-[#222] cursor-pointer text-center truncate"
+                            title="Ana Odak Olarak Belirle"
+                          >
+                            + Ana Odak
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!customSecondarySymbols.includes(rec.symbol.name)) {
+                                setHasUserEditedDesignSymbols(true);
+                                setExcludedDesignSymbols(prev => prev.filter(item => item.name !== rec.symbol.name));
+                                setCustomSecondarySymbols([...customSecondarySymbols, rec.symbol.name]);
+                              }
+                            }}
+                            className="flex-1 py-1 rounded bg-[#161616] hover:bg-[#222] text-[#bbb] text-[10px] font-mono transition-all border border-[#222] cursor-pointer text-center truncate"
+                            title="Yardımcı Sembol Olarak Ekle"
+                          >
+                            + Yardımcı
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => rememberExcludedSymbol(rec.symbol.name, 'Kullanıcı kütüphane önerisinden hariç tuttu.')}
+                            className="px-2 py-1 rounded bg-[#161616] hover:bg-rose-950/50 hover:text-rose-400 text-[#555] text-[10px] font-mono transition-all border border-[#222] cursor-pointer"
+                            title="Tasarımdan Hariç Tut"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hariç Tutulan Semboller (Excluded Symbols - Audit & Teknik Kayıt) */}
+              {excludedDesignSymbols.length > 0 && (
+                <div className="p-3.5 rounded-lg bg-[#0d0909] border border-rose-950/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-rose-400 font-mono flex items-center gap-1.5">
+                      <span>🛡️</span>
+                      <span>Tasarımdan Hariç Tutulan Semboller ({excludedDesignSymbols.length}):</span>
+                    </span>
+                    <span className="text-[10px] text-[#777] font-mono">Prompt Güvenliği Aktif</span>
+                  </div>
+                  <p className="text-[10px] text-[#888] leading-relaxed">
+                    Bu semboller ana dövme reçetesinde, müşteri açıklamasında ve AI görsel üretim promptlarında <strong className="text-rose-300">asla yer almaz</strong>. Teknik audit kaydı için aşağıda tutulur:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {excludedDesignSymbols.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 rounded bg-[#140b0b] border border-rose-900/40 text-[10px] text-rose-300 flex items-center gap-2 font-mono"
+                      >
+                        <span className="line-through text-rose-400/80">{item.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setExcludedDesignSymbols(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-[#888] hover:text-white text-[10px] cursor-pointer underline"
+                          title="Geri Ekle"
+                        >
+                          Geri Al
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

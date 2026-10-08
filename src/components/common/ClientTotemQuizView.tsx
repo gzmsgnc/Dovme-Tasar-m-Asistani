@@ -1,54 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ENNEAGRAM_MINI_TEST_QUESTIONS, 
-  calculateEnneagramFromAnswers, 
-  ENNEAGRAM_TYPES 
-} from '../../utils/enneagram';
+  TOTEM_BEHAVIORAL_QUESTIONS, 
+  calculateBehavioralTotemResult, 
+  TotemTestCalculationResult 
+} from '../../utils/behavioralTotemEngine';
 import { 
-  generateClientReturnWhatsAppMessage, 
-  encodeAnswersToToken, 
+  generateClientReturnWhatsAppTotemMessage, 
+  encodeTotemAnswersToToken, 
   generateWhatsAppShareLink 
-} from '../../utils/enneagramSharing';
+} from '../../utils/totemSharing';
 import { postClientQuizToServer } from '../../utils/storage';
-import { HelpCircle, Check, Send, Copy, ArrowLeft, RotateCcw, Sparkles, CheckCircle2 } from 'lucide-react';
+import { 
+  Compass, 
+  Check, 
+  Send, 
+  Copy, 
+  ArrowLeft, 
+  RotateCcw, 
+  Sparkles, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Layers 
+} from 'lucide-react';
 
-interface ClientEnneagramQuizViewProps {
+interface ClientTotemQuizViewProps {
   clientName?: string;
   onReturnToStudio?: () => void;
-  onCompletedAnswers?: (type: number, wing: string) => void;
+  onCompletedAnswers?: (answers: Record<number, string>, result: TotemTestCalculationResult) => void;
 }
 
-export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = ({
+export const ClientTotemQuizView: React.FC<ClientTotemQuizViewProps> = ({
   clientName = 'Değerli Danışanımız',
   onReturnToStudio,
   onCompletedAnswers
 }) => {
-  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [copiedToken, setCopiedToken] = useState<boolean>(false);
   const [serverSaved, setServerSaved] = useState<boolean>(false);
 
-  const totalQuestions = ENNEAGRAM_MINI_TEST_QUESTIONS.length;
+  const totalQuestions = TOTEM_BEHAVIORAL_QUESTIONS.length;
   const answeredCount = Object.keys(answers).length;
   const isComplete = answeredCount === totalQuestions;
 
-  // Otomatik olarak sunucuya da gönder
-  React.useEffect(() => {
-    if (isComplete && !serverSaved) {
+  // En az 3 soru yanıtlandığında anlık hesaplama yapılır
+  const calculationResult: TotemTestCalculationResult | null = 
+    answeredCount >= 3 ? calculateBehavioralTotemResult(answers) : null;
+
+  // Test bittiğinde stüdyo sunucusuna sessizce kaydet
+  useEffect(() => {
+    if (isComplete && !serverSaved && calculationResult) {
       postClientQuizToServer({
         clientName: clientName || 'Danışan',
-        answers
+        answers: answers as any
       }).then(res => {
         if (res.success) {
           setServerSaved(true);
         }
       }).catch(err => {
-        console.warn('Silent quiz post error:', err);
+        console.warn('Silent totem quiz post error:', err);
       });
-    }
-  }, [isComplete, answers, clientName, serverSaved]);
 
-  const handleSelectOption = (questionId: number, typeNumber: number) => {
-    setAnswers(prev => ({ ...prev, [questionId]: typeNumber }));
+      if (onCompletedAnswers) {
+        onCompletedAnswers(answers, calculationResult);
+      }
+    }
+  }, [isComplete, answers, clientName, serverSaved, calculationResult, onCompletedAnswers]);
+
+  const handleSelectOption = (questionId: number, optionId: string) => {
+    setAnswers(prev => ({ ...prev, [questionId]: optionId }));
   };
 
   const handleReset = () => {
@@ -56,11 +75,12 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
     setCopiedToken(false);
   };
 
-  const calculatedResult = isComplete ? calculateEnneagramFromAnswers(answers) : null;
-  const typeData = calculatedResult ? ENNEAGRAM_TYPES[calculatedResult.type] : null;
-
-  const returnMessage = isComplete ? generateClientReturnWhatsAppMessage(answers, clientName) : '';
-  const token = isComplete ? encodeAnswersToToken(answers, clientName) : '';
+  const returnMessage = isComplete && calculationResult 
+    ? generateClientReturnWhatsAppTotemMessage(answers, clientName, calculationResult) 
+    : '';
+  const token = isComplete 
+    ? encodeTotemAnswersToToken(answers, clientName) 
+    : '';
 
   const handleSendWhatsApp = () => {
     if (returnMessage) {
@@ -72,9 +92,6 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      if (calculatedResult && onCompletedAnswers) {
-        onCompletedAnswers(calculatedResult.type, calculatedResult.wing);
-      }
     }
   };
 
@@ -83,9 +100,6 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
       navigator.clipboard.writeText(token);
       setCopiedToken(true);
       setTimeout(() => setCopiedToken(false), 2000);
-      if (calculatedResult && onCompletedAnswers) {
-        onCompletedAnswers(calculatedResult.type, calculatedResult.wing);
-      }
     }
   };
 
@@ -105,21 +119,21 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
             </button>
           )}
           <div className="text-[10px] font-mono text-[#c4a47c] uppercase tracking-widest ml-auto">
-            Ezoterik Dövme Stüdyosu Danışan Portalı
+            Ezoterik Dövme Stüdyosu • Ruh Totemi Portalı
           </div>
         </div>
 
         {/* Hero Card */}
         <div className="p-6 rounded-2xl bg-gradient-to-b from-[#14120b] to-[#0c0c0c] border border-[#c4a47c]/30 shadow-2xl text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1e1a10] border border-[#c4a47c]/40 text-[#c4a47c] text-xs font-mono">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Kişiye Özel Dövme Arketipi</span>
+            <Compass className="w-3.5 h-3.5" />
+            <span>52 Kadim Hayvan Arketipi</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {clientName} için Enneagram Mini Testi
+            {clientName} için Davranışsal Ruh Totemi Testi
           </h1>
           <p className="text-xs sm:text-sm text-[#aaa] max-w-lg mx-auto leading-relaxed">
-            Dövme tasarımınızın temel sembolizmini, ruhsal gölge arketipinizi ve içsel motivasyonunuzu belirlemek için lütfen aşağıdaki 5 soruyu samimiyetle cevaplayınız.
+            Bu test hayvan isimlerini doğrudan sormaz. Kriz, yalnızlık, tehdit ve karar anlarındaki gerçek içsel reflekslerinizi 20 boyutta analiz ederek size en yakın kadim rehber hayvanları ortaya çıkarır.
           </p>
 
           {/* Progress */}
@@ -137,10 +151,10 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
           </div>
         </div>
 
-        {/* Questions */}
+        {/* Questions List */}
         <div className="space-y-4">
-          {ENNEAGRAM_MINI_TEST_QUESTIONS.map((q, idx) => {
-            const selectedType = answers[q.id];
+          {TOTEM_BEHAVIORAL_QUESTIONS.map((q, idx) => {
+            const selectedOpt = answers[q.id];
             return (
               <div
                 key={q.id}
@@ -150,20 +164,25 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
                   <span className="text-xs font-mono font-bold text-[#c4a47c] bg-[#1a1710] px-2 py-1 rounded border border-[#c4a47c]/30 shrink-0">
                     Soru {idx + 1}
                   </span>
-                  <h3 className="text-sm font-semibold text-white leading-snug">
-                    {q.question}
-                  </h3>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white leading-snug">
+                      {q.question}
+                    </h3>
+                    <span className="text-[10px] text-[#666] font-mono block mt-0.5">
+                      {q.category}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 pt-1 pl-0 sm:pl-9">
                   {q.options.map((opt, optIdx) => {
-                    const isSelected = selectedType === opt.type;
+                    const isSelected = selectedOpt === opt.id;
                     const letter = String.fromCharCode(65 + optIdx);
                     return (
                       <button
-                        key={optIdx}
+                        key={opt.id}
                         type="button"
-                        onClick={() => handleSelectOption(q.id, opt.type)}
+                        onClick={() => handleSelectOption(q.id, opt.id)}
                         className={`text-left p-3 rounded-lg text-xs transition-all border cursor-pointer flex items-start justify-between gap-3 ${
                           isSelected
                             ? 'bg-[#18140c] border-[#c4a47c] text-white shadow-md shadow-[#c4a47c]/10'
@@ -176,14 +195,9 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
                           }`}>
                             {letter}
                           </span>
-                          <div>
-                            <span className="block text-xs sm:text-[13px] leading-relaxed text-zinc-200">
-                              {opt.text}
-                            </span>
-                            <span className="text-[10px] text-[#777] font-mono mt-0.5 block">
-                              {opt.description}
-                            </span>
-                          </div>
+                          <span className="block text-xs sm:text-[13px] leading-relaxed text-zinc-200">
+                            {opt.text}
+                          </span>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-[#c4a47c] shrink-0 mt-0.5" />}
                       </button>
@@ -196,27 +210,67 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
         </div>
 
         {/* Completed Result & Send Buttons */}
-        {isComplete && calculatedResult && typeData && (
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#14120b] to-[#0a0a0a] border-2 border-[#c4a47c] shadow-2xl space-y-4 animate-fadeIn">
+        {isComplete && calculationResult && (
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#14120b] to-[#0a0a0a] border-2 border-[#c4a47c] shadow-2xl space-y-5 animate-fadeIn">
             <div className="flex items-center justify-between border-b border-[#c4a47c]/30 pb-3">
               <span className="text-xs font-mono uppercase tracking-wider text-[#c4a47c] font-bold flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" /> Tebrikler! Arketip Profiliniz Belirlendi
+                <Sparkles className="w-4 h-4" /> Tebrikler! Ruh Toteminiz Belirlendi
               </span>
               <span className="text-xs font-mono font-bold text-black px-2.5 py-1 rounded bg-[#c4a47c]">
-                Tip {calculatedResult.wing}
+                %{calculationResult.confidenceScore} Uyum
               </span>
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold text-white">
-                {typeData.typeName}
+            {/* Primary Totem */}
+            <div className="p-4 rounded-xl bg-[#111116] border border-[#c4a47c]/40 space-y-2">
+              <span className="text-[10px] font-mono text-[#c4a47c] uppercase tracking-wider block font-bold">
+                ★ BİRİNCİL RUH TOTEMİ
+              </span>
+              <h2 className="text-xl font-bold text-white font-serif">
+                {calculationResult.primaryTotem.name}
               </h2>
-              <p className="text-xs text-[#aaa] mt-1 leading-relaxed">
-                <strong className="text-zinc-300">Temel Motivasyon:</strong> {typeData.coreMotivation}
+              <p className="text-xs text-[#888] font-mono">
+                {calculationResult.primaryTotem.turkishName} • {calculationResult.primaryTotem.element} Elementi • {calculationResult.primaryTotem.realm}
               </p>
-              <p className="text-xs text-[#c4a47c] mt-1 leading-relaxed">
-                <strong className="text-[#c4a47c]">Dövmenizdeki Sembolik Yansıma:</strong> {typeData.symbolicMeaning}
+              <p className="text-xs text-zinc-300 leading-relaxed pt-1">
+                {calculationResult.primaryTotem.mainSymbolism}
               </p>
+              <div className="pt-1 text-[11px] text-[#aaa]">
+                <strong className="text-[#c4a47c]">Güçlü Yön:</strong> {calculationResult.primaryTotem.strongSide}
+              </div>
+            </div>
+
+            {/* Allies & Shadows Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-[#0e0e12] border border-[#222230] space-y-1">
+                <span className="text-[10px] font-mono text-[#c4a47c] uppercase tracking-wider block font-bold">
+                  ◆ İkincil Müttefik
+                </span>
+                <h4 className="text-sm font-bold text-white font-serif">
+                  {calculationResult.secondaryTotem.name}
+                </h4>
+                <p className="text-[11px] text-[#888] font-mono">
+                  {calculationResult.secondaryTotem.turkishName} • {calculationResult.secondaryTotem.element}
+                </p>
+                <p className="text-[11px] text-[#aaa] leading-relaxed pt-0.5">
+                  {calculationResult.secondaryTotem.mainSymbolism}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#0e0e12] border border-purple-950/40 space-y-1">
+                <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider block font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Gölge & Koruyucu
+                </span>
+                <h4 className="text-sm font-bold text-white font-serif">
+                  {calculationResult.shadowTotem.name}
+                </h4>
+                <p className="text-[11px] text-[#888] font-mono">
+                  {calculationResult.shadowTotem.turkishName} • {calculationResult.shadowTotem.element}
+                </p>
+                <p className="text-[11px] text-[#aaa] leading-relaxed pt-0.5">
+                  {calculationResult.shadowTotem.protectivePower} ({calculationResult.shadowTotem.shadowTrait})
+                </p>
+              </div>
             </div>
 
             {/* Actions for customer */}
@@ -262,7 +316,7 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
                   <RotateCcw className="w-3 h-3" />
                   <span>Testi Baştan Çöz</span>
                 </button>
-                <span>Aktarım Kodu: {token}</span>
+                <span className="truncate max-w-[200px]" title={token}>Kod: {token}</span>
               </div>
             </div>
           </div>

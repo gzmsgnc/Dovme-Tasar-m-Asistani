@@ -565,6 +565,7 @@ decorative wallpaper, seamless pattern, ornamental background pattern, generic f
     artistSpecSheet: stripExcludedSymbols(shadowAnalysis.section11TattooArtistBrief || artistSpecSheet),
     turkishPromptExplanation: stripExcludedSymbols(turkishPromptExplanation),
     negativePrompt: stripExcludedSymbols(shadowAnalysis.section12Prompts.negativePrompt || negativePrompt),
+    excludedSymbols: parameters.excludedDesignSymbols || [],
     promptParameters: {
       aspectRatio: '2:3',
       stylizeLevel: '200',

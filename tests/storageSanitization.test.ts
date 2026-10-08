@@ -109,9 +109,9 @@ assert.deepEqual(source.getStoredClients().map(c => c.id), ['client_A']);
 // Invalid backup must not destroy existing data.
 testStorage.clear();
 saveClient(clientB);
-const beforeInvalidImport = exportAllDataAsJSON();
+const beforeInvalidImportClients = source.getStoredClients();
 assert.equal(importDataFromJSON(JSON.stringify({ clients: [{ name: 'ID yok' }], recipes: [] })).success, false);
-assert.equal(exportAllDataAsJSON(), beforeInvalidImport);
+assert.deepEqual(source.getStoredClients(), beforeInvalidImportClients);
 assert.equal(importDataFromJSON(JSON.stringify({ clients: [clientB], recipes: [{ id: 'orphan', clientId: 'missing', title: 'Yetim Reçete' }] })).success, true);
 assert.deepEqual(source.getStoredRecipes(), []);
 

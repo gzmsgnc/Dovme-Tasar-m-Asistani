@@ -23,10 +23,12 @@ import {
   Heart,
   Phone,
   Mail,
-  RefreshCw
+  RefreshCw,
+  Clipboard
 } from 'lucide-react';
 import { ClientFormModal } from '../modals/ClientFormModal';
 import { ClientIntakeLinkModal } from '../modals/ClientIntakeLinkModal';
+import { WhatsAppImportModal } from '../modals/WhatsAppImportModal';
 import { syncClientsWithServer } from '../../utils/storage';
 
 interface ClientsViewProps {
@@ -54,6 +56,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   const [selectedClientDetail, setSelectedClientDetail] = useState<PersonData | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<PersonData | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
@@ -147,6 +150,18 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#c4a47c] ${isSyncing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isSyncing ? 'Eşitleniyor...' : 'Sunucudan Yenile'}</span>
+          </button>
+
+          {/* WhatsApp'tan Gelen Yanıtı / Kodu İçe Aktar */}
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-3 py-2 rounded bg-[#101511] hover:bg-[#162118] border border-emerald-500/40 text-emerald-400 font-mono text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            title="WhatsApp üzerinden dönen danışan mesajını veya aktarım kodunu yapıştırarak içeri aktarın"
+          >
+            <Clipboard className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">WhatsApp Yanıtını İçe Aktar</span>
+            <span className="sm:hidden">İçe Aktar</span>
           </button>
 
           {/* Danışan Formu Linki Paylaşım Butonu */}
@@ -665,6 +680,16 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         isOpen={isLinkModalOpen}
         onClose={() => setIsLinkModalOpen(false)}
         onOpenFormInApp={onOpenClientForm}
+      />
+
+      {/* WhatsApp Yanıtını İçe Aktar Modal */}
+      <WhatsAppImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={(newClient) => {
+          onSaveClient(newClient);
+          handleSyncWithServer();
+        }}
       />
     </div>
   );
