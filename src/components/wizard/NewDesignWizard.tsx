@@ -27,6 +27,7 @@ import { TotemQuizModal } from '../modals/TotemQuizModal';
 import { CalculationDetailModal } from '../modals/CalculationDetailModal';
 import { MorseCodeModal } from '../modals/MorseCodeModal';
 import { EnneagramShareModal } from '../modals/EnneagramShareModal';
+import { TotemShareModal } from '../modals/TotemShareModal';
 import { ClientIntakeLinkModal } from '../modals/ClientIntakeLinkModal';
 import { ClientConsultationDossierModal } from '../modals/ClientConsultationDossierModal';
 import { ClientEnneagramQuizView } from '../common/ClientEnneagramQuizView';
@@ -183,8 +184,9 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
   // Danışana Gönderilecek Özel Konsültasyon & Şifa Dosyası State
   const [showClientDossierModal, setShowClientDossierModal] = useState<boolean>(false);
 
-  // Enneagram Müşteriye Gönderme & Cevap Alma State
+  // Enneagram & Totem Müşteriye Gönderme & Cevap Alma State
   const [showEnneagramShareModal, setShowEnneagramShareModal] = useState<boolean>(false);
+  const [showTotemShareModal, setShowTotemShareModal] = useState<boolean>(false);
   const [showClientQuizView, setShowClientQuizView] = useState<boolean>(false);
 
   // Generated Recipe - Step 5
@@ -2108,6 +2110,14 @@ ${r.turkishPromptExplanation}
                       <Compass className="w-3.5 h-3.5 text-[#c4a47c]" />
                       <span>{Object.keys(totemAnswers).length > 0 ? 'Davranış Testini Güncelle' : 'Davranış Testi ile Belirle (15 Soru)'}</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowTotemShareModal(true)}
+                      className="text-[10px] font-mono px-2.5 py-1 rounded bg-[#101511] hover:bg-[#162118] border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Testi Danışana Gönder / İçe Aktar</span>
+                    </button>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#16140e] border border-[#c4a47c]/30 text-[#c4a47c] font-bold">
                       {symbolism.totemAnimal}
                     </span>
@@ -3967,6 +3977,25 @@ ${r.turkishPromptExplanation}
         onOpenClientView={() => {
           setShowEnneagramShareModal(false);
           setShowClientQuizView(true);
+        }}
+      />
+
+      {/* Totem Customer Share & Import Modal */}
+      <TotemShareModal
+        isOpen={showTotemShareModal}
+        onClose={() => setShowTotemShareModal(false)}
+        clientName={name || 'Danışan'}
+        onApplyImportedResult={(newAnswers, result) => {
+          setTotemAnswers(newAnswers);
+          setClientSaveFeedback(`✓ Davranışsal Totem içe aktarıldı: "${result.primaryTotem.name}" (%${result.confidenceScore} uyum)!`);
+          setIncludeTotemInDesign(true);
+          setCustomMainSymbol(result.primaryTotem.name);
+          setShowTotemShareModal(false);
+        }}
+        onOpenClientView={() => {
+          setShowTotemShareModal(false);
+          const origin = typeof window !== 'undefined' ? window.location.origin : '';
+          window.open(`${origin}/?mode=totem-quiz&client=${encodeURIComponent(name || 'Danisan')}`, '_blank');
         }}
       />
 

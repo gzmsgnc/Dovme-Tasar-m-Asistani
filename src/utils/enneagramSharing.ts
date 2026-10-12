@@ -309,7 +309,8 @@ export function parseUniversalClientImport(rawText: string): UniversalParsedClie
   const totemParsed = parseClientTotemAnswers(text);
   if (totemParsed) {
     const nameMatch = text.match(/(?:Danışan|İsim|Ad\s*Soyad|Adı)\s*[:=]\s*([^\n\r,]+)/i);
-    const extractedName = (nameMatch ? nameMatch[1].trim() : totemParsed.clientName) || 'Danışan';
+    const cleanedNameMatch = nameMatch ? nameMatch[1].replace(/[*_~]/g, '').trim() : undefined;
+    const extractedName = totemParsed.clientName || cleanedNameMatch || 'Danışan';
     const phoneMatch = text.match(/(?:Telefon|Tel|Phone|GSM)\s*[:=]\s*([+0-9\s-]{10,20})/i);
     const phone = phoneMatch ? phoneMatch[1].trim() : undefined;
 
@@ -330,7 +331,8 @@ export function parseUniversalClientImport(rawText: string): UniversalParsedClie
   if (enneaParsed) {
     // Danışan adı metin içinden de aranabilir (örn: "Danışan: Melis Kaya" veya "İsim: Melis")
     const nameMatch = text.match(/(?:Danışan|İsim|Ad\s*Soyad|Adı)\s*[:=]\s*([^\n\r,]+)/i);
-    const extractedName = (nameMatch ? nameMatch[1].trim() : enneaParsed.clientName) || 'Danışan';
+    const cleanedNameMatch = nameMatch ? nameMatch[1].replace(/[*_~]/g, '').trim() : undefined;
+    const extractedName = enneaParsed.clientName || cleanedNameMatch || 'Danışan';
     
     // Telefon da aranabilir
     const phoneMatch = text.match(/(?:Telefon|Tel|Phone|GSM)\s*[:=]\s*([+0-9\s-]{10,20})/i);

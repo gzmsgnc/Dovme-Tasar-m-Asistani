@@ -10,6 +10,8 @@ import {
 } from './behavioralTotemEngine';
 import { generateWhatsAppShareLink } from './enneagramSharing';
 
+export { generateWhatsAppShareLink };
+
 /**
  * Müşteriye gönderilecek zengin WhatsApp Totem Testi davet mesajını oluşturur.
  */
