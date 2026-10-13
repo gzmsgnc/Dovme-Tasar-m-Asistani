@@ -23,6 +23,12 @@ import { generateWhatsAppShareLink } from '../../utils/enneagramSharing';
 import { PDFExportButton } from '../common/PDFExportButton';
 import { downloadRecipeAsJson } from '../../utils/jsonExport';
 import { generatePersonalSymbolPrescription, PersonalSymbolPrescription } from '../../utils/personalSymbolPrescription';
+import { SectionCopyButton } from '../common/SectionCopyButton';
+import { 
+  copyCompleteClientData, 
+  copySymbolAnalysis, 
+  copyAiPrompts 
+} from '../../utils/clientDataCopyEngine';
 
 interface ClientConsultationDossierModalProps {
   isOpen: boolean;
@@ -127,6 +133,24 @@ Tüm hesaplamaların sembol karşılıklarını, tasarım formülünü ve stüdy
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
+            <SectionCopyButton
+              label="Tüm Danışan Verilerini Kopyala"
+              variant="gold"
+              size="sm"
+              onCopy={() => copyCompleteClientData({
+                client: recipe.personData,
+                numerology: recipe.numerology,
+                astrology: recipe.astrology,
+                enneagram: recipe.enneagram,
+                symbolism: recipe.symbolism,
+                chakra: recipe.chakra,
+                parameters: recipe.parameters,
+                recipe: recipe,
+                prescription: prescription
+              })}
+              successMessage="✓ Danışana ait tüm veriler ve analizler panoya kopyalandı!"
+              title="Tüm danışan kimlik, test, hesaplama ve reçete verilerini eksiksiz kopyala"
+            />
             <PDFExportButton
               recipe={recipe}
               variant="compact"

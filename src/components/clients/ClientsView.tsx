@@ -24,12 +24,23 @@ import {
   Phone,
   Mail,
   RefreshCw,
-  Clipboard
+  Clipboard,
+  Check
 } from 'lucide-react';
 import { ClientFormModal } from '../modals/ClientFormModal';
 import { ClientIntakeLinkModal } from '../modals/ClientIntakeLinkModal';
 import { WhatsAppImportModal } from '../modals/WhatsAppImportModal';
 import { syncClientsWithServer } from '../../utils/storage';
+import { SectionCopyButton } from '../common/SectionCopyButton';
+import { 
+  copyCompleteClientDataFromPerson,
+  copyClientGeneralInfo,
+  copyNumerologyAnalysis,
+  copyAstrologyAnalysis,
+  copyEbcedMizanAnalysis,
+  copyEnneagramAnalysis,
+  copyTestAnswersAndResults
+} from '../../utils/clientDataCopyEngine';
 
 interface ClientsViewProps {
   clients: PersonData[];
@@ -62,6 +73,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
   const [filterTab, setFilterTab] = useState<'all' | 'form_only'>('all');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [copiedCardId, setCopiedCardId] = useState<string | null>(null);
 
   const handleSyncWithServer = async () => {
     setIsSyncing(true);
@@ -406,6 +418,25 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                       >
                         <UserCheck className="w-3.5 h-3.5" />
                       </button>
+                      <button
+                        type="button"
+                        title="Tüm Danışan Verilerini Kopyala"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const ok = await copyCompleteClientDataFromPerson(client);
+                          if (ok) {
+                            setCopiedCardId(client.id);
+                            setTimeout(() => setCopiedCardId(null), 2500);
+                          }
+                        }}
+                        className={`p-1.5 rounded border text-xs transition-all cursor-pointer ${
+                          copiedCardId === client.id
+                            ? 'bg-emerald-950/60 border-emerald-500 text-emerald-400'
+                            : 'bg-[#111] hover:bg-[#181818] text-[#888] hover:text-[#c4a47c] border-[#222]'
+                        }`}
+                      >
+                        {copiedCardId === client.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Clipboard className="w-3.5 h-3.5" />}
+                      </button>
                       {deleteConfirmId === client.id ? (
                         <div className="flex items-center gap-1 animate-fadeIn">
                           <button
@@ -500,8 +531,9 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#0a0a0a] border border-[#222] rounded-xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl custom-scrollbar">
             {(() => {
-              let num = null;
-              let astro = null;
+              let num: any = null;
+              let astro: any = null;
+              let totem: any = null;
               let calcError: string | null = null;
 
               try {
@@ -526,6 +558,21 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                       }
                     : undefined
                 );
+
+                if (selectedClientDetail.totemAnswers && Object.keys(selectedClientDetail.totemAnswers).length === 15 && num && astro) {
+                  totem = calculateTotemAnimal({
+                    name: selectedClientDetail.name,
+                    birthDate: selectedClientDetail.birthDate,
+                    birthTime: selectedClientDetail.birthTime,
+                    birthPlace: selectedClientDetail.birthPlace,
+                    motherName: selectedClientDetail.motherName,
+                    totemAnswers: selectedClientDetail.totemAnswers,
+                    enneagramType: selectedClientDetail.enneagramType,
+                    lifePathNumber: num.lifePathNumber,
+                    dominantElement: astro.dominantElement,
+                    sunSign: astro.sunSign
+                  });
+                }
               } catch (err: unknown) {
                 calcError = err instanceof Error ? err.message : String(err);
               }
@@ -536,7 +583,16 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                 <>
                   <div className="flex items-start justify-between border-b border-[#1a1a1a] pb-3">
                     <div>
-                      <h3 className="text-base font-bold text-white font-serif">{selectedClientDetail.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-white font-serif">{selectedClientDetail.name}</h3>
+                        <SectionCopyButton
+                          label="Bilgileri Kopyala"
+                          size="xs"
+                          variant="ghost"
+                          onCopy={() => copyClientGeneralInfo(selectedClientDetail)}
+                          title="Danışan Kimlik ve İletişim Bilgilerini Kopyala"
+                        />
+                      </div>
                       <p className="text-xs text-[#666] font-mono mt-0.5">{selectedClientDetail.birthDate} • {selectedClientDetail.birthPlace || 'Belirtilmedi'}</p>
                       {(selectedClientDetail.phone || selectedClientDetail.email) && (
                         <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#aaa] mt-1">
@@ -571,6 +627,23 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     </button>
                   </div>
 
+                  {/* MASTER CLIPBOARD ACTION BANNER */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-[#18150f] via-[#221c12] to-[#18150f] border border-[#c4a47c]/50 shadow-md">
+                    <div className="flex items-center gap-2 text-xs font-mono text-[#c4a47c]">
+                      <Clipboard className="w-4 h-4 text-[#c4a47c] shrink-0" />
+                      <span className="font-bold">Danışan Dosyası:</span>
+                      <span className="text-[11px] text-[#aaa] hidden sm:inline">Tüm testler ve hesaplamalar</span>
+                    </div>
+                    <SectionCopyButton
+                      label="Tüm Danışan Verilerini Kopyala"
+                      variant="gold"
+                      size="sm"
+                      className="w-full sm:w-auto justify-center !font-bold"
+                      onCopy={() => copyCompleteClientDataFromPerson(selectedClientDetail)}
+                      successMessage="✓ Danışana ait tüm kimlik, test ve hesaplama verileri panoya kopyalandı!"
+                    />
+                  </div>
+
                   {calcError ? (
                     <div className="p-3.5 rounded bg-amber-950/20 border border-amber-500/40 text-amber-300 text-xs font-mono space-y-1">
                       <div className="font-bold">⚠ Doğrulama Hatası:</div>
@@ -583,9 +656,18 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
                     <>
                       {/* Numerology Summary */}
                       <div className="space-y-2">
-                        <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
-                          ◆ Numeroloji Matrisi
-                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
+                            ◆ Numeroloji Matrisi
+                          </span>
+                          <SectionCopyButton
+                            label="Numerolojiyi Kopyala"
+                            size="xs"
+                            variant="outline"
+                            onCopy={() => copyNumerologyAnalysis(num)}
+                            title="Numeroloji Analizini Kopyala"
+                          />
+                        </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="p-2.5 rounded bg-[#0d0d0d] border border-[#1a1a1a]">
                             <span className="text-[9px] text-[#555] block font-mono uppercase">Yaşam Yolu: {num.lifePathNumber}</span>
@@ -608,15 +690,77 @@ export const ClientsView: React.FC<ClientsViewProps> = ({
 
                       {/* Astrology & Enneagram */}
                       <div className="space-y-2">
-                        <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
-                          ◆ Astroloji & Enneagram
-                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
+                            ◆ Astroloji & Enneagram
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <SectionCopyButton
+                              label="Astrolojiyi Kopyala"
+                              size="xs"
+                              variant="outline"
+                              onCopy={() => copyAstrologyAnalysis(astro)}
+                              title="Astroloji Haritasını Kopyala"
+                            />
+                            <SectionCopyButton
+                              label="Enneagramı Kopyala"
+                              size="xs"
+                              variant="outline"
+                              onCopy={() => copyEnneagramAnalysis(selectedClientDetail.enneagramAnswers, ennea)}
+                              title="Enneagram Analizini Kopyala"
+                            />
+                          </div>
+                        </div>
                         <div className="p-3.5 rounded bg-[#0d0d0d] border border-[#1a1a1a] text-xs space-y-1.5">
                           <div className="text-white">Güneş: <strong>{astro.sunSign} ({astro.sunSignElement})</strong> • Ay: <strong>{astro.moonSign}</strong> • Yükselen: <strong>{astro.ascendantSign}</strong></div>
                           <div className="text-[#aaa]">Enneagram: <strong className="text-white">{ennea.typeName} ({ennea.wing})</strong></div>
                           <div className="text-[11px] text-[#777] leading-relaxed pt-1 border-t border-[#1a1a1a]">{astro.summary}</div>
                         </div>
                       </div>
+
+                      {/* Ebced ve Mizan */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
+                            ◆ Ebced ve Mizan
+                          </span>
+                          <SectionCopyButton
+                            label="Ebcedi Kopyala"
+                            size="xs"
+                            variant="outline"
+                            onCopy={() => copyEbcedMizanAnalysis(selectedClientDetail)}
+                            title="Ebced ve Mizan Analizini Kopyala"
+                          />
+                        </div>
+                        <div className="p-3 rounded bg-[#0d0d0d] border border-[#1a1a1a] text-xs font-mono space-y-1">
+                          <div className="text-white">İsim: <strong className="text-[#c4a47c]">{selectedClientDetail.name}</strong></div>
+                          {selectedClientDetail.motherName && (
+                            <div className="text-[#aaa]">Anne Adı: <strong className="text-white">{selectedClientDetail.motherName}</strong> (Mizan ve Yıldızname için aktif)</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Test Cevapları & Sonuçları (Varsa) */}
+                      {(selectedClientDetail.totemAnswers || selectedClientDetail.enneagramAnswers) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#c4a47c] uppercase tracking-wider font-mono block">
+                              ◆ Test Cevapları & Analizleri
+                            </span>
+                            <SectionCopyButton
+                              label="Testleri Kopyala"
+                              size="xs"
+                              variant="outline"
+                              onCopy={() => copyTestAnswersAndResults(selectedClientDetail, totem, ennea)}
+                              title="Tüm Test Soru ve Cevaplarını Kopyala"
+                            />
+                          </div>
+                          <div className="p-3 rounded bg-[#0d0d0d] border border-[#1a1a1a] text-xs font-mono flex items-center justify-between text-[#aaa]">
+                            <span>Enneagram: {selectedClientDetail.enneagramAnswers ? `${Object.keys(selectedClientDetail.enneagramAnswers).length}/15 Soru` : 'Cevaplanmadı'}</span>
+                            <span>Totem Testi: {selectedClientDetail.totemAnswers ? `${Object.keys(selectedClientDetail.totemAnswers).length}/15 Senaryo` : 'Cevaplanmadı'}</span>
+                          </div>
+                        </div>
+                      )}
                     </>
                   ) : null}
 

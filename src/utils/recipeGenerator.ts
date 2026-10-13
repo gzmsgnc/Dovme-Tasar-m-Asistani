@@ -339,7 +339,7 @@ export function generateTattooRecipe(
 **Atmosfer:** ${parameters.visualAtmosphere}
 **Duygusal Rezonans:** ${symbolism.emotionalTheme}
 **Renk ve Tonlama:** ${parameters.colorScheme} (${symbolism.colorThemeDescription})
-Tasarım, kişinin hem gölge yönlerini (${enneagram.shadowTraits.slice(0, 2).join(', ')}) kucaklayan hem de yaşam yolu erdemlerini (${numerology.coreKeywords.slice(0, 3).join(', ')}) yükselten mistik bir simya eseri hissiyatı taşımalıdır.
+Tasarım, kişinin hem gölge yönlerini (${(enneagram.shadowTraits || []).slice(0, 2).join(', ') || 'içsel gölgelerini'}) kucaklayan hem de yaşam yolu erdemlerini (${(numerology.coreKeywords || []).slice(0, 3).join(', ') || 'erdemlerini'}) yükselten mistik bir simya eseri hissiyatı taşımalıdır.
   `.trim();
 
   // 7. Summary Rationale

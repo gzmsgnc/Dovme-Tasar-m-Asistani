@@ -39,6 +39,25 @@ import {
   validateEnneagramAnswers, 
   validateTotemAnswers 
 } from '../../utils/dataCompleteness';
+import { SectionCopyButton } from '../common/SectionCopyButton';
+import {
+  copyCompleteClientData,
+  copyClientGeneralInfo,
+  copyNumerologyAnalysis,
+  copyAstrologyAnalysis,
+  copyEbcedMizanAnalysis,
+  copyChakraAnalysis,
+  copyEnneagramAnalysis,
+  copyTotemAnalysis,
+  copyTestAnswersAndResults,
+  copySymbolAnalysis,
+  copyTattooRecipe,
+  copyTechnicalTattooSpecs,
+  copyAiPrompts,
+  buildCompleteClientDataText,
+  buildEnneagramAnalysisText,
+  buildTotemAnalysisText
+} from '../../utils/clientDataCopyEngine';
 import { 
   User, 
   Sparkles, 
@@ -815,20 +834,71 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
     completeRecipe: generatedRecipe || null
   });
 
-  const handleCopyTotemTestResult = () => {
-    copyPromptToClipboard(JSON.stringify(buildTotemTestExport(), null, 2), 'totem-test');
+  const handleCopyTotemTestResult = async () => {
+    const text = buildTotemAnalysisText(totemAnswers, symbolism?.totemTestResult, symbolism);
+    await copyPromptToClipboard(text, 'totem-test');
   };
 
-  const handleCopyEnneagramTestResult = () => {
-    copyPromptToClipboard(JSON.stringify(buildEnneagramTestExport(), null, 2), 'enneagram-test');
+  const handleCopyEnneagramTestResult = async () => {
+    const text = buildEnneagramAnalysisText(enneagramAnswers, enneagram);
+    await copyPromptToClipboard(text, 'enneagram-test');
   };
 
-  const handleCopyPrescription = () => {
-    copyPromptToClipboard(JSON.stringify(buildPrescriptionExport(), null, 2), 'prescription');
+  const handleCopyPrescription = async () => {
+    if (generatedRecipe?.prescription?.fullPrescriptionText) {
+      await copyPromptToClipboard(generatedRecipe.prescription.fullPrescriptionText, 'prescription');
+    } else {
+      await copyPromptToClipboard(JSON.stringify(buildPrescriptionExport(), null, 2), 'prescription');
+    }
   };
 
-  const handleCopyCompleteClientFile = () => {
-    copyPromptToClipboard(JSON.stringify(buildCompleteClientExport(), null, 2), 'complete-client');
+  const handleCopyCompleteClientFile = async () => {
+    const text = buildCompleteClientDataText({
+      client: {
+        id: currentClientId || undefined,
+        name,
+        birthDate,
+        birthTime: birthTime || undefined,
+        birthPlace: birthPlace || undefined,
+        motherName: motherName || undefined,
+        zodiacSystem,
+        notes: notes || undefined,
+        existingSymbols: existingSymbols || undefined,
+        existingTotems: existingTotems || undefined,
+        personalNumbers: personalNumbers || undefined,
+        personalStory: personalStory || undefined,
+        totemAnswers,
+        enneagramAnswers,
+        enneagramType: selectedEnneaType,
+        enneagramWing: selectedWing,
+        birthLatitude: selectedLocation?.lat,
+        birthLongitude: selectedLocation?.lon,
+        birthTimezone: selectedLocation?.timezone
+      },
+      numerology,
+      astrology,
+      enneagram,
+      symbolism,
+      chakra,
+      parameters: {
+        selectedStyles,
+        composition,
+        orientation,
+        bodyPlacement,
+        density,
+        colorScheme,
+        visualAtmosphere,
+        mainSymbol: customMainSymbol.trim() || symbolism?.totemAnimal || 'Kutsal Geometri',
+        secondarySymbols: customSecondarySymbols,
+        excludedDesignSymbols: generatedRecipe?.parameters?.excludedDesignSymbols || [],
+        includeTotemInDesign,
+        useMorseCodeForNumbers,
+        customMorseInput
+      },
+      recipe: generatedRecipe,
+      prescription: generatedRecipe?.prescription
+    });
+    await copyPromptToClipboard(text, 'complete-client');
   };
 
   const handleCopyAllPrompts = () => {
@@ -1119,6 +1189,17 @@ ${r.turkishPromptExplanation}
         </div>
 
         <div className="flex items-center space-x-2.5">
+          {name.trim() && (
+            <SectionCopyButton
+              label="Tüm Danışan Verilerini Kopyala"
+              variant="gold"
+              size="sm"
+              onCopy={handleCopyCompleteClientFile}
+              title="Tüm danışan kimlik, test, hesaplama ve reçete verilerini eksiksiz panoya kopyala"
+              successMessage="✓ Danışan dosyası eksiksiz panoya kopyalandı!"
+            />
+          )}
+
           {step > 1 && (
             <button
               type="button"
@@ -1221,6 +1302,28 @@ ${r.turkishPromptExplanation}
                     <Share2 className="w-3.5 h-3.5 text-[#c4a47c]" />
                     <span>Danışan Formu Linki</span>
                   </button>
+                  <SectionCopyButton
+                    label="Bilgileri Kopyala"
+                    variant="outline"
+                    size="sm"
+                    onCopy={() => copyClientGeneralInfo({
+                      name,
+                      birthDate,
+                      birthTime,
+                      birthPlace,
+                      motherName,
+                      zodiacSystem,
+                      personalNumbers,
+                      existingSymbols,
+                      existingTotems,
+                      personalStory,
+                      notes,
+                      birthLatitude: selectedLocation?.lat,
+                      birthLongitude: selectedLocation?.lon,
+                      birthTimezone: selectedLocation?.timezone
+                    })}
+                    title="Danışan Kimlik ve İletişim Bilgilerini Kopyala"
+                  />
                   <button
                     type="button"
                     onClick={() => handleStartFreshDesign()}
@@ -1681,6 +1784,13 @@ ${r.turkishPromptExplanation}
                 <span className="mr-2">◆</span> Numeroloji Pisagor Matrisi
               </h3>
               <div className="flex items-center gap-2">
+                <SectionCopyButton
+                  label="Numerolojiyi Kopyala"
+                  variant="outline"
+                  size="sm"
+                  onCopy={() => copyNumerologyAnalysis(numerology)}
+                  title="Numeroloji Pisagor Matrisi ve Sayısal Titreşimleri Kopyala"
+                />
                 <button
                   type="button"
                   onClick={() => setShowMorseModal(true)}
@@ -1740,11 +1850,20 @@ ${r.turkishPromptExplanation}
                     İsim harfleri ve doğum verilerinin beden çakraları üzerindeki rezonans dağılımı
                   </p>
                 </div>
-                {chakra && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#15140e] border border-[#c4a47c]/40 text-[#c4a47c] font-bold">
-                    Denge Skoru: {chakra.overallChakraBalanceScore}/100
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <SectionCopyButton
+                    label="Çakrayı Kopyala"
+                    variant="outline"
+                    size="xs"
+                    onCopy={() => copyChakraAnalysis(chakra, numerology)}
+                    title="7+2 Çakra Analizini ve Şifa Yönergelerini Kopyala"
+                  />
+                  {chakra && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#15140e] border border-[#c4a47c]/40 text-[#c4a47c] font-bold">
+                      Denge Skoru: {chakra.overallChakraBalanceScore}/100
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* 1-9 Grid Badges */}
@@ -1888,6 +2007,13 @@ ${r.turkishPromptExplanation}
                   </button>
                 </div>
 
+                <SectionCopyButton
+                  label="Astrolojiyi Kopyala"
+                  variant="outline"
+                  size="sm"
+                  onCopy={() => copyAstrologyAnalysis(astrology)}
+                  title="Astroloji Efemeris ve Göksel Koordinatları Kopyala"
+                />
                 <button
                   type="button"
                   onClick={() => {
@@ -1969,6 +2095,48 @@ ${r.turkishPromptExplanation}
             </div>
           </div>
 
+          {/* Kadim Ebced & Mizan Kartı */}
+          <div className="border border-[#1a1a1a] bg-[#0a0a0a] rounded-xl p-5 shadow-lg space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1a1a1a] pb-3 gap-2">
+              <h3 className="text-[#c4a47c] text-xs uppercase tracking-widest flex items-center font-bold">
+                <span className="mr-2">◆</span> Kadim Ebced & Yıldızname Mizanı
+              </h3>
+              <SectionCopyButton
+                label="Ebcedi Kopyala"
+                variant="outline"
+                size="sm"
+                onCopy={() => copyEbcedMizanAnalysis({ name, motherName })}
+                title="Ebced Değeri ve Yıldızname Mizan Hesabını Kopyala"
+              />
+            </div>
+            {(() => {
+              const pName = name.trim();
+              const mName = motherName.trim();
+              if (!pName) return null;
+              const hasMother = Boolean(mName);
+              const ebcedRes = hasMother ? calculateEbcedAndYildizname(pName, mName) : null;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs font-mono">
+                  <div className="p-3 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a]">
+                    <span className="text-[9px] text-[#666] uppercase tracking-wider block">Danışan Adı Ebcedi</span>
+                    <span className="text-lg font-bold text-[#c4a47c]">{ebcedRes ? ebcedRes.personEbced : 'Aktif'}</span>
+                    <p className="text-[11px] text-[#aaa] truncate mt-0.5">{pName}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a]">
+                    <span className="text-[9px] text-[#666] uppercase tracking-wider block">Anne Adı Ebcedi</span>
+                    <span className="text-lg font-bold text-white">{ebcedRes ? ebcedRes.motherEbced : (mName ? 'Hesaplanıyor' : 'Belirtilmedi')}</span>
+                    <p className="text-[11px] text-[#aaa] truncate mt-0.5">{mName || 'Opsiyonel (Mizan için)'}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a]">
+                    <span className="text-[9px] text-[#666] uppercase tracking-wider block">Yıldızname Mizan Burcu</span>
+                    <span className="text-lg font-bold text-[#c4a47c]">{ebcedRes ? ebcedRes.yildiznameBurcName : 'Anne Adı Gerekli'}</span>
+                    <p className="text-[11px] text-[#aaa] truncate mt-0.5">{ebcedRes ? `${ebcedRes.yildiznameElement} Elementi` : 'Salt isim ebcedi devrede'}</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
           {/* Enneagram Selector & Details */}
           <div className="border border-[#1a1a1a] bg-[#0a0a0a] rounded-xl p-5 shadow-lg space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1a1a1a] pb-3 gap-2">
@@ -1976,6 +2144,13 @@ ${r.turkishPromptExplanation}
                 <span className="mr-2">◆</span> Enneagram Kişilik Tipi & Kanat
               </h3>
               <div className="flex flex-wrap items-center gap-1.5">
+                <SectionCopyButton
+                  label="Enneagramı Kopyala"
+                  variant="outline"
+                  size="sm"
+                  onCopy={() => copyEnneagramAnalysis(enneagramAnswers, enneagram)}
+                  title="15 Soruluk Enneagram Testi ve Kişilik Profilini Kopyala"
+                />
                 <button
                   type="button"
                   onClick={() => setShowIntakeLinkModal(true)}
@@ -2121,7 +2296,16 @@ ${r.turkishPromptExplanation}
               <h3 className="text-[#c4a47c] text-xs uppercase tracking-widest flex items-center font-bold">
                 <span className="mr-2">◆</span> Kişiselleştirilmiş Sembolik Profil
               </h3>
-              <span className="text-[10px] text-[#666] font-mono uppercase">Ezoterik Sentez</span>
+              <div className="flex items-center gap-2">
+                <SectionCopyButton
+                  label="Sembolleri Kopyala"
+                  variant="outline"
+                  size="sm"
+                  onCopy={() => copySymbolAnalysis(symbolism, generatedRecipe?.prescription)}
+                  title="Kişisel Sembol Reçetesi ve Ezoterik Gerekçeleri Kopyala"
+                />
+                <span className="text-[10px] text-[#666] font-mono uppercase">Ezoterik Sentez</span>
+              </div>
             </div>
 
             {/* Themes banner */}
@@ -2694,7 +2878,30 @@ ${r.turkishPromptExplanation}
               <h3 className="text-[#c4a47c] text-xs uppercase tracking-widest flex items-center font-bold">
                 <span className="mr-2">◆</span> Dövme Stili & Tasarım Parametreleri
               </h3>
-              <span className="text-[10px] text-[#666] font-mono uppercase">Çoklu Stil Desteği</span>
+              <div className="flex items-center gap-2">
+                <SectionCopyButton
+                  label="Parametreleri Kopyala"
+                  variant="outline"
+                  size="sm"
+                  onCopy={() => copyTattooRecipe(null, {
+                    selectedStyles,
+                    composition,
+                    orientation,
+                    bodyPlacement,
+                    density,
+                    colorScheme,
+                    visualAtmosphere,
+                    mainSymbol: customMainSymbol.trim() || symbolism?.totemAnimal || 'Kutsal Geometri',
+                    secondarySymbols: customSecondarySymbols,
+                    excludedDesignSymbols,
+                    includeTotemInDesign,
+                    useMorseCodeForNumbers,
+                    customMorseInput
+                  })}
+                  title="Dövme Stili ve Tasarım Parametrelerini Kopyala"
+                />
+                <span className="text-[10px] text-[#666] font-mono uppercase">Çoklu Stil Desteği</span>
+              </div>
             </div>
 
             {/* Tattoo Styles Multiple Selection */}
@@ -3186,6 +3393,14 @@ ${r.turkishPromptExplanation}
             </div>
 
             <div className="flex items-center gap-2">
+              <SectionCopyButton
+                label="Tüm Danışan Verilerini Kopyala"
+                variant="gold"
+                size="md"
+                onCopy={handleCopyCompleteClientFile}
+                title="Tüm danışan dosyasını, analizleri ve reçeteyi tek parça metin olarak panoya kopyala"
+                successMessage="✓ Tüm danışan dosyası panoya kopyalandı!"
+              />
               <button
                 type="button"
                 onClick={handleDownloadRecipeJson}
