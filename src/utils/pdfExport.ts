@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import { TattooRecipe } from '../types';
 import { calculateEbcedAndYildizname } from './ebced';
 import { generatePersonalSymbolPrescription } from './personalSymbolPrescription';
+import { validateExportPrerequisites, assertDataComplete } from './dataCompleteness';
 
 /**
  * Generates an ultra-luxurious, comprehensive multi-page PDF document
@@ -14,6 +15,10 @@ export async function exportRecipeToPDF(
   recipe: TattooRecipe,
   onProgress?: (status: string) => void
 ): Promise<boolean> {
+  // Zorunlu Veri Tamlığı Denetimi: Eksik veya geçersiz reçeteyle PDF oluşturulamaz
+  const exportCheck = validateExportPrerequisites(recipe);
+  assertDataComplete(exportCheck, 'PDF dışa aktarma');
+
   try {
     if (onProgress) onProgress('PDF dökümanı hazırlanıyor...');
 

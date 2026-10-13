@@ -15,6 +15,7 @@ import { encodeToMorse } from './morseCode';
 import { executeSymbolicIntegrationEngine } from './symbolIntegrationEngine';
 import { getTotemAnimalStrict } from './totemCatalogData';
 import { generatePersonalSymbolPrescription } from './personalSymbolPrescription';
+import { validateRecipePrerequisites, assertDataComplete } from './dataCompleteness';
 
 export function validateRecipeSymbolism(symbolism: SymbolismProfile): void {
   if (!symbolism.totemAnimal?.trim()) {
@@ -37,6 +38,17 @@ export function generateTattooRecipe(
   symbolism: SymbolismProfile,
   parameters: TattooDesignParameters
 ): TattooRecipe {
+  // Zorunlu Veri Tamlığı ve Eksik Cevap Engeli Kontrolü
+  const recipePrerequisites = validateRecipePrerequisites(
+    person, 
+    numerology, 
+    astrology, 
+    enneagram, 
+    symbolism, 
+    parameters
+  );
+  assertDataComplete(recipePrerequisites, 'Dövme reçetesi oluşturma');
+
   const stylesStr = parameters.selectedStyles.join(' + ') || 'Fine Line & Geometric';
   // Totem her zaman analiz edilir; yalnızca açık kullanıcı tercihiyle görsel tasarıma alınır.
   const includeTotem = parameters.includeTotemInDesign === true;
@@ -109,7 +121,7 @@ export function generateTattooRecipe(
         ...(symbolism.enneagramShadowTraits ?? []).slice(0, 2).map(trait => `Gölge dönüşümü: ${trait}`)
       ];
 
-  const rawSecondary = parameters.secondarySymbols.length > 0
+  const rawSecondary = (parameters.secondarySymbols && parameters.secondarySymbols.length > 0)
     ? parameters.secondarySymbols.filter(s => !isExcludedSymbol(s))
     : [
         symbolism.plantFlora,
@@ -138,7 +150,7 @@ export function generateTattooRecipe(
   const hasVerified19 = numerology.divineHelp19?.has19 === true;
   let subtleDetails = [...(parameters.subtleDetails && parameters.subtleDetails.length > 0
     ? parameters.subtleDetails
-    : symbolism.subtleDetails)].filter(detail => !isExcludedSymbol(detail));
+    : (symbolism.subtleDetails || []))].filter(detail => !isExcludedSymbol(detail));
 
   // 19 yalnızca doğrulanmış numeroloji verisinden gelebilir.
   if (!hasVerified19) {
@@ -234,11 +246,12 @@ export function generateTattooRecipe(
     ? 'Düşük-Orta Tasarım Riski: Çizgiler arasında yaklaşık 1.5–2 mm veya daha fazla boşluk tasarım kılavuzu olarak değerlendirilebilir; uzun dönem pigment davranışı cilt, bölge, uygulama ve bakıma göre değişir.'
     : 'Görece Daha Düşük Tasarım Riski: Kontur ve negatif alan dengesi uzun dönem okunabilirliği desteklemek üzere tasarlanır; sonuç garanti edilmez.';
 
-  const shadingTechnique = parameters.colorScheme.includes('Tekil Vurgu')
+  const colorSchemeStr = parameters.colorScheme || 'Saf Monokrom Siyah';
+  const shadingTechnique = colorSchemeStr.includes('Tekil Vurgu')
     ? 'Whip shading geçişleri, 3 kademeli Grey Wash (%30, %60, %90) ve seçili kırmızı/altın pigment doygunluğu'
     : 'Whip Shading, Pendulum Dotwork ve pürüzsüz Black & Grey degrade tonlaması';
 
-  const anatomicalFlow = `${parameters.bodyPlacement} bölgesinin kas yönelimine uygun ${parameters.orientation.toLowerCase()} hat; vücut hareketlerinde esneme payı gözetilmiştir.`;
+  const anatomicalFlow = `${parameters.bodyPlacement} bölgesinin kas yönelimine uygun ${(parameters.orientation || 'dikey').toLowerCase()} hat; vücut hareketlerinde esneme payı gözetilmiştir.`;
   
   const recommendedSize = (parameters.bodyPlacement.includes('Sırt') || parameters.bodyPlacement.includes('Göğüs'))
     ? 'Minimum 22 x 15 cm | İdeal: 30 x 20 cm (Detayların 10 yıl sonra net okunabilmesi için)'

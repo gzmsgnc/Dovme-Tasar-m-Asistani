@@ -1,10 +1,15 @@
 import { TattooRecipe } from '../types';
+import { validateExportPrerequisites, assertDataComplete } from './dataCompleteness';
 
 /**
  * Downloads full TattooRecipe and Symbol Integration analysis as a formatted JSON file.
  * The export never claims a recipe is validated when no validation result exists.
  */
 export function downloadRecipeAsJson(recipe: TattooRecipe): boolean {
+  // Zorunlu Veri Tamlığı Denetimi
+  const exportCheck = validateExportPrerequisites(recipe);
+  assertDataComplete(exportCheck, 'JSON dışa aktarma');
+
   try {
     const clientName = recipe.clientName || recipe.personData.name || 'Danisan';
     const sanitizedName = clientName.replace(/[^a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s_-]/g, '').trim().replace(/\s+/g, '_');

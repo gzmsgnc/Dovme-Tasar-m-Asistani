@@ -34,6 +34,12 @@ import { ClientEnneagramQuizView } from '../common/ClientEnneagramQuizView';
 import { encodeToMorse } from '../../utils/morseCode';
 import { downloadAsPng, downloadAsSvg } from '../../utils/imageExport';
 import { 
+  validateRecipePrerequisites, 
+  validateClientMandatoryFields, 
+  validateEnneagramAnswers, 
+  validateTotemAnswers 
+} from '../../utils/dataCompleteness';
+import { 
   User, 
   Sparkles, 
   Check, 
@@ -515,12 +521,26 @@ export const NewDesignWizard: React.FC<NewDesignWizardProps> = ({
 
   // Build the Final Recipe
   const handleGenerateRecipe = () => {
-    if (!numerology || !astrology || !enneagram || !symbolism) return;
+    if (!name.trim() || name.trim().toLowerCase() === 'misafir') {
+      setClientSaveFeedback('⚠️ Reçete oluşturmak için danışan adı zorunludur ("Misafir" gibi varsayılan isimler kullanılamaz).');
+      setTimeout(() => setClientSaveFeedback(null), 4000);
+      return;
+    }
+    if (!birthDate) {
+      setClientSaveFeedback('⚠️ Reçete oluşturmak için geçerli bir doğum tarihi zorunludur.');
+      setTimeout(() => setClientSaveFeedback(null), 4000);
+      return;
+    }
+    if (!numerology || !astrology || !enneagram || !symbolism) {
+      setClientSaveFeedback('⚠️ Hesaplama motorları tamamlanmadan reçete oluşturulamaz. Lütfen önceki adımları tamamlayınız.');
+      setTimeout(() => setClientSaveFeedback(null), 4000);
+      return;
+    }
 
     const idToUse = currentClientId || initialPerson?.id || `client_${Date.now()}`;
     const person: PersonData = {
       id: idToUse,
-      name: name.trim() || 'Misafir',
+      name: name.trim(),
       birthDate,
       birthTime: birthTime.trim() || undefined,
       birthPlace: birthPlace.trim() || undefined,
@@ -1311,9 +1331,11 @@ ${r.turkishPromptExplanation}
                   type="button"
                   onClick={() => setShowTotemQuizModal(true)}
                   className={`p-2.5 rounded-lg border text-left flex items-center justify-between transition-all cursor-pointer ${
-                    Object.keys(totemAnswers).length > 0
+                    Object.keys(totemAnswers).length === 15
                       ? 'bg-[#14120c] border-[#c4a47c]/60 text-white'
-                      : 'bg-[#12121a] hover:bg-[#161622] border-[#222230] text-[#ccc]'
+                      : Object.keys(totemAnswers).length > 0
+                        ? 'bg-[#1c180e] border-amber-500/40 text-[#f5e6cc]'
+                        : 'bg-[#12121a] hover:bg-[#161622] border-[#222230] text-[#ccc]'
                   }`}
                 >
                   <div className="space-y-0.5">
@@ -1321,33 +1343,45 @@ ${r.turkishPromptExplanation}
                       <Compass className="w-3.5 h-3.5 text-[#c4a47c]" />
                       <span>Davranışsal Totem Testi</span>
                     </div>
-                    <p className="text-[10px] text-[#777] font-mono">
-                      {Object.keys(totemAnswers).length > 0 
-                        ? `✓ 15/15 Yanıtlandı (${symbolism?.totemAnimal || 'Totem Hazır'})` 
-                        : '15 Davranışsal senaryo ile 52 hayvan eşleşmesi'}
+                    <p className="text-[10px] font-mono">
+                      {Object.keys(totemAnswers).length === 15 
+                        ? <span className="text-emerald-400 font-bold">✓ 15/15 Yanıtlandı ({symbolism?.totemAnimal || 'Totem Hazır'})</span>
+                        : Object.keys(totemAnswers).length > 0
+                          ? <span className="text-amber-400 font-bold">⚠️ {Object.keys(totemAnswers).length}/15 Yanıtlandı ({15 - Object.keys(totemAnswers).length} soru eksik)</span>
+                          : <span className="text-[#777]">15 Davranışsal senaryo ile 52 hayvan eşleşmesi</span>}
                     </p>
                   </div>
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1c1c28] text-[#c4a47c] border border-[#2e2e40]">
-                    {Object.keys(totemAnswers).length > 0 ? 'Yenile' : 'Testi Çöz'}
+                    {Object.keys(totemAnswers).length === 15 ? 'Yenile' : Object.keys(totemAnswers).length > 0 ? 'Tamamla' : 'Testi Çöz'}
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowQuizModal(true)}
-                  className="p-2.5 rounded-lg bg-[#12121a] hover:bg-[#161622] border border-[#222230] text-left flex items-center justify-between transition-all cursor-pointer"
+                  className={`p-2.5 rounded-lg border text-left flex items-center justify-between transition-all cursor-pointer ${
+                    Object.keys(enneagramAnswers).length === 15
+                      ? 'bg-[#14120c] border-[#c4a47c]/60 text-white'
+                      : Object.keys(enneagramAnswers).length > 0
+                        ? 'bg-[#1c180e] border-amber-500/40 text-[#f5e6cc]'
+                        : 'bg-[#12121a] hover:bg-[#161622] border-[#222230] text-[#ccc]'
+                  }`}
                 >
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5 text-xs font-bold font-mono text-[#c4a47c]">
                       <Sparkles className="w-3.5 h-3.5 text-[#c4a47c]" />
                       <span>Enneagram Kişilik Testi</span>
                     </div>
-                    <p className="text-[10px] text-[#777] font-mono">
-                      Seçili: Tip {selectedEnneaType} ({selectedWing})
+                    <p className="text-[10px] font-mono">
+                      {Object.keys(enneagramAnswers).length === 15
+                        ? <span className="text-emerald-400 font-bold">✓ 15/15 Yanıtlandı (Tip {selectedEnneaType} - {selectedWing})</span>
+                        : Object.keys(enneagramAnswers).length > 0
+                          ? <span className="text-amber-400 font-bold">⚠️ {Object.keys(enneagramAnswers).length}/15 Yanıtlandı ({15 - Object.keys(enneagramAnswers).length} soru eksik)</span>
+                          : <span className="text-[#777]">Seçili: Tip {selectedEnneaType} ({selectedWing})</span>}
                     </p>
                   </div>
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1c1c28] text-[#c4a47c] border border-[#2e2e40]">
-                    Testi Çöz
+                    {Object.keys(enneagramAnswers).length === 15 ? 'Yenile' : Object.keys(enneagramAnswers).length > 0 ? 'Tamamla' : 'Testi Çöz'}
                   </span>
                 </button>
               </div>
@@ -1593,6 +1627,21 @@ ${r.turkishPromptExplanation}
             <div className="p-3.5 rounded-lg bg-rose-950/40 border border-rose-500/50 text-rose-300 text-xs font-mono flex items-start gap-2.5 animate-fadeIn">
               <span className="text-rose-400 font-bold shrink-0">⚠ Hata:</span>
               <span>{profileValidationError}</span>
+            </div>
+          )}
+
+          {(!name.trim() || !birthDate || !birthPlace?.trim()) && (
+            <div className="p-3 rounded-lg bg-[#14100c] border border-amber-500/30 text-amber-300 text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 font-bold">
+                <span>⚠ Zorunlu Alanlar Eksik:</span>
+              </span>
+              <span className="text-[11px] text-[#ddd]">
+                {[
+                  !name.trim() && 'Ad Soyad',
+                  !birthDate && 'Doğum Tarihi',
+                  !birthPlace?.trim() && 'Doğum Yeri'
+                ].filter(Boolean).join(', ')} doldurulmalıdır.
+              </span>
             </div>
           )}
 
