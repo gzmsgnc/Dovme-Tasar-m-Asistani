@@ -10,11 +10,12 @@ import { parseClientTotemAnswers } from './totemSharing';
  * Müşteriye gönderilecek zengin WhatsApp mesaj metnini oluşturur.
  */
 export function generateClientWhatsAppQuizMessage(clientName: string = 'Danışanımız', customUrl?: string): string {
-  const testUrl = customUrl || `${window.location.origin}/?mode=enneagram-quiz&client=${encodeURIComponent(clientName)}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://dovmetasarim.app';
+  const testUrl = customUrl || `${origin}/?mode=enneagram-quiz&client=${encodeURIComponent(clientName)}`;
 
   let msg = `✨ Merhaba ${clientName}! ✨\n\n`;
-  msg += `Dövme tasarımınızın ezoterik ve psikolojik arketipini kusursuz belirleyebilmemiz için size özel 5 soruluk *Enneagram Mini Testi* hazırladık.\n\n`;
-  msg += `📲 *Testi 1 dakikada telefondan çözmek için tıklayın:*\n${testUrl}\n\n`;
+  msg += `Dövme tasarımınızın ezoterik ve psikolojik arketipini kusursuz belirleyebilmemiz için size özel 15 soruluk *Enneagram Kişilik ve Arketip Değerlendirmesi* hazırladık.\n\n`;
+  msg += `📲 *Testi 2 dakikada telefondan çözmek için tıklayın:*\n${testUrl}\n\n`;
   msg += `─ VEYA BURADAN CEVAPLAYABİLİRSİNİZ ─\n\n`;
 
   ENNEAGRAM_MINI_TEST_QUESTIONS.forEach((q, idx) => {
@@ -26,7 +27,7 @@ export function generateClientWhatsAppQuizMessage(clientName: string = 'Danışa
     msg += `\n`;
   });
 
-  msg += `👉 Cevaplarınızı bana (örn: "1-A, 2-C, 3-B, 4-A, 5-D" şeklinde) ilettiğinizde tasarım reçetenize ve çizim rehberinize hemen yansıtacağız! ✨🖋️`;
+  msg += `👉 Cevaplarınızı bana (örn: "1-A, 2-C, 3-B..." veya link üzerinden) ilettiğinizde tasarım reçetenize ve çizim rehberinize hemen yansıtacağız! ✨🖋️`;
 
   return msg;
 }
@@ -44,7 +45,7 @@ export function generateWhatsAppShareLink(phone: string = '', text: string): str
 }
 
 /**
- * Cevapları transfer token'ına paketler: [ENNEA-TOKEN:1=4,2=5,3=4,4=8,5=3|Gizem]
+ * Cevapları transfer token'ına paketler: [ENNEA-TOKEN:1=4,2=5,3=4...|Gizem]
  */
 export function encodeAnswersToToken(answers: Record<number, number>, clientName: string = ''): string {
   const pairs = Object.entries(answers)
@@ -66,7 +67,7 @@ export function generateClientReturnWhatsAppMessage(
   const typeData = ENNEAGRAM_TYPES[calculated.type] || ENNEAGRAM_TYPES[4];
   const token = encodeAnswersToToken(answers, clientName);
 
-  let msg = `✨ Merhaba! Enneagram Mini Testimi tamamladım:\n\n`;
+  let msg = `✨ Merhaba! Enneagram Kişilik ve Arketip Değerlendirmemi tamamladım:\n\n`;
   msg += `👤 *Danışan:* ${clientName || 'Danışan'}\n`;
   msg += `🔮 *Çıkan Arketip:* Tip ${calculated.wing} - ${typeData.typeName}\n`;
   msg += `🗝️ *Temel Motivasyon:* ${typeData.coreMotivation}\n\n`;
@@ -92,7 +93,7 @@ export function parseClientAnswers(rawText: string): {
   const answers: Record<number, number> = {};
   let detectedName: string | undefined = undefined;
 
-  // 1. Token Formatı: [ENNEA-TOKEN:1=4,2=5,3=4,4=8,5=3|Gizem]
+  // 1. Token Formatı: [ENNEA-TOKEN:1=4,2=5,3=4...|Gizem]
   const tokenMatch = text.match(/\[ENNEA-TOKEN:([^\]|]+)(?:\|([^\]]+))?\]/i);
   if (tokenMatch) {
     const pairsStr = tokenMatch[1];
@@ -152,7 +153,7 @@ export function parseClientAnswers(rawText: string): {
   for (const match of numberPairs) {
     const qId = parseInt(match[1], 10);
     const typeVal = parseInt(match[2], 10);
-    if (qId >= 1 && qId <= 5 && typeVal >= 1 && typeVal <= 9) {
+    if (qId >= 1 && qId <= ENNEAGRAM_MINI_TEST_QUESTIONS.length && typeVal >= 1 && typeVal <= 9) {
       answers[qId] = typeVal;
       numCount++;
     }
@@ -173,11 +174,15 @@ export function parseClientAnswers(rawText: string): {
   if (directTypeMatch) {
     const t = parseInt(directTypeMatch[1], 10);
     const w = parseInt(directTypeMatch[2], 10);
+    const simulatedAnswers: Record<number, number> = {};
+    for (let i = 1; i <= ENNEAGRAM_MINI_TEST_QUESTIONS.length; i++) {
+      simulatedAnswers[i] = i % 4 === 0 ? w : t;
+    }
     return {
-      answers: { 1: t, 2: t, 3: t, 4: t, 5: w },
+      answers: simulatedAnswers,
       calculatedType: t,
       calculatedWing: `${t}w${w}`,
-      matchedCount: 5
+      matchedCount: ENNEAGRAM_MINI_TEST_QUESTIONS.length
     };
   }
 
@@ -185,11 +190,15 @@ export function parseClientAnswers(rawText: string): {
   if (singleTypeMatch) {
     const t = parseInt(singleTypeMatch[1], 10);
     const defWing = ENNEAGRAM_TYPES[t]?.wings[0] || `${t}w${t === 9 ? 1 : t + 1}`;
+    const simulatedAnswers: Record<number, number> = {};
+    for (let i = 1; i <= ENNEAGRAM_MINI_TEST_QUESTIONS.length; i++) {
+      simulatedAnswers[i] = t;
+    }
     return {
-      answers: { 1: t, 2: t, 3: t, 4: t, 5: t },
+      answers: simulatedAnswers,
       calculatedType: t,
       calculatedWing: defWing,
-      matchedCount: 5
+      matchedCount: ENNEAGRAM_MINI_TEST_QUESTIONS.length
     };
   }
 

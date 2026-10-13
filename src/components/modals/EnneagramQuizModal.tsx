@@ -65,7 +65,7 @@ export const EnneagramQuizModal: React.FC<EnneagramQuizModalProps> = ({
           <div className="flex items-center gap-2">
             <HelpCircle className="w-4 h-4 text-[#c4a47c]" />
             <h3 className="text-xs uppercase tracking-widest text-[#c4a47c] font-bold">
-              Enneagram Arketip Mini Testi
+              Enneagram Arketip Değerlendirmesi
             </h3>
           </div>
           <button
@@ -78,7 +78,7 @@ export const EnneagramQuizModal: React.FC<EnneagramQuizModalProps> = ({
         </div>
 
         <p className="text-[11px] text-[#777] font-mono leading-relaxed">
-          Bu 5 soruluk test, dövme tasarımındaki gölge yönleri ve temel psikolojik motivasyonları doğru arketiple eşleştirmek için tasarlanmıştır. Doğum tarihinden bağımsızdır.
+          Bu 15 soruluk yapılandırılmış değerlendirme, dövme tasarımındaki gölge yönleri ve temel psikolojik motivasyonları doğru arketiple eşleştirmek için tasarlanmıştır. Doğum tarihinden bağımsızdır.
         </p>
 
         {/* Progress Bar */}

@@ -116,10 +116,10 @@ export const ClientEnneagramQuizView: React.FC<ClientEnneagramQuizViewProps> = (
             <span>Kişiye Özel Dövme Arketipi</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {clientName} için Enneagram Mini Testi
+            {clientName} için Enneagram Kişilik ve Arketip Değerlendirmesi
           </h1>
           <p className="text-xs sm:text-sm text-[#aaa] max-w-lg mx-auto leading-relaxed">
-            Dövme tasarımınızın temel sembolizmini, ruhsal gölge arketipinizi ve içsel motivasyonunuzu belirlemek için lütfen aşağıdaki 5 soruyu samimiyetle cevaplayınız.
+            Dövme tasarımınızın temel sembolizmini, ruhsal gölge arketipinizi ve içsel motivasyonunuzu belirlemek için lütfen aşağıdaki 15 soruyu samimiyetle cevaplayınız.
           </p>
 
           {/* Progress */}

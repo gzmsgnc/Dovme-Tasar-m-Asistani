@@ -113,7 +113,7 @@ export const ClientIntakeLinkModal: React.FC<ClientIntakeLinkModalProps> = ({
             </div>
             <div className="flex items-center gap-1.5 bg-[#080808] p-2 rounded border border-[#1a1a1a]">
               <Layers className="w-3 h-3 text-[#c4a47c]" />
-              <span>5 Soru Enneagram</span>
+              <span>15 Soru Enneagram</span>
             </div>
             <div className="flex items-center gap-1.5 bg-[#080808] p-2 rounded border border-[#1a1a1a]">
               <Compass className="w-3 h-3 text-[#c4a47c]" />

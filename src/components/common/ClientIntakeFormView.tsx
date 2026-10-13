@@ -612,7 +612,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
             {[
               { num: 1, label: 'İletişim', detail: 'Ad, Tel & E-posta' },
               { num: 2, label: 'Doğum & Aile', detail: 'Tarih, Konum & Anne' },
-              { num: 3, label: 'Enneagram', detail: `${enneagramAnswered}/5 Yanıt` },
+              { num: 3, label: 'Enneagram', detail: `${enneagramAnswered}/${ENNEAGRAM_MINI_TEST_QUESTIONS.length} Yanıt` },
               { num: 4, label: 'Totem', detail: `${totemAnswered}/15 Yanıt` }
             ].map((s) => {
               const isActive = currentStep === s.num;
@@ -954,7 +954,7 @@ export const ClientIntakeFormView: React.FC<ClientIntakeFormViewProps> = ({
                   <span>3. BÖLÜM: ENNEAGRAM KİŞİLİK DİNAMİKLERİ TESTİ</span>
                 </h2>
                 <p className="text-xs text-[#777] font-mono mt-0.5">
-                  Dövmenizdeki psikolojik gölge arketipi ve temel içsel motivasyonunuzu belirlemek için 5 soruyu yanıtlayınız.
+                  Dövmenizdeki psikolojik gölge arketipi ve temel içsel motivasyonunuzu belirlemek için 15 soruyu yanıtlayınız.
                 </p>
               </div>
               <div className="text-right">
